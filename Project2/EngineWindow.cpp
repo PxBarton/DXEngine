@@ -8,15 +8,15 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
     : width(w), height(h), hInst(GetModuleHandle(nullptr))
 
 {
-    const wchar_t* CLASS_NAME = L"DXEngineWinClass";
-
+    //setTitle(t);
+    windowClass = L"DXEngineWinClass";
     WNDCLASSEX wc = { };
 
     wc.cbSize = sizeof(wc);
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = MsgSetup;
     wc.hInstance = hInst;
-    wc.lpszClassName = CLASS_NAME;
+    wc.lpszClassName = getWndClass();
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
 
@@ -37,7 +37,7 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
     hWnd = CreateWindowEx(
         // Optional window styles.
         0,
-        CLASS_NAME,
+        getWndClass(),
         L"fucking garbage",
         // Window style
         WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
@@ -66,6 +66,36 @@ void EngineWindow::setTitle(const std::wstring& title)
 
 }
 
+const WCHAR* EngineWindow::getWndClass()
+{
+    return windowClass;
+}
+
+bool EngineWindow::MessageProc()
+{
+    // handle windows messages
+    MSG msg;
+    ZeroMemory(&msg, sizeof(MSG));  // initialize message structure
+    // location, handle, filters, remove
+    if (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE))
+
+    {
+        TranslateMessage(&msg); // virtual key messages to character messages
+        DispatchMessage(&msg);
+    }
+    /*
+    if (msg.message == WM_NULL)
+    {
+        if (!IsWindow(hWnd))
+        {
+            hWnd = nullptr;
+            UnregisterClass(getWndClass(), hInst);
+            return false;
+        }
+    }
+    */
+    return true;
+}
 
 LRESULT CALLBACK EngineWindow::MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -98,6 +128,7 @@ LRESULT CALLBACK EngineWindow::MsgHelper(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
 LRESULT CALLBACK EngineWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+
     switch (msg)
     {
     case WM_DESTROY:
@@ -106,4 +137,62 @@ LRESULT CALLBACK EngineWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPA
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
 
+}
+
+///////////////////////
+//    Exceptions
+
+EngineWindow::Expt::Expt(int line, const char* file, HRESULT hr) noexcept
+    : EngineException(line, file), hr(hr)
+{
+    
+}
+
+const char* EngineWindow::Expt::what() const noexcept
+{
+    std::ostringstream osst;
+    osst << getType() << std::endl
+        << "[Error Code]  " << getErrorCode() << std::endl
+        << "[Description]  " << getErrorString() << std::endl
+        << getOriginString();
+    infoBuffer = osst.str();
+    return infoBuffer.c_str();
+
+}
+
+const char* EngineWindow::Expt::getType() const noexcept
+{
+    return "Engine Window Exception";
+}
+
+std::string EngineWindow::Expt::translateErrorCode(HRESULT hr)
+{
+    char* pMsgBuf = nullptr;
+    // windows will allocate memory for err string and make our pointer point to it
+    const DWORD nMsgLen = FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPWSTR>(&pMsgBuf), 0, nullptr
+    );
+    // 0 string length returned indicates a failure
+    if (nMsgLen == 0)
+    {
+        return "Unidentified error code";
+    }
+    // copy error string from windows-allocated buffer to std::string
+    std::string errorString = pMsgBuf;
+    // free windows buffer
+    LocalFree(pMsgBuf);
+    return errorString;
+}
+
+HRESULT EngineWindow::Expt::getErrorCode() const noexcept
+{
+    return hr;
+}
+
+std::string EngineWindow::Expt::getErrorString() const noexcept
+{
+    return translateErrorCode(hr);
 }

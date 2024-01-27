@@ -21,12 +21,18 @@
     <ClInclude Include="MinimalWin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EngineException.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EngineWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineException.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
