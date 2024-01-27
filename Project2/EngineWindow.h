@@ -5,22 +5,7 @@
 
 class EngineWindow
 {
-private:
-	class WinClass
-	{
-	public:
-		static const WCHAR* getName() noexcept;
-		static HINSTANCE getInstance() noexcept;
-	private:
-		WinClass() noexcept;
-		~WinClass();
-		WinClass(const WinClass&) = delete;
-		WinClass& operator=(const WinClass&) = delete;
-		static constexpr const WCHAR* winClassName = L"DX3d Engine Window";
-		static WinClass wClass;
-		HINSTANCE hInstance;
 
-	};
 public:
 	EngineWindow(int w, int h, const char* t) noexcept;
 	~EngineWindow();
@@ -30,9 +15,11 @@ public:
 private:
 	int width;
 	int height;
-	HWND hwnd;
+	HINSTANCE hInst = nullptr;
+	HWND hWnd = nullptr;
+	
 
-	static LRESULT CALLBACK MsgSetup(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-	static LRESULT CALLBACK MsgHelper(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	LRESULT HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK MsgHelper(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	LRESULT CALLBACK HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };

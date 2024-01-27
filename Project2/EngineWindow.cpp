@@ -1,45 +1,43 @@
 #include "EngineWindow.h"
 #include <assert.h>
 
-EngineWindow::WinClass EngineWindow::WinClass::wClass;
 
-EngineWindow::WinClass::WinClass() noexcept : hInstance(GetModuleHandle(nullptr))
+
+
+EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
+    : width(w), height(h), hInst(GetModuleHandle(nullptr))
+
 {
+    const wchar_t* CLASS_NAME = L"DXEngineWinClass";
+
     WNDCLASSEX wc = { };
 
     wc.cbSize = sizeof(wc);
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = MsgSetup;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = L"fghashasiu";
+    wc.hInstance = hInst;
+    wc.lpszClassName = CLASS_NAME;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
 
+
     RegisterClassEx(&wc);
-}
+    /*
+    if (!RegisterClassEx(&wc))
+    {
+        MessageBox(nullptr,
+            L"Call to RegisterClassEx failed!",
+            L"Windows Desktop Guided Tour",
+            0);
 
-EngineWindow::WinClass::~WinClass()
-{
-    UnregisterClass(winClassName, getInstance());
-}
+        //return 1;
+    }
+    */ 
 
-const WCHAR* EngineWindow::WinClass::getName() noexcept
-{
-    return winClassName;
-}
-
-HINSTANCE EngineWindow::WinClass::getInstance() noexcept
-{
-    return wClass.hInstance;
-}
-
-EngineWindow::EngineWindow(int w, int h, const char* t) noexcept : width(w), height(h)
-{
-
-    hwnd = CreateWindowEx(
+    hWnd = CreateWindowEx(
         // Optional window styles.
         0,
-        WinClass::getName(),
+        CLASS_NAME,
         L"fucking garbage",
         // Window style
         WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
@@ -49,45 +47,45 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept : width(w), hei
 
         nullptr,       // Parent window    
         nullptr,       // Menu
-        WinClass::getInstance(),  // Instance handle
+        hInst,  // Instance handle
         this
     );        // Additional application data
 
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
+    ShowWindow(hWnd, SW_SHOWDEFAULT);
 }
 
 EngineWindow::~EngineWindow()
 {
     //ImGui_ImplWin32_Shutdown();
-    DestroyWindow(hwnd);
+    DestroyWindow(hWnd);
 }
 
 void EngineWindow::setTitle(const std::wstring& title)
 {
-    SetWindowText(hwnd, title.c_str());
+    SetWindowText(hWnd, title.c_str());
 
 }
 
 
-LRESULT CALLBACK EngineWindow::MsgSetup(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK EngineWindow::MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     // use create parameter passed in from CreateWindow() to store window class pointer at WinAPI side
     if (msg == WM_NCCREATE)
     {
         // extract ptr to window class from creation data
-        const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lparam);
+        const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
         EngineWindow* const pWnd = reinterpret_cast<EngineWindow*>(pCreate->lpCreateParams);
         // sanity check
         assert(pWnd != nullptr);
         // set WinAPI-managed user data to store ptr to window class
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
         // set message proc to normal (non-setup) handler now that setup is finished
-        SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&EngineWindow::MsgHelper));
+        SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&EngineWindow::MsgHelper));
         // forward message to window class handler
-        return pWnd->HandleMsg(hwnd, msg, wparam, lparam);
+        return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
     }
     // if we get a message before the WM_NCCREATE message, handle with default handler
-    return DefWindowProc(hwnd, msg, wparam, lparam);
+    return DefWindowProc(hWnd, msg, wParam, lParam);
 
 }
 
@@ -98,7 +96,7 @@ LRESULT CALLBACK EngineWindow::MsgHelper(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
 }
 
-LRESULT EngineWindow::HandleMsg(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK EngineWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
@@ -106,6 +104,6 @@ LRESULT EngineWindow::HandleMsg(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
         PostQuitMessage(0);
         return 0;
     }
-    return DefWindowProc(hwnd, msg, wparam, lparam);
+    return DefWindowProc(hWnd, msg, wParam, lParam);
 
 }
