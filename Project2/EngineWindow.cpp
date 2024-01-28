@@ -51,7 +51,7 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
         this
     );        // Additional application data
 
-    gfx.Init(hWnd);
+    gfx.Init(hWnd, width, height);
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 }

@@ -15,18 +15,18 @@ class Graphics
 public:
 	Graphics();
 	~Graphics();
-	void Init(HWND hWnd);
+	void Init(HWND hWnd, int width, int height);
 	void EndFrame();
-
+	void ClearBuffer(float red, float green, float blue) noexcept;
 private:
-	int width;
-	int height;
+	int width = 0;
+	int height = 0;
 	HWND hWnd = nullptr;
 
 	ID3D11Device* deviceP = nullptr;
 	ID3D11DeviceContext* deviceContextP = nullptr;
 	IDXGISwapChain* swapchainP = nullptr;
-
+	ID3D11RenderTargetView* targetP = nullptr;
 	/*
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext;

@@ -3,8 +3,11 @@
 Graphics::Graphics() 
 {}
 
-void Graphics::Init(HWND hWnd)
+void Graphics::Init(HWND hWnd, int width, int height)
 {
+	this->width = width;
+	this->height = height;
+
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
@@ -38,11 +41,19 @@ void Graphics::Init(HWND hWnd)
 		&deviceP,
 		NULL,
 		&deviceContextP);
+
+	ID3D11Resource* backBufferP = nullptr;
+	swapchainP->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&backBufferP)); 
+	deviceP->CreateRenderTargetView(backBufferP, nullptr, &targetP);
+	backBufferP->Release();
 }
 
 Graphics::~Graphics()
 {
-	
+	if (targetP != nullptr)
+	{
+		targetP->Release();
+	}
 	if (swapchainP != nullptr)
 	{
 		swapchainP->Release();
@@ -60,4 +71,10 @@ Graphics::~Graphics()
 void Graphics::EndFrame()
 {
 	swapchainP->Present(1u, 0u);
+}
+
+void Graphics::ClearBuffer(float red, float green, float blue)
+{
+	const float color[] = { red, green, blue, 1.0f };
+	deviceContextP->ClearRenderTargetView(targetP, color);
 }
