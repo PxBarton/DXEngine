@@ -58,6 +58,7 @@ EngineWindow::~EngineWindow()
 {
     //ImGui_ImplWin32_Shutdown();
     DestroyWindow(hWnd);
+    UnregisterClass(getWndClass(), hInst);
 }
 
 void EngineWindow::setTitle(const std::wstring& title)
@@ -142,13 +143,13 @@ LRESULT CALLBACK EngineWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPA
 ///////////////////////
 //    Exceptions
 
-EngineWindow::Expt::Expt(int line, const char* file, HRESULT hr) noexcept
+EngineWindow::WinExcept::WinExcept(int line, const char* file, HRESULT hr) noexcept
     : EngineException(line, file), hr(hr)
 {
     
 }
 
-const char* EngineWindow::Expt::what() const noexcept
+const char* EngineWindow::WinExcept::what() const noexcept
 {
     std::ostringstream osst;
     osst << getType() << std::endl
@@ -160,12 +161,12 @@ const char* EngineWindow::Expt::what() const noexcept
 
 }
 
-const char* EngineWindow::Expt::getType() const noexcept
+const char* EngineWindow::WinExcept::getType() const noexcept
 {
     return "Engine Window Exception";
 }
 
-std::string EngineWindow::Expt::translateErrorCode(HRESULT hr)
+std::string EngineWindow::WinExcept::translateErrorCode(HRESULT hr)
 {
     char* pMsgBuf = nullptr;
     // windows will allocate memory for err string and make our pointer point to it
@@ -187,12 +188,12 @@ std::string EngineWindow::Expt::translateErrorCode(HRESULT hr)
     return errorString;
 }
 
-HRESULT EngineWindow::Expt::getErrorCode() const noexcept
+HRESULT EngineWindow::WinExcept::getErrorCode() const noexcept
 {
     return hr;
 }
 
-std::string EngineWindow::Expt::getErrorString() const noexcept
+std::string EngineWindow::WinExcept::getErrorString() const noexcept
 {
     return translateErrorCode(hr);
 }

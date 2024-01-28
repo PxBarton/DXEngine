@@ -7,10 +7,10 @@
 class EngineWindow
 {
 public:
-	class Expt : public EngineException
+	class WinExcept : public EngineException
 	{
 	public:
-		Expt(int line, const char* file, HRESULT hr) noexcept;
+		WinExcept(int line, const char* file, HRESULT hr) noexcept;
 		const char* what() const noexcept override;
 		virtual const char* getType() const noexcept override;
 		static std::string translateErrorCode(HRESULT hr);
