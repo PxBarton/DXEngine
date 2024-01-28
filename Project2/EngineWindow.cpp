@@ -51,6 +51,8 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
         this
     );        // Additional application data
 
+    gfx.Init(hWnd);
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 }
 
@@ -78,6 +80,7 @@ bool EngineWindow::MessageProc()
     MSG msg;
     ZeroMemory(&msg, sizeof(MSG));  // initialize message structure
     // location, handle, filters, remove
+    // PeekMessage returns immediately even when no message
     if (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE))
 
     {
@@ -97,6 +100,7 @@ bool EngineWindow::MessageProc()
     */
     return true;
 }
+
 
 LRESULT CALLBACK EngineWindow::MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {

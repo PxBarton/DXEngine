@@ -137,11 +137,13 @@
   <ItemGroup>
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineWindow.h" />
+    <ClInclude Include="Graphics.h" />
     <ClInclude Include="MinimalWin.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EngineException.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
+    <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

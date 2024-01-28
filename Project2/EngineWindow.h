@@ -3,6 +3,7 @@
 #include <string>
 #include "MinimalWin.h"
 #include "EngineException.h"
+#include "Graphics.h"
 
 class EngineWindow
 {
@@ -28,13 +29,15 @@ public:
 	void setTitle(const std::wstring& title);
 	const WCHAR* getWndClass();
 	bool MessageProc();
-
+	Graphics gfx;
+	
 private:
 	int width;
 	int height;
 	const WCHAR* windowClass = L"0";
 	HINSTANCE hInst = nullptr;
 	HWND hWnd = nullptr;
+	
 	
 	static LRESULT CALLBACK MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK MsgHelper(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -43,4 +46,4 @@ private:
 
 
 // exception macro
-#define ENG_EXCEPT(hr) EngineWindow::Expt(__LINE__, __FILE__, hr)
+#define ENG_EXCEPT(hr) EngineWindow::WinExcept(__LINE__, __FILE__, hr)

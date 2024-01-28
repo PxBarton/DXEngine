@@ -11,7 +11,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         EngineWindow wind(400, 400, "trash");
         while (wind.MessageProc() == true)
         {
-
+            wind.gfx.EndFrame();
         }
 
 
