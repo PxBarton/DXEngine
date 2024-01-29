@@ -73,7 +73,7 @@ void Graphics::EndFrame()
 	swapchainP->Present(1u, 0u);
 }
 
-void Graphics::ClearBuffer(float red, float green, float blue)
+void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 {
 	const float color[] = { red, green, blue, 1.0f };
 	deviceContextP->ClearRenderTargetView(targetP, color);

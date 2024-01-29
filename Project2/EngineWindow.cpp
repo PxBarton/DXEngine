@@ -59,8 +59,13 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
 EngineWindow::~EngineWindow()
 {
     //ImGui_ImplWin32_Shutdown();
-    DestroyWindow(hWnd);
-    UnregisterClass(getWndClass(), hInst);
+    if (hWnd != NULL)
+    {
+        UnregisterClass(getWndClass(), hInst);
+        DestroyWindow(hWnd);
+    }
+    
+    
 }
 
 void EngineWindow::setTitle(const std::wstring& title)
@@ -87,7 +92,7 @@ bool EngineWindow::MessageProc()
         TranslateMessage(&msg); // virtual key messages to character messages
         DispatchMessage(&msg);
     }
-    /*
+    
     if (msg.message == WM_NULL)
     {
         if (!IsWindow(hWnd))
@@ -97,7 +102,7 @@ bool EngineWindow::MessageProc()
             return false;
         }
     }
-    */
+    
     return true;
 }
 
