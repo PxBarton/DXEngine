@@ -38,3 +38,4 @@ std::string EngineException::getOriginString() const noexcept
 	osst << "[File]  " << file << std::endl << "[Line]  " << line;
 	return osst.str();
 }
+

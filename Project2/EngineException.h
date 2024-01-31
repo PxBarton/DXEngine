@@ -13,7 +13,7 @@ public:
 	int getLine() const noexcept;
 	const std::string& getFile() const noexcept;
 	std::string getOriginString() const noexcept;
-
+	
 private:
 	int line;
 	std::string file;

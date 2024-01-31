@@ -1,7 +1,10 @@
 #pragma once
 
 #include "MinimalWin.h"
+//#include <Windows.h>
 
+#include "EngineException.h"
+#include "COMException.h"
 #include <d3d11.h>
 #pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
@@ -12,12 +15,15 @@
 
 class Graphics
 {
+public :
+	
 public:
 	Graphics();
 	~Graphics();
-	void Init(HWND hWnd, int width, int height);
+	bool Init(HWND hWnd, int width, int height);
 	void EndFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;
+	static void errLog(COMException& exception);
 private:
 	int width = 0;
 	int height = 0;

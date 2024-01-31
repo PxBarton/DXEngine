@@ -1,7 +1,9 @@
 #pragma once
 
-#include <string>
 #include "MinimalWin.h"
+//#include <Windows.h>
+
+#include <string>
 #include "EngineException.h"
 #include "Graphics.h"
 

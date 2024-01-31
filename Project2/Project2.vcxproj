@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="COMException.h" />
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineWindow.h" />
     <ClInclude Include="Graphics.h" />

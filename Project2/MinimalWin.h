@@ -6,6 +6,7 @@
 
 #ifndef MINWIN
 #define WIN32_LEAN_AND_MEAN
+/*
 #define NOGDICAPMASKS
 #define NOSYSMETRICS
 #define NOMENUS
@@ -39,6 +40,7 @@
 #define NOPROXYSTUB
 #define NOIMAGE
 #define NOTAPE
+*/
 #endif
 
 #define NOMINMAX
