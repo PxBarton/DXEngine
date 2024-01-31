@@ -11,11 +11,11 @@ public:
 	COMException(HRESULT hr, const std::string& msg, const std::string& file, const std::string& function, int line)
 	{
 		_com_error error(hr);
-		whatmsg = L"Msg: " + stringToWide(std::string(msg)) + L"\n";
+		whatmsg = L"Msg: " + wideStr(std::string(msg)) + L"\n";
 		whatmsg += error.ErrorMessage();
-		whatmsg += L"\nFile: " + stringToWide(file);
-		whatmsg += L"\nFunction: " + stringToWide(function);
-		whatmsg += L"\nLine: " + stringToWide(std::to_string(line));
+		whatmsg += L"\nFile: " + wideStr(file);
+		whatmsg += L"\nFunction: " + wideStr(function);
+		whatmsg += L"\nLine: " + wideStr(std::to_string(line));
 	}
 
 	const wchar_t* what() const
@@ -23,7 +23,7 @@ public:
 		return whatmsg.c_str();
 	}
 
-	static std::wstring stringToWide(std::string str)
+	static std::wstring wideStr(std::string str)
 	{
 		std::wstring wide_string(str.begin(), str.end());
 		return wide_string;

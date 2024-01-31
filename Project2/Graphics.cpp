@@ -52,7 +52,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 	}
 	catch (COMException exception)
 	{
-		errLog(exception);
+		EngineException::Log(exception);
 		return false;
 	}
 
@@ -90,8 +90,10 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	deviceContextP->ClearRenderTargetView(targetP, color);
 }
 
+/*
 void Graphics::errLog(COMException& exception)
 {
 	std::wstring error_message = exception.what();
 	MessageBoxW(NULL, error_message.c_str(), L"Error", MB_ICONERROR);
 }
+*/

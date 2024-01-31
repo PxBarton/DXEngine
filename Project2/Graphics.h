@@ -4,7 +4,7 @@
 //#include <Windows.h>
 
 #include "EngineException.h"
-#include "COMException.h"
+//#include "COMException.h"
 #include <d3d11.h>
 #pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
@@ -23,7 +23,7 @@ public:
 	bool Init(HWND hWnd, int width, int height);
 	void EndFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;
-	static void errLog(COMException& exception);
+	//static void errLog(COMException& exception);
 private:
 	int width = 0;
 	int height = 0;
