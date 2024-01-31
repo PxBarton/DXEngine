@@ -47,7 +47,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 
 		ID3D11Resource* backBufferP = nullptr;
 		swapchainP->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&backBufferP));
-		deviceP->CreateRenderTargetView(backBufferP, nullptr, &targetP);
+		deviceP->CreateRenderTargetView(backBufferP, nullptr, &renderTargetViewP);
 		backBufferP->Release();
 	}
 	catch (COMException exception)
@@ -59,11 +59,37 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 	return true;
 }
 
+bool Graphics::InitShaders()
+{
+	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso"))
+		return false;
+
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0,
+			D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	UINT numElements = ARRAYSIZE(layout);
+
+	HRESULT hr = this->deviceP->CreateInputLayout(layout, numElements,
+		this->vertexShader.GetBuffer()->GetBufferPointer(), this->vertexShader.GetBuffer()->GetBufferSize(),
+		this->inputLayoutP.GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "Failed to create input layout.");
+		return false;
+	}
+
+	return true;
+}
+
 Graphics::~Graphics()
 {
-	if (targetP != nullptr)
+	if (renderTargetViewP != nullptr)
 	{
-		targetP->Release();
+		renderTargetViewP->Release();
 	}
 	if (swapchainP != nullptr)
 	{
@@ -87,7 +113,7 @@ void Graphics::EndFrame()
 void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 {
 	const float color[] = { red, green, blue, 1.0f };
-	deviceContextP->ClearRenderTargetView(targetP, color);
+	//deviceContextP->ClearRenderTargetView(renderTargetViewP, color);
 }
 
 /*
