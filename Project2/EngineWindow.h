@@ -3,9 +3,11 @@
 #include "MinimalWin.h"
 //#include <Windows.h>
 
-#include <string>
-#include "EngineException.h"
 #include "Graphics.h"
+
+#include <string>
+#include <SDKDDKVer.h>
+
 
 class EngineWindow
 {

@@ -5,13 +5,13 @@
 
 #include "EngineException.h"
 #include "HLSLShaders.h"
+#include "AdapterInfo.h"
 
-#include <d3d11.h>
-#pragma comment(lib,"d3d11.lib")
+//#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
-#pragma comment(lib,"DXGI.lib")
-#include <wrl/client.h>
-#include <vector> 
+//#pragma comment(lib,"DXGI.lib")
+//#include <wrl/client.h>
+//#include <vector> 
 
 
 class Graphics
@@ -20,11 +20,13 @@ public :
 	
 public:
 	Graphics();
-	~Graphics();
+	~Graphics() = default;
 	bool Init(HWND hWnd, int width, int height);
 	bool InitShaders();
-	void EndFrame();
+	void RenderFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;
+	void BasicTri();
+
 	//static void errLog(COMException& exception);
 private:
 	int width = 0;

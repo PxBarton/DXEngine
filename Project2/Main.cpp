@@ -11,7 +11,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         EngineWindow wind(400, 400, "trash");
         while (wind.MessageProc() == true)
         {
-            wind.gfx.EndFrame();
+            wind.gfx.ClearBuffer(.2, .4, .8);
+            //wind.gfx.BasicTri();
+            //wind.gfx.InitShaders();
+            wind.gfx.RenderFrame();
         }
 
 
