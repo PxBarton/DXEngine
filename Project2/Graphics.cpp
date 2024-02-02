@@ -59,13 +59,14 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 
 		wrl::ComPtr<ID3D11Texture2D> backBufferP;
 
-		IF_COM_FAIL(swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)backBufferP.GetAddressOf()), "get buffer");
+		IF_COM_FAIL(swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBufferP.GetAddressOf())), "get buffer");
 
 		IF_COM_FAIL(deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, renderTargetViewP.GetAddressOf()), "create target");
 		
 		deviceContextP->OMSetRenderTargets(1, renderTargetViewP.GetAddressOf(), NULL);
 
 		D3D11_VIEWPORT viewport;
+		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
 		viewport.Width = width;
@@ -131,7 +132,7 @@ bool Graphics::InitScene()
 	Vertex v[] =
 	{
 		//Vertex(0.0f, 0.0f), //Center
-		Vertex(0.0f, 0.1f), //Top
+		Vertex(0.0f, -0.6f), //bottom
 		Vertex(-0.1f, 0.0f), //Left 
 		Vertex(0.1f, 0.0f), //Right 
 	};
@@ -144,12 +145,13 @@ bool Graphics::InitScene()
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = sizeof(Vertex);
 
 	D3D11_SUBRESOURCE_DATA vertexBufferData;
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = v;
 
-	HRESULT hr = this->deviceP->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->vertexBuffer.GetAddressOf());
+	HRESULT hr = deviceP->CreateBuffer(&vertexBufferDesc, &vertexBufferData, vertexBuffer.GetAddressOf());
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "Failed to create vertex buffer.");
@@ -163,6 +165,7 @@ void Graphics::RenderFrame()
 {
 	const float color[] = { 0.2f, 0.4f, 0.8f, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
+	
 	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
 	deviceContextP->VSSetShader(vertexShader.GetShader(), NULL, 0);
 	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -173,6 +176,7 @@ void Graphics::RenderFrame()
 	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 
 	deviceContextP->Draw(3, 0);
+	
 	swapchainP->Present(1u, NULL);
 }
 
