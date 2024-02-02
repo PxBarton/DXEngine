@@ -7,6 +7,7 @@ Graphics::Graphics()
 
 bool Graphics::Init(HWND hWnd, int width, int height)
 {
+	this->hWnd = hWnd;
 	this->width = width;
 	this->height = height;
 
@@ -42,27 +43,27 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 		D3D11CreateDeviceAndSwapChain(
-			//nullptr,    // default is first adapter in list (Nvidia 1650) 
+			//NULL,    // default is first adapter in list (Nvidia 1650) 
 			adapters[0].pAdapter,
 			D3D_DRIVER_TYPE_UNKNOWN,
-			nullptr,
-			0,
-			nullptr,
+			NULL,
+			NULL,
+			NULL,
 			0,
 			D3D11_SDK_VERSION,
 			&scd,
-			this->swapchainP.GetAddressOf(),
-			this->deviceP.GetAddressOf(),
+			swapchainP.GetAddressOf(),
+			deviceP.GetAddressOf(),
 			NULL,
-			this->deviceContextP.GetAddressOf());
+			deviceContextP.GetAddressOf());
 
 		wrl::ComPtr<ID3D11Texture2D> backBufferP;
 
-		IF_COM_FAIL(this->swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferP), "get buffer");
+		IF_COM_FAIL(swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)backBufferP.GetAddressOf()), "get buffer");
 
-		IF_COM_FAIL(this->deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, &renderTargetViewP), "create target");
+		IF_COM_FAIL(deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, renderTargetViewP.GetAddressOf()), "create target");
 		
-		//deviceContextP->OMSetRenderTargets(1, &renderTargetViewP, NULL);
+		deviceContextP->OMSetRenderTargets(1, renderTargetViewP.GetAddressOf(), NULL);
 
 		D3D11_VIEWPORT viewport;
 		viewport.TopLeftX = 0;
@@ -77,7 +78,12 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		{
 			EngineException::Log("shader fuckup");
 		}
-		InitScene();
+		
+		if (!InitScene())
+		{
+			EngineException::Log("scene fuckup");
+		}
+		
 	}
 	catch (COMException exception)
 	{
@@ -103,17 +109,13 @@ bool Graphics::InitShaders()
 	
 	
 	
-	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso"))
+	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso", layout, numElements))
 	{
 		EngineException::Log("vertex shader");
 		return false;
 	}
 	
-	HRESULT hr = deviceP->CreateInputLayout(layout, numElements,
-		vertexShader.GetBuffer()->GetBufferPointer(), vertexShader.GetBuffer()->GetBufferSize(),
-		&inputLayoutP);
-
-	IF_COM_FAIL(hr, "imput layout");
+	
 
 	if (!pixelShader.Initialize(this->deviceP, L"..\\x64\\Debug\\PixelShader.cso"))
 	{
@@ -128,9 +130,10 @@ bool Graphics::InitScene()
 {
 	Vertex v[] =
 	{
-		Vertex(0.0f, -0.1f), //Center Point
-		Vertex(-0.1f, 0.0f), //Left Point
-		Vertex(0.1f, 0.0f), //Right Point
+		//Vertex(0.0f, 0.0f), //Center
+		Vertex(0.0f, 0.1f), //Top
+		Vertex(-0.1f, 0.0f), //Left 
+		Vertex(0.1f, 0.0f), //Right 
 	};
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
@@ -160,7 +163,17 @@ void Graphics::RenderFrame()
 {
 	const float color[] = { 0.2f, 0.4f, 0.8f, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
-	swapchainP->Present(1u, 0u);
+	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
+	deviceContextP->VSSetShader(vertexShader.GetShader(), NULL, 0);
+	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContextP->PSSetShader(pixelShader.GetShader(), NULL, 0);
+
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+
+	deviceContextP->Draw(3, 0);
+	swapchainP->Present(1u, NULL);
 }
 
 void Graphics::ClearBuffer(float red, float green, float blue) noexcept
@@ -168,6 +181,12 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	const float color[] = { red, green, blue, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 }
+/*
+ID3D11InputLayout* Graphics::GetInputLayout()
+{
+	return vertexShader.inputLayoutP.Get();
+}
+*/
 
 void Graphics::BasicTri()
 {

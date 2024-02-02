@@ -25,6 +25,7 @@ public:
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;
+	//ID3D11InputLayout* GetInputLayout();
 	void BasicTri();
 
 	//static void errLog(COMException& exception);
@@ -39,7 +40,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchainP;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetViewP;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
+	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	bool InitShaders();
