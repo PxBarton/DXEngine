@@ -57,9 +57,21 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			this->deviceContextP.GetAddressOf());
 
 		wrl::ComPtr<ID3D11Resource> backBufferP = nullptr;
+
 		IF_COM_FAIL(this->swapchainP->GetBuffer(0, __uuidof(ID3D11Resource), (LPVOID*)&backBufferP), "get buffer");
+
 		IF_COM_FAIL(this->deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, &renderTargetViewP), "create target");
-		//backBufferP->Release();
+		
+		deviceContextP->OMSetRenderTargets(1, &renderTargetViewP, nullptr);
+
+		D3D11_VIEWPORT viewport;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = width;
+		viewport.Height = height;
+
+		//Set the Viewport
+		this->deviceContextP->RSSetViewports(1, &viewport);
 	}
 	catch (COMException exception)
 	{
@@ -67,14 +79,14 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		return false;
 	}
 
+	InitShaders();
+
 	return true;
 }
 
 bool Graphics::InitShaders()
 {
-	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso"))
-		return false;
-
+	
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0,
@@ -88,6 +100,13 @@ bool Graphics::InitShaders()
 		&inputLayoutP);
 
 	IF_COM_FAIL(hr, "imput layout");
+
+	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso"))
+		return false;
+
+	if (!pixelShader.Initialize(this->deviceP, L"..\\x64\\Debug\\PixelShader.cso"))
+		return false;
+
 
 	return true;
 }
