@@ -9,13 +9,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     try
     {
         EngineWindow wind(400, 400, "trash");
-        while (wind.MessageProc() == true)
-        {
-            wind.gfx.ClearBuffer(.2, .4, .8);
-            //wind.gfx.BasicTri();
-            //wind.gfx.InitShaders();
-            wind.gfx.RenderFrame();
+        if (wind.InitGfx()) {
+            while (wind.MessageProc() == true)
+            {
+                wind.gfx.RenderFrame();
+            }
         }
+        
 
 
         /*

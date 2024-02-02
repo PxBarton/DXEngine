@@ -56,13 +56,13 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			NULL,
 			this->deviceContextP.GetAddressOf());
 
-		wrl::ComPtr<ID3D11Resource> backBufferP = nullptr;
+		wrl::ComPtr<ID3D11Texture2D> backBufferP;
 
-		IF_COM_FAIL(this->swapchainP->GetBuffer(0, __uuidof(ID3D11Resource), (LPVOID*)&backBufferP), "get buffer");
+		IF_COM_FAIL(this->swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferP), "get buffer");
 
 		IF_COM_FAIL(this->deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, &renderTargetViewP), "create target");
 		
-		deviceContextP->OMSetRenderTargets(1, &renderTargetViewP, nullptr);
+		//deviceContextP->OMSetRenderTargets(1, &renderTargetViewP, NULL);
 
 		D3D11_VIEWPORT viewport;
 		viewport.TopLeftX = 0;
@@ -71,7 +71,13 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		viewport.Height = height;
 
 		//Set the Viewport
-		this->deviceContextP->RSSetViewports(1, &viewport);
+		deviceContextP->RSSetViewports(1, &viewport);
+
+		if (!InitShaders())
+		{
+			EngineException::Log("shader fuckup");
+		}
+		InitScene();
 	}
 	catch (COMException exception)
 	{
@@ -79,7 +85,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		return false;
 	}
 
-	InitShaders();
+	
 
 	return true;
 }
@@ -94,27 +100,66 @@ bool Graphics::InitShaders()
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
-
+	
+	
+	
+	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso"))
+	{
+		EngineException::Log("vertex shader");
+		return false;
+	}
+	
 	HRESULT hr = deviceP->CreateInputLayout(layout, numElements,
 		vertexShader.GetBuffer()->GetBufferPointer(), vertexShader.GetBuffer()->GetBufferSize(),
 		&inputLayoutP);
 
 	IF_COM_FAIL(hr, "imput layout");
 
-	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso"))
-		return false;
-
 	if (!pixelShader.Initialize(this->deviceP, L"..\\x64\\Debug\\PixelShader.cso"))
+	{
+		EngineException::Log("vertex shader");
 		return false;
+	}
+		
+	return true;
+}
 
+bool Graphics::InitScene()
+{
+	Vertex v[] =
+	{
+		Vertex(0.0f, -0.1f), //Center Point
+		Vertex(-0.1f, 0.0f), //Left Point
+		Vertex(0.1f, 0.0f), //Right Point
+	};
+
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	vertexBufferDesc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(v);
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = 0;
+	vertexBufferDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA vertexBufferData;
+	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+	vertexBufferData.pSysMem = v;
+
+	HRESULT hr = this->deviceP->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->vertexBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "Failed to create vertex buffer.");
+		return false;
+	}
 
 	return true;
 }
 
-
-
 void Graphics::RenderFrame()
 {
+	const float color[] = { 0.2f, 0.4f, 0.8f, 1.0f };
+	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 	swapchainP->Present(1u, 0u);
 }
 

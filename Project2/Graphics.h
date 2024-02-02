@@ -6,6 +6,7 @@
 #include "EngineException.h"
 #include "Shaders.h"
 #include "AdapterInfo.h"
+#include "Vertex.h"
 
 //#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
@@ -39,7 +40,9 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchainP;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetViewP;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	bool InitShaders();
+	bool InitScene();
 	
 };

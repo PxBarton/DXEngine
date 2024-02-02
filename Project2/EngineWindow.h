@@ -31,9 +31,11 @@ public:
 	EngineWindow(const EngineWindow&) = delete;
 	EngineWindow& operator=(const EngineWindow&) = delete;
 	void setTitle(const std::wstring& title);
+	bool InitGfx();
 	const WCHAR* getWndClass();
 	bool MessageProc();
 	Graphics gfx;
+
 	
 private:
 	int width;

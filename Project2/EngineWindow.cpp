@@ -51,7 +51,7 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
         this
     );        // Additional application data
 
-    gfx.Init(hWnd, width, height);
+    
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 }
@@ -79,6 +79,15 @@ const WCHAR* EngineWindow::getWndClass()
     return windowClass;
 }
 
+bool EngineWindow::InitGfx()
+{
+    if (!gfx.Init(hWnd, width, height))
+    {
+        return false;
+    }
+    return true;
+}
+
 bool EngineWindow::MessageProc()
 {
     // handle windows messages
@@ -86,7 +95,7 @@ bool EngineWindow::MessageProc()
     ZeroMemory(&msg, sizeof(MSG));  // initialize message structure
     // location, handle, filters, remove
     // PeekMessage returns immediately even when no message
-    if (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE))
+    while (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE))
 
     {
         TranslateMessage(&msg); // virtual key messages to character messages
