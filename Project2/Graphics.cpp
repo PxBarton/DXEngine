@@ -62,8 +62,52 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		IF_COM_FAIL(swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBufferP.GetAddressOf())), "get buffer");
 
 		IF_COM_FAIL(deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, renderTargetViewP.GetAddressOf()), "create target");
+
+
+		//Describe our Depth/Stencil Buffer
+		D3D11_TEXTURE2D_DESC depthStencilDesc;
+		depthStencilDesc.Width = width;
+		depthStencilDesc.Height = height;
+		depthStencilDesc.MipLevels = 1;
+		depthStencilDesc.ArraySize = 1;
+		depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilDesc.SampleDesc.Count = 1;
+		depthStencilDesc.SampleDesc.Quality = 0;
+		depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthStencilDesc.CPUAccessFlags = 0;
+		depthStencilDesc.MiscFlags = 0;
+
+		HRESULT hr = deviceP->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
+		if (FAILED(hr)) //If error occurred
+		{
+			EngineException::Log(hr, "Failed to create depth stencil buffer.");
+			return false;
+		}
+
+		hr = deviceP->CreateDepthStencilView(this->depthStencilBuffer.Get(), NULL, this->depthStencilView.GetAddressOf());
+		if (FAILED(hr)) //If error occurred
+		{
+			EngineException::Log(hr, "Failed to create depth stencil view.");
+			return false;
+		}
 		
-		deviceContextP->OMSetRenderTargets(1, renderTargetViewP.GetAddressOf(), NULL);
+		deviceContextP->OMSetRenderTargets(1, renderTargetViewP.GetAddressOf(), depthStencilView.Get());
+
+		//Create depth stencil state
+		D3D11_DEPTH_STENCIL_DESC depthstencildesc;
+		ZeroMemory(&depthstencildesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+		depthstencildesc.DepthEnable = true;
+		depthstencildesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL;
+		depthstencildesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
+
+		hr = deviceP->CreateDepthStencilState(&depthstencildesc, this->depthStencilState.GetAddressOf());
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "Failed to create depth stencil state.");
+			return false;
+		}
 
 		D3D11_VIEWPORT viewport;
 		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -71,9 +115,13 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		viewport.TopLeftY = 0;
 		viewport.Width = width;
 		viewport.Height = height;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
 
 		//Set the Viewport
 		deviceContextP->RSSetViewports(1, &viewport);
+
+
 
 		if (!InitShaders())
 		{
@@ -83,6 +131,19 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		if (!InitScene())
 		{
 			EngineException::Log("scene fuckup");
+		}
+
+		//Create Rasterizer State
+		D3D11_RASTERIZER_DESC rasterizerDesc;
+		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		hr = deviceP->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "rasterizer state.");
+			return false;
 		}
 		
 	}
@@ -167,10 +228,13 @@ void Graphics::RenderFrame()
 {
 	const float color[] = { 0.2f, 0.2f, 0.6f, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
-	
+	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
-	deviceContextP->VSSetShader(vertexShader.GetShader(), NULL, 0);
 	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContextP->RSSetState(rasterizerState.Get());
+	deviceContextP->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
+	
+	deviceContextP->VSSetShader(vertexShader.GetShader(), NULL, 0);
 	deviceContextP->PSSetShader(pixelShader.GetShader(), NULL, 0);
 
 	UINT stride = sizeof(Vertex);
