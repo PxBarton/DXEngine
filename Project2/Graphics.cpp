@@ -199,25 +199,31 @@ bool Graphics::InitScene()
 		Vertex(-0.2f, 0.6f, 0.0f, 1.0f, 0.0f), //Left 
 		Vertex(0.2f, 0.6f, 0.0f, 0.0f, 1.0f), //Right 
 	};
+	
+	DWORD indices[] =
+	{
+		0, 1, 2
+	};
 
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(v);
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = sizeof(Vertex);
-
-	D3D11_SUBRESOURCE_DATA vertexBufferData;
-	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-	vertexBufferData.pSysMem = v;
-
-	HRESULT hr = deviceP->CreateBuffer(&vertexBufferDesc, &vertexBufferData, vertexBuffer.GetAddressOf());
+	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), v, ARRAYSIZE(v));
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "Failed to create vertex buffer.");
+		return false;
+	}
+
+	hr = indicesBuffer.Initialize(deviceP.Get(), indices, ARRAYSIZE(indices));
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "Failed to create index buffer.");
+		return false;
+	}
+	
+	hr = constBuffer.Initialize(deviceP.Get(), deviceContextP.Get());
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "Failed to create constant buffer.");
 		return false;
 	}
 
@@ -226,6 +232,8 @@ bool Graphics::InitScene()
 
 void Graphics::RenderFrame()
 {
+
+
 	const float color[] = { 0.2f, 0.2f, 0.6f, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -237,11 +245,20 @@ void Graphics::RenderFrame()
 	deviceContextP->VSSetShader(vertexShader.GetShader(), NULL, 0);
 	deviceContextP->PSSetShader(pixelShader.GetShader(), NULL, 0);
 
-	UINT stride = sizeof(Vertex);
+	//UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 
-	deviceContextP->Draw(3, 0);
+	constBuffer.data.xOffset = 0.4f;
+	constBuffer.data.yOffset - 0.0f;
+	if (!constBuffer.ApplyChanges())
+	{
+		return;
+	}
+	deviceContextP->VSSetConstantBuffers(0, 1, constBuffer.GetAddressOf());
+	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
+	deviceContextP->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+	deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
 	
 	swapchainP->Present(1u, NULL);
 }

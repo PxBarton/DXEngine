@@ -7,6 +7,7 @@
 #include "Shaders.h"
 #include "AdapterInfo.h"
 #include "Vertex.h"
+#include "Buffers.h"
 
 //#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
@@ -40,11 +41,16 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchainP;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetViewP;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
+
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
+
+	VertexBuffer<Vertex> vertexBuffer;
+	IndexBuffer indicesBuffer;
+	ConstantBuffer<CB_VS_vertexshader> constBuffer;
+	//Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
 
