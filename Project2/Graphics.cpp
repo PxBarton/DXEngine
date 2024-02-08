@@ -196,34 +196,38 @@ bool Graphics::InitScene()
 	{
 		//Vertex(0.0f, 0.0f), //Center
 		Vertex(0.0f, -0.6f, 1.0f, 0.0f, 0.0f), //bottom
+		Vertex(-0.6f, -0.4f, 1.0f, 0.0f, 1.0f), //bottom
 		Vertex(-0.2f, 0.6f, 0.0f, 1.0f, 0.0f), //Left 
 		Vertex(0.2f, 0.6f, 0.0f, 0.0f, 1.0f), //Right 
+		Vertex(0.6f, -0.4f, 1.0f, 1.0f, 0.0f), //bottom
 	};
 	
 	DWORD indices[] =
 	{
-		0, 1, 2
+		0, 1, 2,
+		0, 2, 3,
+		0, 3, 4
 	};
 
 
 	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), v, ARRAYSIZE(v));
 	if (FAILED(hr))
 	{
-		EngineException::Log(hr, "Failed to create vertex buffer.");
+		EngineException::Log(hr, "vertex buffer");
 		return false;
 	}
 
 	hr = indicesBuffer.Initialize(deviceP.Get(), indices, ARRAYSIZE(indices));
 	if (FAILED(hr))
 	{
-		EngineException::Log(hr, "Failed to create index buffer.");
+		EngineException::Log(hr, "index buffer");
 		return false;
 	}
 	
 	hr = constBuffer.Initialize(deviceP.Get(), deviceContextP.Get());
 	if (FAILED(hr))
 	{
-		EngineException::Log(hr, "Failed to create constant buffer.");
+		EngineException::Log(hr, "constant buffer");
 		return false;
 	}
 
@@ -248,8 +252,8 @@ void Graphics::RenderFrame()
 	//UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
-	constBuffer.data.xOffset = 0.4f;
-	constBuffer.data.yOffset - 0.0f;
+	constBuffer.data.xOffset = 0.0f;
+	constBuffer.data.yOffset - 0.2f;
 	if (!constBuffer.ApplyChanges())
 	{
 		return;

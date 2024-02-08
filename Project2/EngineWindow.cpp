@@ -38,7 +38,7 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
         // Optional window styles.
         0,
         getWndClass(),
-        L"fucking garbage",
+        L"Basic BS",
         // Window style
         WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 
