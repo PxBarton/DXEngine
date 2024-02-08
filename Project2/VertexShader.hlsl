@@ -2,12 +2,12 @@ cbuffer mycBuffer : register(b0)
 {
 	float xOffset;
 	float yOffset;
-	//float4x4 mat;
+	float4x4 mat;
 };
 
 struct VS_INPUT
 {
-	float2 inPos : POSITION;
+	float3 inPos : POSITION;
 	float3 inColor : COLOR;
 };
 
@@ -22,8 +22,8 @@ VS_OUTPUT main(VS_INPUT input)
 	VS_OUTPUT output;
 	input.inPos.x += xOffset;
 	input.inPos.y += yOffset;
-	output.outPosition = float4(input.inPos, 0.0f, 1.0f);
-	//output.outPosition = mul(float4(input.inPos, 0.0f, 1.0f), mat);
+	//output.outPosition = float4(input.inPos, 1.0f);
+	output.outPosition = mul(float4(input.inPos, 1.0f), mat);
 	output.outColor = input.inColor;
 	return output;
 }

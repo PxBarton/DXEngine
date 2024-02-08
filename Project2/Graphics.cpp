@@ -163,7 +163,7 @@ bool Graphics::InitShaders()
 	
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
-		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0,
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
 			D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 
 			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  }
@@ -195,11 +195,11 @@ bool Graphics::InitScene()
 	Vertex v[] =
 	{
 		//Vertex(0.0f, 0.0f), //Center
-		Vertex(0.0f, -0.6f, 1.0f, 0.0f, 0.0f), //bottom
-		Vertex(-0.6f, -0.4f, 1.0f, 0.0f, 1.0f), //bottom
-		Vertex(-0.2f, 0.6f, 0.0f, 1.0f, 0.0f), //Left 
-		Vertex(0.2f, 0.6f, 0.0f, 0.0f, 1.0f), //Right 
-		Vertex(0.6f, -0.4f, 1.0f, 1.0f, 0.0f), //bottom
+		Vertex(0.0f, -0.6f, 0.0f, 1.0f, 0.0f, 0.0f), //bottom
+		Vertex(-0.6f, -0.4f, 0.0f, 1.0f, 0.0f, 1.0f), //bottom
+		Vertex(-0.2f, 0.6f, 0.0f, 0.0f, 1.0f, 0.0f), //Left 
+		Vertex(0.2f, 0.6f, 0.0f, 0.0f, 0.0f, 1.0f), //Right 
+		Vertex(0.6f, -0.4f, 0.0f, 1.0f, 1.0f, 0.0f), //bottom
 	};
 	
 	DWORD indices[] =
@@ -251,6 +251,9 @@ void Graphics::RenderFrame()
 
 	//UINT stride = sizeof(Vertex);
 	UINT offset = 0;
+
+	constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+	constBuffer.data.mat = DirectX::XMMatrixTranspose(constBuffer.data.mat);
 
 	constBuffer.data.xOffset = 0.0f;
 	constBuffer.data.yOffset - 0.2f;
