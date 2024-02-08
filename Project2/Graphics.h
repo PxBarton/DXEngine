@@ -25,11 +25,7 @@ public:
 	~Graphics() = default;
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
-	void ClearBuffer(float red, float green, float blue) noexcept;
-	//ID3D11InputLayout* GetInputLayout();
-	void BasicTri();
-
-	//static void errLog(COMException& exception);
+	
 private:
 	int width = 0;
 	int height = 0;

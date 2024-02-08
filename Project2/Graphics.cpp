@@ -195,11 +195,11 @@ bool Graphics::InitScene()
 	Vertex v[] =
 	{
 		//Vertex(0.0f, 0.0f), //Center
-		Vertex(0.0f, -0.6f, 0.0f, 1.0f, 0.0f, 0.0f), //bottom
-		Vertex(-0.6f, -0.4f, 0.0f, 1.0f, 0.0f, 1.0f), //bottom
-		Vertex(-0.2f, 0.6f, 0.0f, 0.0f, 1.0f, 0.0f), //Left 
-		Vertex(0.2f, 0.6f, 0.0f, 0.0f, 0.0f, 1.0f), //Right 
-		Vertex(0.6f, -0.4f, 0.0f, 1.0f, 1.0f, 0.0f), //bottom
+		Vertex(0.0f, -0.5f, -0.3f, 1.0f, 0.0f, 0.0f), //bottom
+		Vertex(-0.5f, -0.3f, 0.0f, 1.0f, 0.0f, 1.0f), //bottom
+		Vertex(-0.2f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f), //Left 
+		Vertex(0.2f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f), //Right 
+		Vertex(0.5f, -0.3f, 0.0f, 1.0f, 1.0f, 0.0f), //bottom
 	};
 	
 	DWORD indices[] =
@@ -252,11 +252,25 @@ void Graphics::RenderFrame()
 	//UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
-	constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+	
+	//constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 0.0f, -2.0f, 0.0f);
+	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(eye, lookAt, upDir);
+	float fovDeg = 90.0f;
+	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
+	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+	float nearZ = 0.1f;
+	float farZ = 1000.0f;
+	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
+
+	constBuffer.data.mat = world * view * projectionMat;
 	constBuffer.data.mat = DirectX::XMMatrixTranspose(constBuffer.data.mat);
 
 	constBuffer.data.xOffset = 0.0f;
-	constBuffer.data.yOffset - 0.2f;
+	constBuffer.data.yOffset - 0.0f;
 	if (!constBuffer.ApplyChanges())
 	{
 		return;
@@ -270,67 +284,4 @@ void Graphics::RenderFrame()
 	swapchainP->Present(1u, NULL);
 }
 
-void Graphics::ClearBuffer(float red, float green, float blue) noexcept
-{
-	const float color[] = { red, green, blue, 1.0f };
-	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
-}
-/*
-ID3D11InputLayout* Graphics::GetInputLayout()
-{
-	return vertexShader.inputLayoutP.Get();
-}
-*/
 
-void Graphics::BasicTri()
-{
-	try
-	{
-		struct Vert
-		{
-			float x;
-			float y;
-		};
-
-		const Vert verts[] =
-		{
-			{0.0f, 0.5f},
-			{0.5f, -0.5f},
-			{-0.5f, -0.5f}
-		};
-
-		const UINT stride = sizeof(Vert);
-		const UINT offset = 0u;
-
-		wrl::ComPtr<ID3D11Buffer> vertexBufferP;
-		D3D11_BUFFER_DESC bd = {};
-		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.CPUAccessFlags = 0u;
-		bd.MiscFlags = 0u;
-		bd.ByteWidth = sizeof(verts);
-		bd.StructureByteStride = sizeof(Vert);
-
-		D3D11_SUBRESOURCE_DATA srd = {};
-		srd.pSysMem = verts;
-
-		IF_COM_FAIL(deviceP->CreateBuffer(&bd, &srd, &vertexBufferP), "fail");
-
-		// bind vertex buffer to pipeline
-		deviceContextP->IASetVertexBuffers(0u, 1u, &vertexBufferP, &stride, &offset);
-		deviceContextP->Draw(3u, 0u);
-	}
-	catch (COMException exception)
-	{
-		EngineException::Log(exception);
-		
-	}
-}
-
-/*
-void Graphics::errLog(COMException& exception)
-{
-	std::wstring error_message = exception.what();
-	MessageBoxW(NULL, error_message.c_str(), L"Error", MB_ICONERROR);
-}
-*/
