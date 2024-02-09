@@ -128,7 +128,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("shader fuckup");
 		}
 		
-		if (!InitScene())
+		if (!buildShape())
 		{
 			EngineException::Log("scene fuckup");
 		}
@@ -157,6 +157,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 
 	return true;
 }
+
 
 bool Graphics::InitShaders()
 {
@@ -190,34 +191,22 @@ bool Graphics::InitShaders()
 	return true;
 }
 
-bool Graphics::InitScene()
+
+bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 {
-	Vertex v[] =
-	{
-		//Vertex(0.0f, 0.0f), //Center
-		Vertex(0.0f, -0.5f, -0.3f, 1.0f, 0.0f, 0.0f), //bottom
-		Vertex(-0.5f, -0.3f, 0.0f, 1.0f, 0.0f, 1.0f), //bottom
-		Vertex(-0.2f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f), //Left 
-		Vertex(0.2f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f), //Right 
-		Vertex(0.5f, -0.3f, 0.0f, 1.0f, 1.0f, 0.0f), //bottom
-	};
-	
-	DWORD indices[] =
-	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 3, 4
-	};
 
 
-	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), v, ARRAYSIZE(v));
+
+	// ARRAYSIZE(v)
+	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), v, lenV);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "vertex buffer");
 		return false;
 	}
 
-	hr = indicesBuffer.Initialize(deviceP.Get(), indices, ARRAYSIZE(indices));
+	// ARRAYSIZE(indices)
+	hr = indicesBuffer.Initialize(deviceP.Get(), i, lenI);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "index buffer");
@@ -234,11 +223,12 @@ bool Graphics::InitScene()
 	return true;
 }
 
+
 void Graphics::RenderFrame()
 {
 
 
-	const float color[] = { 0.2f, 0.2f, 0.6f, 1.0f };
+	const float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
@@ -270,7 +260,7 @@ void Graphics::RenderFrame()
 	constBuffer.data.mat = DirectX::XMMatrixTranspose(constBuffer.data.mat);
 
 	constBuffer.data.xOffset = 0.0f;
-	constBuffer.data.yOffset - 0.0f;
+	constBuffer.data.yOffset = 0.0f;
 	if (!constBuffer.ApplyChanges())
 	{
 		return;
@@ -285,3 +275,32 @@ void Graphics::RenderFrame()
 }
 
 
+bool Graphics::buildShape()
+{
+	Vertex vertList[] =
+	{
+		//Vertex(0.0f, 0.0f), //Center
+		Vertex(0.0f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f), //bottom
+		Vertex(-0.5f, -0.3f, 0.0f, 1.0f, 0.0f, 1.0f), //bottom
+		Vertex(-0.2f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f), //Left 
+		Vertex(0.2f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f), //Right 
+		Vertex(0.5f, -0.3f, 0.0f, 1.0f, 1.0f, 0.0f), //bottom
+	};
+
+	// DWORD alias for unsigned long
+	DWORD indexList[] =
+	{
+		0, 1, 2,
+		0, 2, 3,
+		0, 3, 4
+	};
+
+	DWORD indexList2[] =
+	{
+		0, 1, 0, 2, 0, 3, 0, 4
+
+	};
+
+	InitScene(vertList, indexList, ARRAYSIZE(vertList), ARRAYSIZE(indexList));
+	return true;
+}

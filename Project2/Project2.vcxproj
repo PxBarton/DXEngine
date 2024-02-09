@@ -141,6 +141,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="MinimalWin.h" />
     <ClInclude Include="Buffers.h" />
+    <ClInclude Include="Shape.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>

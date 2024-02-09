@@ -53,6 +53,7 @@ public:
 		return this->stride.get();
 	}
 
+	// T* data
 	HRESULT Initialize(ID3D11Device* device, T* data, UINT numVertices)
 	{
 		this->bufferSize = numVertices;
@@ -111,6 +112,7 @@ public:
 		return this->bufferSize;
 	}
 
+	// DWORD* data
 	HRESULT Initialize(ID3D11Device* device, DWORD* data, UINT numIndices)
 	{
 		this->bufferSize = numIndices;

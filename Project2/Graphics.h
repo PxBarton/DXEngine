@@ -51,6 +51,6 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
 
 	bool InitShaders();
-	bool InitScene();
-	
+	bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
+	bool buildShape();
 };
