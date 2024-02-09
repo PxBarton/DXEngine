@@ -139,6 +139,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = deviceP->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
 		if (FAILED(hr))
 		{
@@ -192,13 +193,14 @@ bool Graphics::InitShaders()
 }
 
 
-bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
+//bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
+bool Graphics::InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI)
 {
 
 
 
 	// ARRAYSIZE(v)
-	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), v, lenV);
+	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), &v[0], lenV);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "vertex buffer");
@@ -206,7 +208,7 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 	}
 
 	// ARRAYSIZE(indices)
-	hr = indicesBuffer.Initialize(deviceP.Get(), i, lenI);
+	hr = indicesBuffer.Initialize(deviceP.Get(), &i[0], lenI);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "index buffer");
@@ -232,7 +234,7 @@ void Graphics::RenderFrame()
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
-	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
 	deviceContextP->RSSetState(rasterizerState.Get());
 	deviceContextP->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
 	
@@ -245,7 +247,7 @@ void Graphics::RenderFrame()
 	
 	//constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 0.0f, -2.0f, 0.0f);
+	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 0.5f, -2.0f, 0.0f);
 	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(eye, lookAt, upDir);
@@ -295,12 +297,31 @@ bool Graphics::buildShape()
 		0, 3, 4
 	};
 
+	Vertex vertList2[] =
+	{
+		Vertex(-10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
+		Vertex(10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
+		Vertex(0.0f, -10.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+		Vertex(0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+		Vertex(0.0f, 0.0f, -10.0f, 0.0f, 0.0f, 1.0f),
+		Vertex(0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f)
+	};
+
 	DWORD indexList2[] =
 	{
-		0, 1, 0, 2, 0, 3, 0, 4
+		0, 1, 2, 3, 4, 5
 
 	};
 
-	InitScene(vertList, indexList, ARRAYSIZE(vertList), ARRAYSIZE(indexList));
+	std::vector<Vertex> vertList3;
+	vertList3.push_back(Vertex(-10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
+	vertList3.push_back(Vertex(10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
+
+	std::vector<DWORD> indexList3;
+	indexList3.push_back(0);
+	indexList3.push_back(1);
+
+	//InitScene(vertList2, indexList2, ARRAYSIZE(vertList2), ARRAYSIZE(indexList2));
+	InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
 	return true;
 }
