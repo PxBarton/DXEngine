@@ -56,8 +56,18 @@ public:
 	// T* data
 	HRESULT Initialize(ID3D11Device* device, T* data, UINT numVertices)
 	{
+		if (buffer.Get() != nullptr)
+		{
+			buffer.Reset();
+		}
+
 		this->bufferSize = numVertices;
-		this->stride = std::make_unique<UINT>(sizeof(T));
+
+		if (this->stride.get() == nullptr)
+		{
+			this->stride = std::make_unique<UINT>(sizeof(T));
+		}
+		
 
 		D3D11_BUFFER_DESC vertexBufferDesc;
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -115,6 +125,11 @@ public:
 	// DWORD* data
 	HRESULT Initialize(ID3D11Device* device, DWORD* data, UINT numIndices)
 	{
+		if (buffer.Get() != nullptr)
+		{
+			buffer.Reset();
+		}
+
 		this->bufferSize = numIndices;
 		//Load Index Data
 		D3D11_BUFFER_DESC indexBufferDesc;
@@ -177,6 +192,11 @@ public:
 	// pass deviceP.Get(), deviceContextP.Get() as arguments
 	HRESULT Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 	{
+		if (buffer.Get() != nullptr)
+		{
+			buffer.Reset();
+		}
+
 		// assign graphics::deviceContextP to deviceContext
 		this->deviceContext = deviceContext;
 

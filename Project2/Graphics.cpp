@@ -137,7 +137,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = deviceP->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
@@ -193,8 +193,8 @@ bool Graphics::InitShaders()
 }
 
 
-//bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
-bool Graphics::InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI)
+bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
+//bool Graphics::InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI)
 {
 
 
@@ -234,7 +234,7 @@ void Graphics::RenderFrame()
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
-	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
+	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContextP->RSSetState(rasterizerState.Get());
 	deviceContextP->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
 	
@@ -321,7 +321,7 @@ bool Graphics::buildShape()
 	indexList3.push_back(0);
 	indexList3.push_back(1);
 
-	//InitScene(vertList2, indexList2, ARRAYSIZE(vertList2), ARRAYSIZE(indexList2));
-	InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
+	InitScene(vertList, indexList, ARRAYSIZE(vertList), ARRAYSIZE(indexList));
+	//InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
 	return true;
 }
