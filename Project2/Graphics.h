@@ -54,4 +54,12 @@ private:
 	bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
 	//bool InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI);
 	bool buildShape();
+	DirectX::XMFLOAT3 vertNormal(Vertex verts[], DWORD tris[]);
+	DirectX::XMFLOAT3 triNormal(Vertex &A, Vertex& B, Vertex& C);
+	// XMVECTOR version
+	DirectX::XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
+	void calcNormals(Vertex verts[], DWORD tris[]);
+	// XMVECTOR version
+	void calcNormalsV(Vertex verts[], DWORD tris[]);
+
 };

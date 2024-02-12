@@ -137,7 +137,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = deviceP->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
@@ -247,11 +247,11 @@ void Graphics::RenderFrame()
 	
 	//constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 0.5f, -2.0f, 0.0f);
+	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 1.5f, -3.0f, 0.0f);
 	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(eye, lookAt, upDir);
-	float fovDeg = 90.0f;
+	float fovDeg = 60.0f;
 	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	float nearZ = 0.1f;
@@ -297,6 +297,7 @@ bool Graphics::buildShape()
 		0, 3, 4
 	};
 
+	// 3 axis
 	Vertex vertList2[] =
 	{
 		Vertex(-10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
@@ -307,6 +308,7 @@ bool Graphics::buildShape()
 		Vertex(0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f)
 	};
 
+	// x axis
 	DWORD indexList2[] =
 	{
 		0, 1, 2, 3, 4, 5
@@ -321,7 +323,156 @@ bool Graphics::buildShape()
 	indexList3.push_back(0);
 	indexList3.push_back(1);
 
-	InitScene(vertList, indexList, ARRAYSIZE(vertList), ARRAYSIZE(indexList));
+	// cube
+	Vertex vertList4[] =
+	{
+		Vertex(-1.f, -1.f, 1.f, 1.f, 1.f, 1.f),
+		Vertex(-1.f, -1.f, -1.f, 1.f, 1.f, 1.f),
+		Vertex(1.f, -1.f, -1.f, 1.f, 1.f, 1.f),
+		Vertex(1.f, -1.f, 1.f, 1.f, 1.f, 1.f),
+		Vertex(-1.f, 1.f, 1.f, 1.f, 1.f, 1.f),
+		Vertex(-1.f, 1.f, -1.f, 1.f, 1.f, 1.f),
+		Vertex(1.f, 1.f, -1.f, 1.f, 1.f, 1.f),
+		Vertex(1.f, 1.f, 1.f, 1.f, 1.f, 1.f)
+	};
+
+	DWORD triList4[] =
+	{
+		// sides
+		0, 3, 4,
+		4, 3, 7,
+
+		3, 2, 7,
+		7, 2, 6,
+
+		2, 1, 6,
+		6, 1, 5,
+
+		1, 0, 5,
+		5, 0, 4,
+
+		// bottom
+		0, 1, 3,
+		3, 1, 2,
+
+		// top
+		4, 7, 5,
+		5, 7, 6
+
+
+	};
+
+	DirectX::XMFLOAT3 triNorm1 = triNormal(vertList4[0], vertList4[3], vertList4[4]);
+
+	calcNormalsV(vertList4, triList4);
+
+	InitScene(vertList4, triList4, ARRAYSIZE(vertList4), ARRAYSIZE(triList4));
 	//InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
 	return true;
+}
+
+DirectX::XMFLOAT3 Graphics::vertNormal(Vertex verts[], DWORD tris[])
+{
+	DirectX::XMFLOAT3 norm(0.f, 0.f, 0.f);
+	return norm;
+}
+
+DirectX::XMFLOAT3 Graphics::triNormal(Vertex& A, Vertex& B, Vertex& C)
+{
+	// convert triangle Vertex.pos to vectors
+	DirectX::XMVECTOR vA = DirectX::XMLoadFloat3(&A.pos);
+	DirectX::XMVECTOR vB = DirectX::XMLoadFloat3(&B.pos);
+	DirectX::XMVECTOR vC = DirectX::XMLoadFloat3(&C.pos);
+
+	// define vectors for cross
+	DirectX::XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
+	DirectX::XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
+
+	//DirectX::XMFLOAT3 u(&B.pos.x - &A.pos.x, &B.pos.y - &A.pos.y, &B.pos.z - &A.pos.z);
+	//DirectX::XMFLOAT3 v(&C.pos.x - &A.pos.x, &C.pos.y - &A.pos.y, &C.pos.z - &A.pos.z);
+	//DirectX::XMVECTOR U = DirectX::XMLoadFloat3(&u);
+	//DirectX::XMVECTOR V = DirectX::XMLoadFloat3(&v);
+
+	DirectX::XMVECTOR norm1 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
+
+	//DirectX::XMVECTOR norm2 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(U, V));
+
+	DirectX::XMFLOAT3 norm;
+	DirectX::XMStoreFloat3(&norm, norm1);
+
+	return (norm);
+}
+
+DirectX::XMVECTOR Graphics::triNormalV(Vertex& A, Vertex& B, Vertex& C)
+{
+	// convert Vertex.pos to vectors
+	DirectX::XMVECTOR vA = DirectX::XMLoadFloat3(&A.pos);
+	DirectX::XMVECTOR vB = DirectX::XMLoadFloat3(&B.pos);
+	DirectX::XMVECTOR vC = DirectX::XMLoadFloat3(&C.pos);
+
+	// define vectors for cross
+	DirectX::XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
+	DirectX::XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
+
+	//DirectX::XMFLOAT3 u(&B.pos.x - &A.pos.x, &B.pos.y - &A.pos.y, &B.pos.z - &A.pos.z);
+	//DirectX::XMFLOAT3 v(&C.pos.x - &A.pos.x, &C.pos.y - &A.pos.y, &C.pos.z - &A.pos.z);
+	//DirectX::XMVECTOR U = DirectX::XMLoadFloat3(&u);
+	//DirectX::XMVECTOR V = DirectX::XMLoadFloat3(&v);
+
+	DirectX::XMVECTOR normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
+
+	//DirectX::XMVECTOR norm2 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(U, V));
+
+
+	return (normalV);
+}
+
+void Graphics::calcNormals(Vertex verts[], DWORD tris[])
+{
+	for (int i = 0; i < (sizeof(tris)) / 3; i++)
+	{
+		int index1 = tris[i * 3 + 0];
+		int index2 = tris[i * 3 + 1];
+		int index3 = tris[i * 3 + 2];
+
+		DirectX::XMFLOAT3 triNorm = triNormal(verts[index1], verts[index2], verts[index3]);
+
+		verts[index1].normal.x += triNorm.x;
+		verts[index1].normal.y += triNorm.y;
+		verts[index1].normal.z += triNorm.z;
+
+		verts[index2].normal.x += triNorm.x;
+		verts[index2].normal.y += triNorm.y;
+		verts[index2].normal.z += triNorm.z;
+
+		verts[index3].normal.x += triNorm.x;
+		verts[index3].normal.y += triNorm.y;
+		verts[index3].normal.z += triNorm.z;
+	}
+
+
+}
+
+void Graphics::calcNormalsV(Vertex verts[], DWORD tris[])
+{
+	for (int i = 0; i < (sizeof(tris)) / 3; i++)
+	{
+		int index1 = tris[i * 3 + 0];
+		int index2 = tris[i * 3 + 1];
+		int index3 = tris[i * 3 + 2];
+
+		DirectX::XMVECTOR normalV = triNormalV(verts[index1], verts[index2], verts[index3]);
+
+		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, normalV);
+		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, normalV);
+		verts[index3].normalV = DirectX::XMVectorAdd(verts[index3].normalV, normalV);
+		
+	}
+
+	for (int i = 0; i < sizeof(verts); i++)
+	{
+		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
+	}
+
+
 }
