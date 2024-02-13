@@ -153,8 +153,12 @@ public:
 ////////////////////////////////////////////////
 ////    Constant Buffer    /////////////////////
 
+
 #ifndef ConstantBuffer_h__
 #define ConstantBuffer_h__
+
+
+// types
 
 struct CB_VS_vertexshader
 {
@@ -162,6 +166,22 @@ struct CB_VS_vertexshader
 	float yOffset = 0; //4bytes
 	DirectX::XMMATRIX mat;
 };
+
+struct CB_PS_light
+{
+	DirectX::XMFLOAT3 ambientLightColor;
+	float ambientLightStrength;
+
+	DirectX::XMFLOAT3 dynamicLightColor;
+	float dynamicLightStrength;
+	DirectX::XMFLOAT3 dynamicLightPosition;
+	float dynamicLightAttenuation_a;
+	float dynamicLightAttenuation_b;
+	float dynamicLightAttenuation_c;
+};
+
+
+// const buffer template class
 
 template<class T>
 class ConstantBuffer

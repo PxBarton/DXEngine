@@ -138,6 +138,8 @@
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineWindow.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="MinimalWin.h" />
     <ClInclude Include="Buffers.h" />
@@ -149,7 +151,9 @@
     <ClCompile Include="EngineException.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="light.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="Vertex.cpp" />
   </ItemGroup>
@@ -167,7 +171,19 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\Microsoft.XAudio2.Redist.1.2.11\build\native\Microsoft.XAudio2.Redist.targets" Condition="Exists('..\packages\Microsoft.XAudio2.Redist.1.2.11\build\native\Microsoft.XAudio2.Redist.targets')" />
+    <Import Project="..\packages\directxtk_desktop_2019.2024.1.1.1\build\native\directxtk_desktop_2019.targets" Condition="Exists('..\packages\directxtk_desktop_2019.2024.1.1.1\build\native\directxtk_desktop_2019.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.XAudio2.Redist.1.2.11\build\native\Microsoft.XAudio2.Redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.XAudio2.Redist.1.2.11\build\native\Microsoft.XAudio2.Redist.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtk_desktop_2019.2024.1.1.1\build\native\directxtk_desktop_2019.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_2019.2024.1.1.1\build\native\directxtk_desktop_2019.targets'))" />
+  </Target>
 </Project>

@@ -371,11 +371,6 @@ bool Graphics::buildShape()
 	return true;
 }
 
-DirectX::XMFLOAT3 Graphics::vertNormal(Vertex verts[], DWORD tris[])
-{
-	DirectX::XMFLOAT3 norm(0.f, 0.f, 0.f);
-	return norm;
-}
 
 DirectX::XMFLOAT3 Graphics::triNormal(Vertex& A, Vertex& B, Vertex& C)
 {
@@ -403,6 +398,8 @@ DirectX::XMFLOAT3 Graphics::triNormal(Vertex& A, Vertex& B, Vertex& C)
 	return (norm);
 }
 
+
+// XMVECTOR version
 DirectX::XMVECTOR Graphics::triNormalV(Vertex& A, Vertex& B, Vertex& C)
 {
 	// convert Vertex.pos to vectors
@@ -474,5 +471,12 @@ void Graphics::calcNormalsV(Vertex verts[], DWORD tris[])
 		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
 	}
 
+	/*
+	DirectX::XMFLOAT3 Graphics::vertNormal(Vertex verts[], DWORD tris[])
+	{
+		DirectX::XMFLOAT3 norm(0.f, 0.f, 0.f);
+		return norm;
+	}
+	*/
 
 }
