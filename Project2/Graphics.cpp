@@ -128,6 +128,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("shader fuckup");
 		}
 		
+		// InitScene called in buildShape, this is bad
 		if (!buildShape())
 		{
 			EngineException::Log("scene fuckup");
@@ -159,7 +160,9 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 	return true;
 }
 
-
+///////////////////////////////
+// Input Layout desc is here
+///////////////////////////////
 bool Graphics::InitShaders()
 {
 	
@@ -168,6 +171,8 @@ bool Graphics::InitShaders()
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
 			D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 
+			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"NORMAL", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0,
 			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  }
 	};
 
@@ -198,8 +203,10 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 {
 
 
-
+	////////////////////////////////
+	// here is where vertex data is placed in buffer
 	// ARRAYSIZE(v)
+	////////////////////////////////
 	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), &v[0], lenV);
 	if (FAILED(hr))
 	{
@@ -364,9 +371,12 @@ bool Graphics::buildShape()
 
 	DirectX::XMFLOAT3 triNorm1 = triNormal(vertList4[0], vertList4[3], vertList4[4]);
 
+	calcNormals(vertList4, triList4);
 	calcNormalsV(vertList4, triList4);
 
+	// This needs to be changed
 	InitScene(vertList4, triList4, ARRAYSIZE(vertList4), ARRAYSIZE(triList4));
+
 	//InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
 	return true;
 }

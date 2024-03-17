@@ -232,6 +232,7 @@ public:
 		return hr;
 	}
 
+	// actually populates the ID3D11 buffer with the content of data 
 	bool ApplyChanges()
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedResource;

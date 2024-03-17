@@ -27,7 +27,7 @@ bool VertexShader::Initialize(Microsoft::WRL::ComPtr<ID3D11Device>& device, std:
 		GetBuffer()->GetBufferPointer(), GetBuffer()->GetBufferSize(),
 		inputLayoutP.GetAddressOf());
 
-	IF_COM_FAIL(hr, "imput layout");
+	IF_COM_FAIL(hr, "input layout");
 
 	return true;
 }
