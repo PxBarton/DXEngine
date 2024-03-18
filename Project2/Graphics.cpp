@@ -436,6 +436,7 @@ DirectX::XMVECTOR Graphics::triNormalV(Vertex& A, Vertex& B, Vertex& C)
 	return (normalV);
 }
 
+/*
 void Graphics::calcNormals(Vertex verts[], DWORD tris[])
 {
 	for (int i = 0; i < (sizeof(tris)) / 3; i++)
@@ -461,6 +462,7 @@ void Graphics::calcNormals(Vertex verts[], DWORD tris[])
 
 
 }
+*/
 
 void Graphics::calcNormalsV(Vertex verts[], DWORD tris[])
 {
@@ -483,6 +485,8 @@ void Graphics::calcNormalsV(Vertex verts[], DWORD tris[])
 		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
 	}
 
+	
+
 	/*
 	DirectX::XMFLOAT3 Graphics::vertNormal(Vertex verts[], DWORD tris[])
 	{
@@ -490,5 +494,29 @@ void Graphics::calcNormalsV(Vertex verts[], DWORD tris[])
 		return norm;
 	}
 	*/
+
+}
+
+void Graphics::calcNormals(Vertex verts[], DWORD tris[])
+{
+	for (int i = 0; i < (sizeof(tris)) / 3; i++)
+	{
+		int index1 = tris[i * 3 + 0];
+		int index2 = tris[i * 3 + 1];
+		int index3 = tris[i * 3 + 2];
+
+		DirectX::XMVECTOR normalV = triNormalV(verts[index1], verts[index2], verts[index3]);
+
+		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, normalV);
+		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, normalV);
+		verts[index3].normalV = DirectX::XMVectorAdd(verts[index3].normalV, normalV);
+
+	}
+
+	for (int i = 0; i < sizeof(verts); i++)
+	{
+		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
+		DirectX::XMStoreFloat3(&verts[i].normal, verts[i].normalV);
+	}
 
 }

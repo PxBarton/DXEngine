@@ -1,3 +1,5 @@
+//#pragma pack_matrix( row_major )
+
 cbuffer mycBuffer : register(b0)
 {
 	float xOffset;
@@ -31,5 +33,6 @@ VS_OUTPUT main(VS_INPUT input)
 	output.outPosition = mul(float4(input.inPos, 1.0f), wvpMatrix);
 	output.outColor = input.inColor;
 	output.outNormal = input.inNormal;
+	//output.outNormal = normalize(mul(float4(input.inNormal, 1.0f), worldMatrix));
 	return output;
 }
