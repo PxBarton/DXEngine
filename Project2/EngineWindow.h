@@ -2,7 +2,7 @@
 
 #include "MinimalWin.h"
 //#include <Windows.h>
-
+#include "Keyboard.h"
 #include "Graphics.h"
 
 #include <string>
@@ -34,6 +34,7 @@ public:
 	bool InitGfx();
 	const WCHAR* getWndClass();
 	bool MessageProc();
+	void Update();
 	Graphics gfx;
 
 	
@@ -43,7 +44,7 @@ private:
 	const WCHAR* windowClass = L"0";
 	HINSTANCE hInst = nullptr;
 	HWND hWnd = nullptr;
-	
+	Keyboard keyboard;
 	
 	static LRESULT CALLBACK MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK MsgHelper(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

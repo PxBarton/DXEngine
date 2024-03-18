@@ -139,6 +139,8 @@
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineWindow.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="KeyboardEvent.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="SceneObject.h" />
@@ -154,6 +156,8 @@
     <ClCompile Include="EngineException.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="KeyboardEvent.cpp" />
     <ClCompile Include="light.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Mesh.cpp" />

@@ -136,6 +136,12 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("scene fuckup");
 		}
 
+		/////////////
+		// Camera
+		/////////////
+		camera.SetPosition(0.0f, 0.0f, -2.0f);
+		camera.SetProjectionValues(90.0f, static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
+
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
@@ -267,7 +273,8 @@ void Graphics::RenderFrame()
 	float farZ = 1000.0f;
 	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
 
-	constBuffer.data.wvpMatrix = world * view * projectionMat;
+	//constBuffer.data.wvpMatrix = world * view * projectionMat;
+	constBuffer.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 	constBuffer.data.wvpMatrix = DirectX::XMMatrixTranspose(constBuffer.data.wvpMatrix);
 
 	constBuffer.data.xOffset = 0.0f;

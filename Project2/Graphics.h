@@ -9,6 +9,7 @@
 #include "Vertex.h"
 #include "Buffers.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 //#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
@@ -33,6 +34,7 @@ private:
 	HWND hWnd = nullptr;
 	VertexShader vertexShader;
 	PixelShader pixelShader;
+	Camera camera;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> deviceP;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;

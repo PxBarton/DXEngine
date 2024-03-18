@@ -1,7 +1,6 @@
 #include "EngineWindow.h"
+
 #include <assert.h>
-
-
 
 
 EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
@@ -115,6 +114,38 @@ bool EngineWindow::MessageProc()
     return true;
 }
 
+void EngineWindow::Update()
+{
+    while (!keyboard.CharBufferIsEmpty())
+    {
+        unsigned char ch = keyboard.ReadChar();
+    }
+
+    while (!keyboard.KeyBufferIsEmpty())
+    {
+        KeyboardEvent kbe = keyboard.ReadKey();
+        unsigned char keycode = kbe.GetKeyCode();
+    }
+
+    /*
+    if (keyboard.KeyIsPressed('W'))
+    {
+        this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * cameraSpeed * dt);
+    }
+    if (keyboard.KeyIsPressed('S'))
+    {
+        this->gfx.camera.AdjustPosition(this->gfx.camera.GetBackwardVector() * cameraSpeed * dt);
+    }
+    if (keyboard.KeyIsPressed('A'))
+    {
+        this->gfx.camera.AdjustPosition(this->gfx.camera.GetLeftVector() * cameraSpeed * dt);
+    }
+    if (keyboard.KeyIsPressed('D'))
+    {
+        this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * cameraSpeed * dt);
+    }
+    */
+}
 
 LRESULT CALLBACK EngineWindow::MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -150,6 +181,48 @@ LRESULT CALLBACK EngineWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPA
 
     switch (msg)
     {
+        //Keyboard Messages
+    case WM_KEYDOWN:
+    {
+        unsigned char keycode = static_cast<unsigned char>(wParam);
+        if (keyboard.IsKeysAutoRepeat())
+        {
+            keyboard.OnKeyPressed(keycode);
+        }
+        else
+        {
+            const bool wasPressed = lParam & 0x40000000;
+            if (!wasPressed)
+            {
+                keyboard.OnKeyPressed(keycode);
+            }
+        }
+        return 0;
+    }
+    case WM_KEYUP:
+    {
+        unsigned char keycode = static_cast<unsigned char>(wParam);
+        keyboard.OnKeyReleased(keycode);
+        return 0;
+    }
+    case WM_CHAR:
+    {
+        unsigned char ch = static_cast<unsigned char>(wParam);
+        if (keyboard.IsCharsAutoRepeat())
+        {
+            keyboard.OnChar(ch);
+        }
+        else
+        {
+            const bool wasPressed = lParam & 0x40000000;
+            if (!wasPressed)
+            {
+                keyboard.OnChar(ch);
+            }
+        }
+        return 0;
+    }
+
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
