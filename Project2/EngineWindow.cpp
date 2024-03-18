@@ -127,7 +127,9 @@ void EngineWindow::Update()
         unsigned char keycode = kbe.GetKeyCode();
     }
 
-    /*
+    const float cameraSpeed = 0.006f;
+    float dt = 1.0;
+
     if (keyboard.KeyIsPressed('W'))
     {
         this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * cameraSpeed * dt);
@@ -144,7 +146,7 @@ void EngineWindow::Update()
     {
         this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * cameraSpeed * dt);
     }
-    */
+    
 }
 
 LRESULT CALLBACK EngineWindow::MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

@@ -27,6 +27,7 @@ public:
 	~Graphics() = default;
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
+	Camera camera;
 	
 private:
 	int width = 0;
@@ -34,7 +35,6 @@ private:
 	HWND hWnd = nullptr;
 	VertexShader vertexShader;
 	PixelShader pixelShader;
-	Camera camera;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> deviceP;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;
