@@ -128,6 +128,8 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("shader fuckup");
 		}
 		
+		Mesh mesh();
+
 		// InitScene called in buildShape, this is bad
 		if (!buildShape())
 		{
@@ -265,8 +267,8 @@ void Graphics::RenderFrame()
 	float farZ = 1000.0f;
 	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
 
-	constBuffer.data.mat = world * view * projectionMat;
-	constBuffer.data.mat = DirectX::XMMatrixTranspose(constBuffer.data.mat);
+	constBuffer.data.wvpMatrix = world * view * projectionMat;
+	constBuffer.data.wvpMatrix = DirectX::XMMatrixTranspose(constBuffer.data.wvpMatrix);
 
 	constBuffer.data.xOffset = 0.0f;
 	constBuffer.data.yOffset = 0.0f;

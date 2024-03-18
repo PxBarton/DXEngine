@@ -164,20 +164,22 @@ struct CB_VS_vertexshader
 {
 	float xOffset = 0; //4bytes
 	float yOffset = 0; //4bytes
-	DirectX::XMMATRIX mat;
+	DirectX::XMMATRIX wvpMatrix;
+	DirectX::XMMATRIX worldMatrix;
 };
 
 struct CB_PS_light
 {
 	DirectX::XMFLOAT3 ambientLightColor;
 	float ambientLightStrength;
-
+	/*
 	DirectX::XMFLOAT3 dynamicLightColor;
 	float dynamicLightStrength;
 	DirectX::XMFLOAT3 dynamicLightPosition;
 	float dynamicLightAttenuation_a;
 	float dynamicLightAttenuation_b;
 	float dynamicLightAttenuation_c;
+	*/
 };
 
 

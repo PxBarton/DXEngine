@@ -3,7 +3,8 @@ cbuffer mycBuffer : register(b0)
 	float xOffset;
 	float yOffset;
 	float zOffset;
-	float4x4 mat;
+	float4x4 wvpMatrix;
+	float4x4 worldMatrix;
 };
 
 struct VS_INPUT
@@ -27,7 +28,7 @@ VS_OUTPUT main(VS_INPUT input)
 	input.inPos.y += yOffset;
 	input.inPos.z += zOffset;
 	//output.outPosition = float4(input.inPos, 1.0f);
-	output.outPosition = mul(float4(input.inPos, 1.0f), mat);
+	output.outPosition = mul(float4(input.inPos, 1.0f), wvpMatrix);
 	output.outColor = input.inColor;
 	output.outNormal = input.inNormal;
 	return output;
