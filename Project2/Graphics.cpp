@@ -139,8 +139,13 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		/////////////
 		// Camera
 		/////////////
-		camera.SetPosition(0.0f, 0.0f, -2.0f);
-		camera.SetProjectionValues(90.0f, static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
+		float fovDeg = 60.0f;
+		float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
+		float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+		DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
+		camera.SetPosition(2.0f, 1.5f, -3.0f);
+		camera.SetLookAtPos(eye);
+		camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -262,6 +267,7 @@ void Graphics::RenderFrame()
 	
 	//constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+	/*
 	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 1.5f, -3.0f, 0.0f);
 	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -272,8 +278,10 @@ void Graphics::RenderFrame()
 	float nearZ = 0.1f;
 	float farZ = 1000.0f;
 	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
+	*/
 
 	//constBuffer.data.wvpMatrix = world * view * projectionMat;
+
 	constBuffer.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 	constBuffer.data.wvpMatrix = DirectX::XMMatrixTranspose(constBuffer.data.wvpMatrix);
 
