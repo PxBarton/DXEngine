@@ -170,8 +170,9 @@ struct CB_VS_vertexshader
 
 struct CB_PS_light
 {
-	DirectX::XMFLOAT3 ambientLightColor;
-	float ambientLightStrength;
+	// 12 + 4 = 16 bytes
+	DirectX::XMFLOAT3 ambientColor;
+	float ambientStrength;
 	/*
 	DirectX::XMFLOAT3 dynamicLightColor;
 	float dynamicLightStrength;

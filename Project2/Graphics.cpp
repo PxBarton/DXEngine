@@ -144,7 +144,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 		DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
 		camera.SetPosition(2.0f, 1.5f, -3.0f);
-		camera.SetLookAtPos(eye);
+		//camera.SetLookAtPos(eye);
 		camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 
 		//Create Rasterizer State
@@ -160,6 +160,24 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log(hr, "rasterizer state.");
 			return false;
 		}
+
+		//Create Blend State
+		D3D11_RENDER_TARGET_BLEND_DESC rtbd = { 0 };
+		rtbd.BlendEnable = true;
+		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
+		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
+		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		D3D11_BLEND_DESC blendDesc = { 0 };
+		blendDesc.RenderTarget[0] = rtbd;
+
+		hr = this->deviceP->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
+		IF_COM_FAIL(hr, "Failed to create blend state.");
+
 		
 	}
 	catch (COMException exception)
@@ -235,13 +253,21 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 		return false;
 	}
 	
-	hr = constBuffer.Initialize(deviceP.Get(), deviceContextP.Get());
+	hr = cb_vert.Initialize(deviceP.Get(), deviceContextP.Get());
 	if (FAILED(hr))
 	{
-		EngineException::Log(hr, "constant buffer");
+		EngineException::Log(hr, "constant buffer: vertex");
 		return false;
 	}
 
+	hr = cb_light.Initialize(deviceP.Get(), deviceContextP.Get());
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "constant buffer: pixel/light");
+		return false;
+	}
+
+	
 	return true;
 }
 
@@ -249,6 +275,7 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 void Graphics::RenderFrame()
 {
 
+	
 
 	const float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
@@ -265,7 +292,7 @@ void Graphics::RenderFrame()
 	UINT offset = 0;
 
 	
-	//constBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+	//cb_vert.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
 	/*
 	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 1.5f, -3.0f, 0.0f);
@@ -280,18 +307,24 @@ void Graphics::RenderFrame()
 	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
 	*/
 
-	//constBuffer.data.wvpMatrix = world * view * projectionMat;
+	//cb_vert.data.wvpMatrix = world * view * projectionMat;
 
-	constBuffer.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
-	constBuffer.data.wvpMatrix = DirectX::XMMatrixTranspose(constBuffer.data.wvpMatrix);
-
-	constBuffer.data.xOffset = 0.0f;
-	constBuffer.data.yOffset = 0.0f;
-	if (!constBuffer.ApplyChanges())
+	cb_light.data.ambientColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	cb_light.data.ambientStrength = 0.5f;
+	if (!cb_light.ApplyChanges())
 	{
 		return;
 	}
-	deviceContextP->VSSetConstantBuffers(0, 1, constBuffer.GetAddressOf());
+	deviceContextP->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
+
+	cb_vert.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	cb_vert.data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vert.data.wvpMatrix);
+	if (!cb_vert.ApplyChanges())
+	{
+		return;
+	}
+	deviceContextP->VSSetConstantBuffers(0, 1, cb_vert.GetAddressOf());
+	
 	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
 	deviceContextP->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 

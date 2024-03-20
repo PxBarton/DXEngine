@@ -40,15 +40,17 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchainP;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetViewP;
-
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
+	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;
+
 
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indicesBuffer;
-	ConstantBuffer<CB_VS_vertexshader> constBuffer;
+	ConstantBuffer<CB_VS_vertexshader> cb_vert;
+	ConstantBuffer<CB_PS_light> cb_light;
 	//Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;

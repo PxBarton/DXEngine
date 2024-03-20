@@ -1,6 +1,6 @@
 //#pragma pack_matrix( row_major )
 
-cbuffer mycBuffer : register(b0)
+cbuffer cBuffer : register(b0)
 {
 	float xOffset;
 	float yOffset;
