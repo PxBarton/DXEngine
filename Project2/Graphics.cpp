@@ -309,8 +309,11 @@ void Graphics::RenderFrame()
 
 	//cb_vert.data.wvpMatrix = world * view * projectionMat;
 
-	cb_light.data.ambientColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	cb_light.data.ambientStrength = 0.5f;
+	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
+	cb_light.data.ambientStrength = 0.2f;
+	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	cb_light.data.lightStrength = 1.0f;
+	cb_light.data.lightPosition = XMFLOAT3(-2.0f, 3.0f, -1.0f);
 	if (!cb_light.ApplyChanges())
 	{
 		return;
@@ -319,6 +322,7 @@ void Graphics::RenderFrame()
 
 	cb_vert.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 	cb_vert.data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vert.data.wvpMatrix);
+	cb_vert.data.worldMatrix = world;
 	if (!cb_vert.ApplyChanges())
 	{
 		return;

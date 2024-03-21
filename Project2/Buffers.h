@@ -4,6 +4,7 @@
 #define VertexBuffer_h__
 
 #include "EngineException.h"
+#include "Light.h"
 
 #include <d3d11.h>
 #include <wrl/client.h>
@@ -173,14 +174,19 @@ struct CB_PS_light
 	// 12 + 4 = 16 bytes
 	DirectX::XMFLOAT3 ambientColor;
 	float ambientStrength;
-	/*
-	DirectX::XMFLOAT3 dynamicLightColor;
-	float dynamicLightStrength;
-	DirectX::XMFLOAT3 dynamicLightPosition;
-	float dynamicLightAttenuation_a;
-	float dynamicLightAttenuation_b;
-	float dynamicLightAttenuation_c;
-	*/
+	// 16
+	DirectX::XMFLOAT3 lightColor;
+	float lightStrength;
+
+	DirectX::XMFLOAT3 lightPosition;
+	float pad;
+
+	DirectX::XMFLOAT3 attenuation;
+	//float dynamicLightAttenuation_a;
+	//float dynamicLightAttenuation_b;
+	//float dynamicLightAttenuation_c;
+
+	
 };
 
 

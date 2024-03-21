@@ -8,6 +8,7 @@ using namespace DirectX;
 class SceneObject
 {
 public:
+	
 	const XMVECTOR& GetPositionVector() const;
 	const XMFLOAT3& GetPositionFloat3() const;
 	const XMVECTOR& GetRotationVector() const;
@@ -32,7 +33,9 @@ public:
 	const XMVECTOR& GetLeftVector(bool omitY = false);
 
 protected:
-	virtual void UpdateMatrix();
+	XMMATRIX worldMatrix = XMMatrixIdentity();
+
+	void UpdateMatrix();
 	void UpdateDirectionVectors();
 
 	XMVECTOR posVector;

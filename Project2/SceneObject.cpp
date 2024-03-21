@@ -174,7 +174,9 @@ const XMVECTOR& SceneObject::GetLeftVector(bool omitY)
 
 void SceneObject::UpdateMatrix()
 {
-	assert("UpdateMatrix must be overridden." && 0);
+	//assert("UpdateMatrix must be overridden." && 0);
+	this->worldMatrix = XMMatrixRotationRollPitchYaw(this->rot.x, this->rot.y, this->rot.z) * XMMatrixTranslation(this->pos.x, this->pos.y, this->pos.z);
+	this->UpdateDirectionVectors();
 }
 
 void SceneObject::UpdateDirectionVectors()

@@ -3,6 +3,7 @@
 #include "SceneObject.h"
 #include "SimpleMath.h"
 
+
 class Light
 {
 public:
