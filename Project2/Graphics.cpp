@@ -131,7 +131,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		Mesh mesh();
 
 		// InitScene called in buildShape, this is bad
-		if (!buildShape())
+		if (!buildPlane())
 		{
 			EngineException::Log("scene fuckup");
 		}
@@ -501,6 +501,7 @@ bool Graphics::buildPlane()
 		{
 			tris[tInd] = (i * zCount) + j;
 			tInd++;
+			
 			tris[tInd] = (i * zCount) + j + 1;
 			tInd++;
 			tris[tInd] = (i * zCount) + j + zCount;
@@ -508,6 +509,7 @@ bool Graphics::buildPlane()
 			
 			tris[tInd] = (i * zCount) + j + 1;
 			tInd++;
+			
 			tris[tInd] = (i * zCount) + j + zCount + 1;
 			tInd++;
 			tris[tInd] = (i * zCount) + j + zCount;
