@@ -10,13 +10,15 @@
 #include "Buffers.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include <cmath>
 
 //#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
 //#pragma comment(lib,"DXGI.lib")
 //#include <wrl/client.h>
-//#include <vector> 
-
+#include <vector> 
+#include <array>
+#include <iostream>
 
 class Graphics
 {
@@ -60,11 +62,12 @@ private:
 	// C++ STL <vector> version
 	//bool InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI);
 	bool buildShape();
+	bool buildPlane();
 	
 	DirectX::XMFLOAT3 triNormal(Vertex &A, Vertex& B, Vertex& C);
 	// XMVECTOR version
 	DirectX::XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
-	void calcNormals(Vertex verts[], DWORD tris[]);
+	bool calcNormals(Vertex verts[], DWORD tris[]);
 	// XMVECTOR version
 	void calcNormalsV(Vertex verts[], DWORD tris[]);
 

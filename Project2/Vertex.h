@@ -8,6 +8,13 @@ struct Vertex
 		normalV(DirectX::XMLoadFloat3(&pos)) 
 		{}
 
+	Vertex(float x, float y, float z)
+		: pos(x, y, z),
+		color(1.f, 1.f, 1.f),
+		normal(0.f, 0.f, 0.f),
+		normalV(DirectX::XMLoadFloat3(&pos))
+		{}
+
 	Vertex(float x, float y, float z, float r, float g, float b)
 		: pos(x, y, z), 
 		color(r, g, b), 
@@ -15,7 +22,13 @@ struct Vertex
 		normalV(DirectX::XMLoadFloat3(&pos))
 		{}
 
-	const DirectX::XMFLOAT3 pos;
+	void assign(float x, float y, float z)
+	{
+		pos.x = x;
+		pos.y = y;
+		pos.z = z;
+	}
+	DirectX::XMFLOAT3 pos;
 	DirectX::XMFLOAT3 color;
 	DirectX::XMFLOAT3 normal;
 	DirectX::XMVECTOR normalV;

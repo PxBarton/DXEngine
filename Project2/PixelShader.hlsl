@@ -31,6 +31,6 @@ float4 main(PS_INPUT input) : SV_TARGET
 	float3 outColor = pixelColor * finalLight;
 	float3 white = float3(1.0f, 1.0f, 1.0f);
 	//return float4(input.inColor, 1.0f);
-	return float4(outColor, 1.0f);
+	return float4(input.inNormal, 1.0f);
 
 }
