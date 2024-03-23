@@ -37,6 +37,7 @@ private:
 	HWND hWnd = nullptr;
 	VertexShader vertexShader;
 	PixelShader pixelShader;
+	std::vector<XMFLOAT3> triNormals;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> deviceP;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;
@@ -67,7 +68,7 @@ private:
 	DirectX::XMFLOAT3 triNormal(Vertex &A, Vertex& B, Vertex& C);
 	// XMVECTOR version
 	DirectX::XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
-	bool calcNormals(Vertex verts[], DWORD tris[]);
+	bool calcNormals(Vertex verts[], DWORD tris[], int size, int numV);
 	// XMVECTOR version
 	void calcNormalsV(Vertex verts[], DWORD tris[]);
 

@@ -310,7 +310,7 @@ void Graphics::RenderFrame()
 	//cb_vert.data.wvpMatrix = world * view * projectionMat;
 
 	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
-	cb_light.data.ambientStrength = 1.f;
+	cb_light.data.ambientStrength = .2f;
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	cb_light.data.lightStrength = 1.0f;
 	cb_light.data.lightPosition = XMFLOAT3(6.0f, 4.0f, 6.0f);
@@ -340,6 +340,7 @@ void Graphics::RenderFrame()
 
 bool Graphics::buildShape()
 {
+	/*
 	Vertex vertList[] =
 	{
 		//Vertex(0.0f, 0.0f), //Center
@@ -425,15 +426,18 @@ bool Graphics::buildShape()
 
 	DirectX::XMFLOAT3 triNorm1 = triNormal(vertList4[0], vertList4[3], vertList4[4]);
 
-	calcNormals(vertList4, triList4);
+	calcNormals(vertList4, triList4, sizeof(triList4));
 	calcNormalsV(vertList4, triList4);
 
 	// This needs to be changed
 	InitScene(vertList4, triList4, ARRAYSIZE(vertList4), ARRAYSIZE(triList4));
 
 	//InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
+	
+	*/
 	return true;
 }
+
 
 bool Graphics::buildPlane()
 {
@@ -465,7 +469,8 @@ bool Graphics::buildPlane()
 	
 	const int xCount = 20;
 	const int zCount = 20;
-	const int triCount = xCount * zCount * 2 * 3;
+	const int vCount = xCount * zCount;
+	const int triCount = (xCount-1) * (zCount-1) * 2 * 3;
 	
 	Vertex vertices[xCount * zCount];
 	float xAxis[xCount];
@@ -486,7 +491,8 @@ bool Graphics::buildPlane()
 	{
 		for (int j = 0; j < zCount; j++)
 		{
-			vertices[vInd].assign(xAxis[i], .5 * sin(xAxis[i] * pi/2), zAxis[j]);
+			vertices[vInd].assign(xAxis[i], .5 * sin(xAxis[i] * pi) + sin(zAxis[j] * pi/2), zAxis[j]);
+			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
 			vInd++;
 		}
 	}
@@ -517,7 +523,9 @@ bool Graphics::buildPlane()
 		}
 	}
 
-	calcNormals(vertices, tris);
+	int count = sizeof(tris);
+
+	calcNormals(vertices, tris, triCount, vCount);
 	//calcNormalsV(vertices, tris);
 
 	// This needs to be changed
@@ -556,15 +564,18 @@ DirectX::XMVECTOR Graphics::triNormalV(Vertex& A, Vertex& B, Vertex& C)
 }
 
 
-bool Graphics::calcNormals(Vertex verts[], DWORD tris[])
+bool Graphics::calcNormals(Vertex verts[], DWORD tris[], int size, int numV)
 {
-	for (int i = 0; i < (sizeof(tris)) / 3; i++)
+	for (int i = 0; i < size/3; i++)
 	{
 		int index1 = tris[i * 3 + 0];
 		int index2 = tris[i * 3 + 1];
 		int index3 = tris[i * 3 + 2];
 
 		DirectX::XMVECTOR triNormV = triNormalV(verts[index1], verts[index2], verts[index3]);
+		XMFLOAT3 normal;
+		DirectX::XMStoreFloat3(&normal, triNormV);
+		triNormals.push_back(normal);
 
 		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, triNormV);
 		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, triNormV);
@@ -572,16 +583,17 @@ bool Graphics::calcNormals(Vertex verts[], DWORD tris[])
 
 	}
 
-	for (int i = 0; i < sizeof(verts); i++)
+	for (int i = 0; i < numV; i++)
 	{
 		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
 		DirectX::XMStoreFloat3(&verts[i].normal, verts[i].normalV);
 	}
-
+	/*
 	if (verts[(sizeof(verts)) / 2].normal.y < 0.1)
 	{
 		return false;
 	}
+	*/
 	return true;
 }
 
