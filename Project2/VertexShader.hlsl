@@ -33,8 +33,8 @@ VS_OUTPUT main(VS_INPUT input)
 	//output.outPosition = float4(input.inPos, 1.0f);
 	output.outPosition = mul(float4(input.inPos, 1.0f), wvpMatrix);
 	output.outColor = input.inColor;
-	output.outNormal = input.inNormal;
+	//output.outNormal = input.inNormal;
 	output.outWorldPos = mul(float4(input.inPos, 1.0f), worldMatrix);
-	//output.outNormal = normalize(mul(float4(input.inNormal, 1.0f), worldMatrix));
+	output.outNormal = normalize(mul(float4(input.inNormal, 1.0f), worldMatrix));
 	return output;
 }

@@ -128,18 +128,28 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("shader fuckup");
 		}
 		
-		Mesh mesh();
+		Mesh *mesh = new Mesh;
+		const int xCount = 80;
+		const int zCount = 80;
+		Vertex vertices[xCount * zCount];
+		const int triCount = (xCount - 1) * (zCount - 1) * 2 * 3;
+		DWORD tris[triCount];
+		float xAxis[xCount];
+		float zAxis[zCount];
 
-		// InitScene called in buildShape, this is bad
-		if (!buildPlane())
+		if (!mesh->buildPlane(xCount, zCount, vertices, tris, xAxis, zAxis))
 		{
 			EngineException::Log("scene fuckup");
 		}
-		//buildPlane();
+
+		// add more mesh data to vertices and tris, but account fpr initialize with larger size
+		// or copy all mesh and tri data from multiple meshes into single vers/tris arrays
+		InitScene(vertices, tris, ARRAYSIZE(vertices), ARRAYSIZE(tris));
+		
 		/////////////
 		// Camera
 		/////////////
-		float fovDeg = 60.0f;
+		float fovDeg = 90.0f;
 		float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 		float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 		DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
@@ -152,7 +162,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = deviceP->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
 		if (FAILED(hr))
@@ -213,7 +223,7 @@ bool Graphics::InitShaders()
 	
 	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso", layout, numElements))
 	{
-		EngineException::Log("vertex shader");
+		EngineException::Log("vertex shader problem");
 		return false;
 	}
 	
@@ -221,7 +231,7 @@ bool Graphics::InitShaders()
 
 	if (!pixelShader.Initialize(this->deviceP, L"..\\x64\\Debug\\PixelShader.cso"))
 	{
-		EngineException::Log("vertex shader");
+		EngineException::Log("pixel shader problem");
 		return false;
 	}
 		
@@ -236,8 +246,9 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 
 	////////////////////////////////
 	// here is where vertex data is placed in buffer
-	// ARRAYSIZE(v)
 	////////////////////////////////
+
+	// ARRAYSIZE(v)
 	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), &v[0], lenV);
 	if (FAILED(hr))
 	{
@@ -245,7 +256,7 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 		return false;
 	}
 
-	// ARRAYSIZE(indices)
+	// ARRAYSIZE(i)
 	hr = indicesBuffer.Initialize(deviceP.Get(), &i[0], lenI);
 	if (FAILED(hr))
 	{
@@ -293,12 +304,21 @@ void Graphics::RenderFrame()
 
 	
 	//cb_vert.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+
+	// set up world
+	// id matrix implies the origin at 0, 0, 0
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
 	/*
+	// set up view
+	//handled by camera now
 	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 1.5f, -3.0f, 0.0f);
+	// origin
 	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(eye, lookAt, upDir);
+
+	// set up projection matrix
+	// handled by camera now
 	float fovDeg = 60.0f;
 	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -307,13 +327,15 @@ void Graphics::RenderFrame()
 	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
 	*/
 
+	// world-view-projection
+	// handled by camera now
 	//cb_vert.data.wvpMatrix = world * view * projectionMat;
 
 	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
 	cb_light.data.ambientStrength = .2f;
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	cb_light.data.lightStrength = 1.0f;
-	cb_light.data.lightPosition = XMFLOAT3(6.0f, 4.0f, 6.0f);
+	cb_light.data.lightPosition = XMFLOAT3(6.0f, 4.0f, 0.0f);
 	if (!cb_light.ApplyChanges())
 	{
 		return;
@@ -332,15 +354,18 @@ void Graphics::RenderFrame()
 	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
 	deviceContextP->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
+
+	// this is it
 	deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
-	
 	swapchainP->Present(1u, NULL);
 }
 
 
+////////////////////////////////////////////////////
+/*
 bool Graphics::buildShape()
 {
-	/*
+	
 	Vertex vertList[] =
 	{
 		//Vertex(0.0f, 0.0f), //Center
@@ -424,257 +449,49 @@ bool Graphics::buildShape()
 
 	};
 
-	DirectX::XMFLOAT3 triNorm1 = triNormal(vertList4[0], vertList4[3], vertList4[4]);
+	//DirectX::XMFLOAT3 triNorm1 = triNormal(vertList4[0], vertList4[3], vertList4[4]);
 
-	calcNormals(vertList4, triList4, sizeof(triList4));
-	calcNormalsV(vertList4, triList4);
+	//calcNormals(vertList4, triList4, sizeof(triList4));
+	//calcNormalsV(vertList4, triList4);
 
 	// This needs to be changed
-	InitScene(vertList4, triList4, ARRAYSIZE(vertList4), ARRAYSIZE(triList4));
+	//InitScene(vertList4, triList4, ARRAYSIZE(vertList4), ARRAYSIZE(triList4));
 
 	//InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
 	
-	*/
+	
 	return true;
 }
 
-
-bool Graphics::buildPlane()
-{
-	/*
-
-
-	def makePlane(X, Y) :
-		points = []
-		for i in range(len(X)) :
-			for j in range(len(Y)) :
-				coord = [X[i], Y[j], 0]
-				points.append(coord)
-				return points
-
-	for i in range(x-1):
-		for j in range(y-1):
-			face = [(i*y)+j, (i*y)+j+1, (i*y)+j+y+1, (i*y)+j+y]
-			tri1 = [(i*y)+j, (i*y)+j+1, (i*y)+j+y]
-			tri2 = [(i*y)+j+1, (i*y)+j+y+1, (i*y)+j+y]
-			faces.append(face)
-
-	*/
-	
-
-
-	float xLim = 4.0;
-	float yLim = 4.0;
-	float step = .2;
-	
-	const int xCount = 20;
-	const int zCount = 20;
-	const int vCount = xCount * zCount;
-	const int triCount = (xCount-1) * (zCount-1) * 2 * 3;
-	
-	Vertex vertices[xCount * zCount];
-	float xAxis[xCount];
-	float zAxis[zCount];
-	DWORD tris[triCount];
-
-	for (int i = 0; i < xCount; i++)
-	{
-		xAxis[i] = i * step;
-	}
-	for (int i = 0; i < zCount; i++)
-	{
-		zAxis[i] = i * step;
-	}
-	double pi = 3.1415926535;
-	int vInd = 0;
-	for (int i = 0; i < xCount; i++)
-	{
-		for (int j = 0; j < zCount; j++)
-		{
-			vertices[vInd].assign(xAxis[i], .5 * sin(xAxis[i] * pi) + sin(zAxis[j] * pi/2), zAxis[j]);
-			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
-			vInd++;
-		}
-	}
-
-
-	//tri1 = [(i * y) + j, (i * y) + j + 1, (i * y) + j + y]
-	//tri2 = [(i * y) + j + 1, (i * y) + j + y + 1, (i * y) + j + y]
-	int tInd = 0;
-	for (int i = 0; i < xCount - 1; i++)
-	{
-		for (int j = 0; j < zCount - 1; j++)
-		{
-			tris[tInd] = (i * zCount) + j;
-			tInd++;
-			
-			tris[tInd] = (i * zCount) + j + 1;
-			tInd++;
-			tris[tInd] = (i * zCount) + j + zCount;
-			tInd++;
-			
-			tris[tInd] = (i * zCount) + j + 1;
-			tInd++;
-			
-			tris[tInd] = (i * zCount) + j + zCount + 1;
-			tInd++;
-			tris[tInd] = (i * zCount) + j + zCount;
-			tInd++;
-		}
-	}
-
-	int count = sizeof(tris);
-
-	calcNormals(vertices, tris, triCount, vCount);
-	//calcNormalsV(vertices, tris);
-
-	// This needs to be changed
-	InitScene(vertices, tris, ARRAYSIZE(vertices), ARRAYSIZE(tris));
-
-	return true;
-}
-
-
-
-
-
-// XMVECTOR version
-DirectX::XMVECTOR Graphics::triNormalV(Vertex& A, Vertex& B, Vertex& C)
-{
-	// convert Vertex.pos to vectors
-	DirectX::XMVECTOR vA = DirectX::XMLoadFloat3(&A.pos);
-	DirectX::XMVECTOR vB = DirectX::XMLoadFloat3(&B.pos);
-	DirectX::XMVECTOR vC = DirectX::XMLoadFloat3(&C.pos);
-
-	// define vectors for cross
-	DirectX::XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
-	DirectX::XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
-
-	//DirectX::XMFLOAT3 u(&B.pos.x - &A.pos.x, &B.pos.y - &A.pos.y, &B.pos.z - &A.pos.z);
-	//DirectX::XMFLOAT3 v(&C.pos.x - &A.pos.x, &C.pos.y - &A.pos.y, &C.pos.z - &A.pos.z);
-	//DirectX::XMVECTOR U = DirectX::XMLoadFloat3(&u);
-	//DirectX::XMVECTOR V = DirectX::XMLoadFloat3(&v);
-
-	DirectX::XMVECTOR normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
-
-	//DirectX::XMVECTOR norm2 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(U, V));
-
-
-	return (normalV);
-}
-
-
-bool Graphics::calcNormals(Vertex verts[], DWORD tris[], int size, int numV)
-{
-	for (int i = 0; i < size/3; i++)
-	{
-		int index1 = tris[i * 3 + 0];
-		int index2 = tris[i * 3 + 1];
-		int index3 = tris[i * 3 + 2];
-
-		DirectX::XMVECTOR triNormV = triNormalV(verts[index1], verts[index2], verts[index3]);
-		XMFLOAT3 normal;
-		DirectX::XMStoreFloat3(&normal, triNormV);
-		triNormals.push_back(normal);
-
-		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, triNormV);
-		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, triNormV);
-		verts[index3].normalV = DirectX::XMVectorAdd(verts[index3].normalV, triNormV);
-
-	}
-
-	for (int i = 0; i < numV; i++)
-	{
-		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
-		DirectX::XMStoreFloat3(&verts[i].normal, verts[i].normalV);
-	}
-	/*
-	if (verts[(sizeof(verts)) / 2].normal.y < 0.1)
-	{
-		return false;
-	}
-	*/
-	return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-void Graphics::calcNormalsV(Vertex verts[], DWORD tris[])
-{
-	for (int i = 0; i < (sizeof(tris)) / 3; i++)
-	{
-		int index1 = tris[i * 3 + 0];
-		int index2 = tris[i * 3 + 1];
-		int index3 = tris[i * 3 + 2];
-
-		DirectX::XMVECTOR triNormV = triNormalV(verts[index1], verts[index2], verts[index3]);
-
-		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, triNormV);
-		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, triNormV);
-		verts[index3].normalV = DirectX::XMVectorAdd(verts[index3].normalV, triNormV);
-
-	}
-
-	for (int i = 0; i < sizeof(verts); i++)
-	{
-		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
-	}
-
-
-}
-
-DirectX::XMFLOAT3 Graphics::triNormal(Vertex& A, Vertex& B, Vertex& C)
-{
-	// convert triangle Vertex.pos to vectors
-	DirectX::XMVECTOR vA = DirectX::XMLoadFloat3(&A.pos);
-	DirectX::XMVECTOR vB = DirectX::XMLoadFloat3(&B.pos);
-	DirectX::XMVECTOR vC = DirectX::XMLoadFloat3(&C.pos);
-
-	// define vectors for cross
-	DirectX::XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
-	DirectX::XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
-
-	//DirectX::XMFLOAT3 u(&B.pos.x - &A.pos.x, &B.pos.y - &A.pos.y, &B.pos.z - &A.pos.z);
-	//DirectX::XMFLOAT3 v(&C.pos.x - &A.pos.x, &C.pos.y - &A.pos.y, &C.pos.z - &A.pos.z);
-	//DirectX::XMVECTOR U = DirectX::XMLoadFloat3(&u);
-	//DirectX::XMVECTOR V = DirectX::XMLoadFloat3(&v);
-
-	DirectX::XMVECTOR norm1 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
-
-	//DirectX::XMVECTOR norm2 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(U, V));
-
-	DirectX::XMFLOAT3 norm;
-	DirectX::XMStoreFloat3(&norm, norm1);
-
-	return (norm);
-}
+*/
 
 /*
-void Graphics::calcNormals(Vertex verts[], DWORD tris[])
-{
-	for (int i = 0; i < (sizeof(tris)) / 3; i++)
-	{
-		int index1 = tris[i * 3 + 0];
-		int index2 = tris[i * 3 + 1];
-		int index3 = tris[i * 3 + 2];
+int main() {
+	int arr1[] = {1, 2, 3};
+	int arr2[] = {4, 5, 6};
+	int arr3[] = {7, 8, 9};
 
-		DirectX::XMFLOAT3 triNorm = triNormal(verts[index1], verts[index2], verts[index3]);
+	int totalSize = sizeof(arr1) + sizeof(arr2) + sizeof(arr3);
+	int* bigArray = new int[totalSize / sizeof(int)];
 
-		verts[index1].normal.x += triNorm.x;
-		verts[index1].normal.y += triNorm.y;
-		verts[index1].normal.z += triNorm.z;
+	int* current = bigArray;
 
-		verts[index2].normal.x += triNorm.x;
-		verts[index2].normal.y += triNorm.y;
-		verts[index2].normal.z += triNorm.z;
+	std::memcpy(current, arr1, sizeof(arr1));
+	current += sizeof(arr1) / sizeof(int);
 
-		verts[index3].normal.x += triNorm.x;
-		verts[index3].normal.y += triNorm.y;
-		verts[index3].normal.z += triNorm.z;
+	std::memcpy(current, arr2, sizeof(arr2));
+	current += sizeof(arr2) / sizeof(int);
+
+	std::memcpy(current, arr3, sizeof(arr3));
+
+	// Print the big array
+	for (int i = 0; i < totalSize / sizeof(int); ++i) {
+		std::cout << bigArray[i] << " ";
 	}
+	std::cout << std::endl;
 
-
-}
+	delete[] bigArray;
 */
+
+
+

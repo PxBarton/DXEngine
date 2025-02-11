@@ -22,15 +22,15 @@
 
 class Graphics
 {
-public :
-	
+public:
+
 public:
 	Graphics();
 	~Graphics() = default;
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
-	
+
 private:
 	int width = 0;
 	int height = 0;
@@ -62,16 +62,5 @@ private:
 	bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
 	// C++ STL <vector> version
 	//bool InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI);
-	bool buildShape();
-	bool buildPlane();
-	
-	DirectX::XMFLOAT3 triNormal(Vertex &A, Vertex& B, Vertex& C);
-	// XMVECTOR version
-	DirectX::XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
-	bool calcNormals(Vertex verts[], DWORD tris[], int size, int numV);
-	// XMVECTOR version
-	void calcNormalsV(Vertex verts[], DWORD tris[]);
-
-	//DirectX::XMFLOAT3 vertNormal(Vertex verts[], DWORD tris[]);
 
 };

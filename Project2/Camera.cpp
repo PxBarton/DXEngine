@@ -202,6 +202,9 @@ const XMVECTOR& Camera::GetLeftVector()
 
 void Camera::UpdateViewMatrix() //Updates view matrix and also updates the movement vectors
 {
+	// XMVector3TransformCoord ignores the w component of the input vector, and uses a value of 1.0 instead. 
+	// The w component of the returned vector will always be 1.0.
+	
 	//Calculate camera rotation matrix
 	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rot.x, this->rot.y, this->rot.z);
 	//Calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
@@ -213,6 +216,14 @@ void Camera::UpdateViewMatrix() //Updates view matrix and also updates the movem
 	//Rebuild view matrix
 	this->viewMatrix = XMMatrixLookAtLH(this->posVector, camTarget, upDir);
 
+	// should be using quaternions
+	// XMVECTOR XM_CALLCONV XMVector3Rotate(
+	// [in] FXMVECTOR V,
+	//	[in] FXMVECTOR RotationQuaternion
+	//	) noexcept;
+
+	 
+	// here is why XMVECTOR is retained 
 	XMMATRIX vecRotationMatrix = XMMatrixRotationRollPitchYaw(0.0f, this->rot.y, 0.0f);
 	this->vec_forward = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR, vecRotationMatrix);
 	this->vec_backward = XMVector3TransformCoord(this->DEFAULT_BACKWARD_VECTOR, vecRotationMatrix);

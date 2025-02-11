@@ -3,6 +3,11 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
+// XMVECTOR and XMMATRIX are for computation
+// XMFLOAT is for storage 
+// load -> XMVECTOR, XMMATRIX
+// store -> XMFLOAT
+
 class Camera
 {
 public:
@@ -20,20 +25,25 @@ public:
 	void SetPosition(const XMVECTOR& pos);
 	void SetPosition(const XMFLOAT3& pos);
 	void SetPosition(float x, float y, float z);
+
 	void AdjustPosition(const XMVECTOR& pos);
 	void AdjustPosition(const XMFLOAT3& pos);
 	void AdjustPosition(float x, float y, float z);
+
 	void SetRotation(const XMVECTOR& rot);
 	void SetRotation(const XMFLOAT3& rot);
 	void SetRotation(float x, float y, float z);
+
 	void AdjustRotation(const XMVECTOR& rot);
 	void AdjustRotation(const XMFLOAT3& rot);
 	void AdjustRotation(float x, float y, float z);
+
 	void SetLookAtPos(XMFLOAT3 lookAtPos);
 	const XMVECTOR& GetForwardVector();
 	const XMVECTOR& GetRightVector();
 	const XMVECTOR& GetBackwardVector();
 	const XMVECTOR& GetLeftVector();
+
 private:
 	void UpdateViewMatrix();
 	XMVECTOR posVector;
