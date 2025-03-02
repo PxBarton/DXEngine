@@ -31,6 +31,8 @@ public:
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
+	std::unique_ptr<Mesh> plane = nullptr;
+	std::unique_ptr<Mesh> cube = nullptr;
 
 private:
 	int width = 0;
@@ -60,7 +62,7 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
 
 	bool InitShaders();
-	bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
+	//bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
 	bool InitScene();
 	// C++ STL <vector> version
 	//bool InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI);

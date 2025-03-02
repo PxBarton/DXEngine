@@ -139,45 +139,38 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		//camera.SetLookAtPos(eye);
 		camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 
-		// initialize constant buffers
-		//InitScene();
+		// initialize constant buffers when vertex & pixel shaders filled in the mesh object
+		InitScene();
 
 		//////////////
 		// Set up mesh geometry
 		//////////////
-		//Mesh mesh;
-		std::unique_ptr<Mesh> plane = std::make_unique<Mesh>();
+	
 		DirectX::XMMATRIX planeTransform = DirectX::XMMatrixIdentity();
-		//std::unique_ptr<Mesh> plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
+		plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
+		cube = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
 		// setup for Plane geometry
 		const int planePointsX = 80;
 		const int planePointsZ = 80;
 		const int planeVertCount = planePointsX * planePointsZ;
-		std::unique_ptr<Vertex[]> planeVerts = std::make_unique<Vertex[]>(planeVertCount);
 
 		// the number of total indices in the triangle array, triangles * 3
 		const int planeTriCount = (planePointsX - 1) * (planePointsZ - 1) * 2 * 3;
-
 		
-		DWORD tris[planeTriCount];
-		plane->initMeshBuilder(planeVertCount, 1);
-		if (!plane->buildPlane(planePointsX, planePointsZ, tris))
+		DWORD planeTris[planeTriCount];
+		DWORD cubeTris[36];
+
+		plane->initMeshBuilder(planeVertCount, planeTriCount);
+		cube->initMeshBuilder(8, 36);
+		if (!plane->buildPlane(planePointsX, planePointsZ))
 		{
 			EngineException::Log("scene fuckup");
 		}
-		//if (!mesh->buildCube(2.0f, tris))
-		//{
-		//	EngineException::Log("scene fuckup");
-		//}
-
-		plane->calcNormals(tris, planeTriCount, planeVertCount);
-		//plane->Draw(camera.GetViewMatrix(), camera.GetProjectionMatrix());
-		// copy separate mesh data into one vertex array and one index array
-		//std::copy(planeVerts.get(), planeVerts.get() + planeVertCount, vertices.get());
-		InitScene(plane->vertices.get(), tris, planeVertCount, ARRAYSIZE(tris));
+		if (!cube->buildCube(2.0f))
+		{
+			EngineException::Log("scene fuckup");
+		}
 		
-		
-
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
@@ -260,33 +253,9 @@ bool Graphics::InitShaders()
 }
 
 
-bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
-//bool Graphics::InitScene()
-//bool Graphics::InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI)
+bool Graphics::InitScene()
 {
-
-
-	////////////////////////////////
-	// here is where vertex data is placed in buffer
-	////////////////////////////////
-	
-	// ARRAYSIZE(v)
-	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), &v[0], lenV);
-	if (FAILED(hr))
-	{
-		EngineException::Log(hr, "vertex buffer");
-		return false;
-	}
-
-	// ARRAYSIZE(i)
-	hr = indicesBuffer.Initialize(deviceP.Get(), &i[0], lenI);
-	if (FAILED(hr))
-	{
-		EngineException::Log(hr, "index buffer");
-		return false;
-	}
-	
-	hr = cb_vert.Initialize(this->deviceP.Get(), deviceContextP.Get());
+	HRESULT hr = cb_vert.Initialize(this->deviceP.Get(), deviceContextP.Get());
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "constant buffer: vertex");
@@ -343,8 +312,19 @@ void Graphics::RenderFrame()
 	}
 	deviceContextP->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
 
-	// dont remove yet
 	
+	plane->Draw(world, camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	cube->Draw(world, camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	swapchainP->Present(1u, NULL);
+
+
+}
+
+
+////////////////////////////////////////////////////
+
+// dont remove yet
+	/*
 	// camera changes get applied to the constant buffer data
 	cb_vert.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 	cb_vert.data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vert.data.wvpMatrix);
@@ -358,17 +338,12 @@ void Graphics::RenderFrame()
 	deviceContextP->VSSetConstantBuffers(0, 1, cb_vert.GetAddressOf());
 	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
 	deviceContextP->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	
+	*/
 
 	// this is it
-	deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
-	swapchainP->Present(1u, NULL);
+	//deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
 
 
-}
-
-
-////////////////////////////////////////////////////
 /*
 bool Graphics::buildShape()
 {
