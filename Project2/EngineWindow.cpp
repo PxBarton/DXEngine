@@ -80,7 +80,7 @@ const WCHAR* EngineWindow::getWndClass()
 
 bool EngineWindow::InitGfx()
 {
-    if (!gfx.Init(hWnd, width, height))
+    if (!gfx->Init(hWnd, width, height))
     {
         return false;
     }
@@ -132,47 +132,47 @@ void EngineWindow::Update()
     // move forward, back, left, right
     if (keyboard.KeyIsPressed('Y'))
     {
-        this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetForwardVector() * cameraSpeed * dt);
     }
     if (keyboard.KeyIsPressed('B'))
     {
-        this->gfx.camera.AdjustPosition(this->gfx.camera.GetBackwardVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetBackwardVector() * cameraSpeed * dt);
     }
     if (keyboard.KeyIsPressed('G'))
     {
-        this->gfx.camera.AdjustPosition(this->gfx.camera.GetLeftVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetLeftVector() * cameraSpeed * dt);
     }
     if (keyboard.KeyIsPressed('H'))
     {
-        this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetRightVector() * cameraSpeed * dt);
     }
 
     // up, down
     if (keyboard.KeyIsPressed('R'))
     {
-        this->gfx.camera.AdjustPosition(0.0f, 1.0f * cameraSpeed * dt, 0.0f);
+        this->gfx->camera.AdjustPosition(0.0f, 1.0f * cameraSpeed * dt, 0.0f);
     }
     if (keyboard.KeyIsPressed('C'))
     {
-        this->gfx.camera.AdjustPosition(0.0f, -1.0f * cameraSpeed * dt, 0.0f);
+        this->gfx->camera.AdjustPosition(0.0f, -1.0f * cameraSpeed * dt, 0.0f);
     }
 
     // rotation
     if (keyboard.KeyIsPressed('W'))
     {
-        this->gfx.camera.AdjustRotation(-0.01f, 0.0f, 0.0f);
+        this->gfx->camera.AdjustRotation(-0.01f, 0.0f, 0.0f);
     }
     if (keyboard.KeyIsPressed('Z'))
     {
-        this->gfx.camera.AdjustRotation(0.01f, 0.0f, 0.0f);
+        this->gfx->camera.AdjustRotation(0.01f, 0.0f, 0.0f);
     }
     if (keyboard.KeyIsPressed('A'))
     {
-        this->gfx.camera.AdjustRotation(0.0f, -0.01f, 0.00f);
+        this->gfx->camera.AdjustRotation(0.0f, -0.01f, 0.00f);
     }
     if (keyboard.KeyIsPressed('S'))
     {
-        this->gfx.camera.AdjustRotation(0.0f, 0.01f, -0.00f);
+        this->gfx->camera.AdjustRotation(0.0f, 0.01f, -0.00f);
     }
     
 }

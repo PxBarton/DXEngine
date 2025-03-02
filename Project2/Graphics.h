@@ -3,6 +3,7 @@
 #include "MinimalWin.h"
 //#include <Windows.h>
 
+#include <algorithm>
 #include "EngineException.h"
 #include "Shaders.h"
 #include "AdapterInfo.h"
@@ -60,6 +61,7 @@ private:
 
 	bool InitShaders();
 	bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
+	bool InitScene();
 	// C++ STL <vector> version
 	//bool InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI);
 

@@ -35,8 +35,8 @@ public:
 	const WCHAR* getWndClass();
 	bool MessageProc();
 	void Update();
-	Graphics gfx;
-
+	//Graphics gfx;
+	std::unique_ptr<Graphics> gfx = std::make_unique<Graphics>();
 	
 private:
 	int width;

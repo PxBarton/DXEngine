@@ -1,22 +1,20 @@
 #include "Mesh.h"
 
 
-Mesh::Mesh(ID3D11Device* device, 
-		ID3D11DeviceContext* deviceContext, 
-		std::vector<Vertex>& vertices, 
-		std::vector<DWORD>& indices,
-		const DirectX::XMMATRIX& transformMatrix,
-		ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
+Mesh::Mesh(
+	ID3D11Device* device,
+	ID3D11DeviceContext* deviceContext,
+	
+	//Microsoft::WRL::ComPtr<ID3D11Device> device,
+	//Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
+	const DirectX::XMMATRIX& transformMatrix,
+	ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
 {
+	this->device = device;
 	this->deviceContext = deviceContext;
-	//this->textures = textures;
 	this->transformMatrix = transformMatrix;
-
-	HRESULT hr = this->vertexBuffer.Initialize(device, vertices.data(), vertices.size());
-	//COM_ERROR_IF_FAILED(hr, "Failed to initialize vertex buffer for mesh.");
-
-	hr = this->indexBuffer.Initialize(device, indices.data(), indices.size());
-	//COM_ERROR_IF_FAILED(hr, "Failed to initialize index buffer for mesh.");
+	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	//this->textures = textures;
 }
 
 //Mesh::Mesh() {}
@@ -33,6 +31,8 @@ Mesh::Mesh(const Mesh& mesh)
 */
 void Mesh::Draw(const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& viewProjectionMatrix)
 {
+	
+	
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader->GetAddressOf());
 
 	this->cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
@@ -49,6 +49,58 @@ void Mesh::Draw(const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& v
 const DirectX::XMMATRIX& Mesh::GetTransformMatrix()
 {
 	return this->transformMatrix;
+}
+
+bool Mesh::buildCube(float size, DWORD tris[])
+{
+	// cube
+	Vertex vertList[] =
+	{
+		Vertex(-1.f, -1.f, 1.f),
+		Vertex(-1.f, -1.f, -1.f),
+		Vertex(1.f, -1.f, -1.f),
+		Vertex(1.f, -1.f, 1.f),
+		Vertex(-1.f, 1.f, 1.f),
+		Vertex(-1.f, 1.f, -1.f),
+		Vertex(1.f, 1.f, -1.f),
+		Vertex(1.f, 1.f, 1.f)
+	};
+
+	DWORD triList[] =
+	{
+		// sides
+		0, 3, 4,
+		4, 3, 7,
+
+		3, 2, 7,
+		7, 2, 6,
+
+		2, 1, 6,
+		6, 1, 5,
+
+		1, 0, 5,
+		5, 0, 4,
+
+		// bottom
+		0, 1, 3,
+		3, 1, 2,
+
+		// top
+		4, 7, 5,
+		5, 7, 6
+
+
+	};
+	
+	for (int i = 0; i <= 35; i++)
+	{
+		tris[i] = triList[i];
+	}
+
+	this->vertexCounter += 8;
+	this->triCounter += 36;
+	
+	return true;
 }
 
 bool Mesh::buildPlane(int xCount, int zCount, Vertex vertices[], DWORD tris[], float xAxis[], float zAxis[])
@@ -112,6 +164,88 @@ bool Mesh::buildPlane(int xCount, int zCount, Vertex vertices[], DWORD tris[], f
 
 	calcNormals(vertices, tris, triCount, vCount);
 
+	
+
+	return true;
+}
+
+//  overloaded to use MeshBuilder vertices 
+
+bool Mesh::buildPlane(int xCount, int zCount, DWORD tris[])
+{
+	//float xAxis[xCount]; must be allocated on the heap using new or uniqueptr
+	//float zAxis[zCount];
+
+	std::unique_ptr<float[]> xAxis = std::make_unique<float[]>(xCount);
+	std::unique_ptr<float[]> zAxis = std::make_unique<float[]>(xCount);
+	float xLim = 12.0;
+	float yLim = 12.0;
+	float step = .1;
+
+	int vCount = xCount * zCount;
+	const int triCount = (xCount - 1) * (zCount - 1) * 2 * 3;
+
+	for (int i = 0; i < xCount; i++)
+	{
+		xAxis[i] = i * step;
+	}
+	for (int i = 0; i < zCount; i++)
+	{
+		zAxis[i] = i * step;
+	}
+	double pi = 3.1415926535;
+	int vInd = 0 + this->vertexCounter;
+	for (int i = 0; i < xCount; i++)
+	{
+		for (int j = 0; j < zCount; j++)
+		{
+			this->vertices[vInd].assign(xAxis[i], .25 * cos(xAxis[i] * pi / 2) * .25 * sin(zAxis[j] * pi / 2) + .25 * cos(xAxis[i] * zAxis[j]), zAxis[j] * pi / 2);
+			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
+			vInd++;
+		}
+	}
+
+	int tInd = 0 + this->triCounter;
+	for (int i = 0; i < xCount - 1; i++)
+	{
+		for (int j = 0; j < zCount - 1; j++)
+		{
+			tris[tInd] = (i * zCount) + j;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + 1;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + zCount;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + 1;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + zCount + 1;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + zCount;
+			tInd++;
+		}
+	}
+
+	//calcNormals(tris, triCount, vCount);
+	/*
+	HRESULT hr = vertexBuffer.Initialize(this->device, &vertices[0], vCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(this->device, tris, triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+	*/
 	return true;
 }
 
@@ -133,6 +267,35 @@ DirectX::XMVECTOR Mesh::triNormalV(Vertex& A, Vertex& B, Vertex& C)
 
 
 	return (normalV);
+}
+
+bool Mesh::calcNormals(DWORD tris[], int size, int numV)
+{
+	for (int i = 0; i < size / 3; i++)
+	{
+		int index1 = tris[i * 3 + 0];
+		int index2 = tris[i * 3 + 1];
+		int index3 = tris[i * 3 + 2];
+
+		DirectX::XMVECTOR triNormV = triNormalV(this->vertices[index1], this->vertices[index2], this->vertices[index3]);
+		XMFLOAT3 normal;
+		DirectX::XMStoreFloat3(&normal, triNormV);
+		//triNormals.push_back(normal);
+
+		this->vertices[index1].normalV = DirectX::XMVectorAdd(this->vertices[index1].normalV, triNormV);
+		this->vertices[index2].normalV = DirectX::XMVectorAdd(this->vertices[index2].normalV, triNormV);
+		this->vertices[index3].normalV = DirectX::XMVectorAdd(this->vertices[index3].normalV, triNormV);
+
+
+	}
+
+	for (int i = 0; i < numV; i++)
+	{
+		this->vertices[i].normalV = DirectX::XMVector3Normalize(this->vertices[i].normalV);
+		DirectX::XMStoreFloat3(&this->vertices[i].normal, this->vertices[i].normalV);
+	}
+
+	return true;
 }
 
 
@@ -174,6 +337,7 @@ bool Mesh::calcNormals(Vertex verts[], DWORD tris[], int size, int numV)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+
 
 // do not use
 

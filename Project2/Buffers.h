@@ -55,7 +55,7 @@ public:
 	}
 
 	// T* data
-	HRESULT Initialize(ID3D11Device* device, T* data, UINT numVertices)
+	HRESULT Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device, T* data, UINT numVertices)
 	{
 		if (buffer.Get() != nullptr)
 		{
@@ -157,7 +157,7 @@ public:
 	}
 
 	// DWORD* data
-	HRESULT Initialize(ID3D11Device* device, DWORD* data, UINT numIndices)
+	HRESULT Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device, DWORD* data, UINT numIndices)
 	{
 		if (buffer.Get() != nullptr)
 		{
@@ -276,7 +276,7 @@ public:
 	}
 
 	// pass deviceP.Get(), deviceContextP.Get() as arguments
-	HRESULT Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+	HRESULT Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device, ID3D11DeviceContext* deviceContext)
 	{
 		if (buffer.Get() != nullptr)
 		{

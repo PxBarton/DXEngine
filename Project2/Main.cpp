@@ -13,7 +13,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             while (wind.MessageProc() == true)
             {
                 wind.Update();
-                wind.gfx.RenderFrame();
+                wind.gfx->RenderFrame();
             }
         }
         

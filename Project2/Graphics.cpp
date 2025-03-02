@@ -128,24 +128,6 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("shader fuckup");
 		}
 		
-		Mesh *mesh = new Mesh;
-		const int xCount = 80;
-		const int zCount = 80;
-		Vertex vertices[xCount * zCount];
-		const int triCount = (xCount - 1) * (zCount - 1) * 2 * 3;
-		DWORD tris[triCount];
-		float xAxis[xCount];
-		float zAxis[zCount];
-
-		if (!mesh->buildPlane(xCount, zCount, vertices, tris, xAxis, zAxis))
-		{
-			EngineException::Log("scene fuckup");
-		}
-
-		// add more mesh data to vertices and tris, but account fpr initialize with larger size
-		// or copy all mesh and tri data from multiple meshes into single vers/tris arrays
-		InitScene(vertices, tris, ARRAYSIZE(vertices), ARRAYSIZE(tris));
-		
 		/////////////
 		// Camera
 		/////////////
@@ -156,6 +138,45 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		camera.SetPosition(2.0f, 1.5f, -3.0f);
 		//camera.SetLookAtPos(eye);
 		camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
+
+		// initialize constant buffers
+		//InitScene();
+
+		//////////////
+		// Set up mesh geometry
+		//////////////
+		//Mesh mesh;
+		std::unique_ptr<Mesh> plane = std::make_unique<Mesh>();
+		DirectX::XMMATRIX planeTransform = DirectX::XMMatrixIdentity();
+		//std::unique_ptr<Mesh> plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
+		// setup for Plane geometry
+		const int planePointsX = 80;
+		const int planePointsZ = 80;
+		const int planeVertCount = planePointsX * planePointsZ;
+		std::unique_ptr<Vertex[]> planeVerts = std::make_unique<Vertex[]>(planeVertCount);
+
+		// the number of total indices in the triangle array, triangles * 3
+		const int planeTriCount = (planePointsX - 1) * (planePointsZ - 1) * 2 * 3;
+
+		
+		DWORD tris[planeTriCount];
+		plane->initMeshBuilder(planeVertCount, 1);
+		if (!plane->buildPlane(planePointsX, planePointsZ, tris))
+		{
+			EngineException::Log("scene fuckup");
+		}
+		//if (!mesh->buildCube(2.0f, tris))
+		//{
+		//	EngineException::Log("scene fuckup");
+		//}
+
+		plane->calcNormals(tris, planeTriCount, planeVertCount);
+		//plane->Draw(camera.GetViewMatrix(), camera.GetProjectionMatrix());
+		// copy separate mesh data into one vertex array and one index array
+		//std::copy(planeVerts.get(), planeVerts.get() + planeVertCount, vertices.get());
+		InitScene(plane->vertices.get(), tris, planeVertCount, ARRAYSIZE(tris));
+		
+		
 
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -240,6 +261,7 @@ bool Graphics::InitShaders()
 
 
 bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
+//bool Graphics::InitScene()
 //bool Graphics::InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI)
 {
 
@@ -247,7 +269,7 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 	////////////////////////////////
 	// here is where vertex data is placed in buffer
 	////////////////////////////////
-
+	
 	// ARRAYSIZE(v)
 	HRESULT hr = vertexBuffer.Initialize(deviceP.Get(), &v[0], lenV);
 	if (FAILED(hr))
@@ -264,14 +286,14 @@ bool Graphics::InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI)
 		return false;
 	}
 	
-	hr = cb_vert.Initialize(deviceP.Get(), deviceContextP.Get());
+	hr = cb_vert.Initialize(this->deviceP.Get(), deviceContextP.Get());
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "constant buffer: vertex");
 		return false;
 	}
 
-	hr = cb_light.Initialize(deviceP.Get(), deviceContextP.Get());
+	hr = cb_light.Initialize(this->deviceP.Get(), deviceContextP.Get());
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "constant buffer: pixel/light");
@@ -308,28 +330,7 @@ void Graphics::RenderFrame()
 	// set up world
 	// id matrix implies the origin at 0, 0, 0
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-	/*
-	// set up view
-	//handled by camera now
-	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 1.5f, -3.0f, 0.0f);
-	// origin
-	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(eye, lookAt, upDir);
-
-	// set up projection matrix
-	// handled by camera now
-	float fovDeg = 60.0f;
-	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
-	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	float nearZ = 0.1f;
-	float farZ = 1000.0f;
-	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
-	*/
-
-	// world-view-projection
-	// handled by camera now
-	//cb_vert.data.wvpMatrix = world * view * projectionMat;
+	
 
 	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
 	cb_light.data.ambientStrength = .2f;
@@ -342,6 +343,9 @@ void Graphics::RenderFrame()
 	}
 	deviceContextP->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
 
+	// dont remove yet
+	
+	// camera changes get applied to the constant buffer data
 	cb_vert.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 	cb_vert.data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vert.data.wvpMatrix);
 	cb_vert.data.worldMatrix = world;
@@ -349,15 +353,18 @@ void Graphics::RenderFrame()
 	{
 		return;
 	}
+
+	// buffers are populated
 	deviceContextP->VSSetConstantBuffers(0, 1, cb_vert.GetAddressOf());
-	
 	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
 	deviceContextP->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
+	
 
 	// this is it
 	deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
 	swapchainP->Present(1u, NULL);
+
+
 }
 
 
