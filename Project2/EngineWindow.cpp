@@ -116,6 +116,9 @@ bool EngineWindow::MessageProc()
 
 void EngineWindow::Update()
 {
+    float time = timer.GetMilisecondsElapsed();
+    timer.Restart();
+
     while (!keyboard.CharBufferIsEmpty())
     {
         unsigned char ch = keyboard.ReadChar();
@@ -132,19 +135,19 @@ void EngineWindow::Update()
     // move forward, back, left, right
     if (keyboard.KeyIsPressed('Y'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetForwardVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetForwardVector() * cameraSpeed * time);
     }
     if (keyboard.KeyIsPressed('B'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetBackwardVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetBackwardVector() * cameraSpeed * time);
     }
     if (keyboard.KeyIsPressed('G'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetLeftVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetLeftVector() * cameraSpeed * time);
     }
     if (keyboard.KeyIsPressed('H'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetRightVector() * cameraSpeed * dt);
+        this->gfx->camera.AdjustPosition(this->gfx->camera.GetRightVector() * cameraSpeed * time);
     }
 
     // up, down

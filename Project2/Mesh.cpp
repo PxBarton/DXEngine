@@ -16,22 +16,75 @@ Mesh::Mesh(
 
 //Mesh::Mesh() {}
 
-void Mesh::Draw(const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& viewProjectionMatrix)
+void Mesh::initPosition(float x, float y, float z)
+{
+	position = XMFLOAT3(x, y, z);
+	positionVec = XMLoadFloat3(&position);
+	setWorldMatrix();
+}
+
+void Mesh::setPosition(float x, float y, float z)
+{
+	position.x += x;
+	position.y += y;
+	position.z += z;
+	positionVec = XMLoadFloat3(&position);
+	setWorldMatrix();
+}
+
+
+void Mesh::initRotation(float x, float y, float z)
+{
+	rotation = XMFLOAT3(x, y, z);
+	rotationVec = XMLoadFloat3(&rotation);
+	setWorldMatrix();
+}
+
+void Mesh::setRotation(float x, float y, float z)
+{
+	rotation.x += x;
+	rotation.y += y;
+	rotation.z += z;
+	rotationVec = XMLoadFloat3(&rotation);
+	setWorldMatrix();
+}
+
+void Mesh::translate(float x, float y, float z)
+{
+	float time = timer.GetMilisecondsElapsed();
+	timer.Restart();
+	setPosition(x * time, y * time, z * time);
+}
+
+void Mesh::rotate(float x, float y, float z)
+{
+	float time = timer.GetMilisecondsElapsed();
+	timer.Restart();
+	setRotation(x * time, y * time, z * time);
+}
+
+void Mesh::Draw(const DirectX::XMMATRIX& viewProjectionMatrix)
 {
 	
 	
-	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader->GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
 
-	this->cb_vs_vertexshader->data.wvpMatrix = worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-	this->cb_vs_vertexshader->data.worldMatrix = worldMatrix; //Calculate World
-	this->cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(this->cb_vs_vertexshader->data.wvpMatrix);
-	this->cb_vs_vertexshader->ApplyChanges();
+	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
+	cb_vs_vertexshader->ApplyChanges();
 
 	UINT offset = 0;
 
-	this->deviceContext->IASetVertexBuffers(0, 1, this->vertexBuffer.GetAddressOf(), this->vertexBuffer.StridePtr(), &offset);
-	this->deviceContext->IASetIndexBuffer(this->indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->DrawIndexed(this->indexBuffer.BufferSize(), 0, 0);
+	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
+	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->DrawIndexed(indexBuffer.BufferSize(), 0, 0);
+}
+
+void Mesh::setWorldMatrix()
+{
+	// change to quaternions
+	worldMatrix = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) * XMMatrixTranslation(position.x, position.y, position.z);
 }
 
 const DirectX::XMMATRIX& Mesh::GetTransformMatrix()
@@ -91,14 +144,14 @@ bool Mesh::buildCube(float size)
 
 	calcNormals();
 
-	HRESULT hr = vertexBuffer.Initialize(this->device, vertices.get(), 8);
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), 8);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "vertex buffer");
 
 	}
 	// ARRAYSIZE(i)
-	hr = indexBuffer.Initialize(this->device, tris.get(), 36);
+	hr = indexBuffer.Initialize(device, tris.get(), 36);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "index buffer");
@@ -169,20 +222,97 @@ bool Mesh::buildPlane(int xCount, int zCount)
 
 	calcNormals();
 	
-	HRESULT hr = vertexBuffer.Initialize(this->device, vertices.get(), vertCount);
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "vertex buffer");
 
 	}
 	// ARRAYSIZE(i)
-	hr = indexBuffer.Initialize(this->device, tris.get(), triCount);
+	hr = indexBuffer.Initialize(device, tris.get(), triCount);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "index buffer");
 
 	}
 	
+	return true;
+}
+
+
+bool Mesh::wave(int xCount, int zCount, float step)
+{
+	float time = timer.GetMilisecondsElapsed();
+	timer.Restart();
+	t += time;
+
+	std::unique_ptr<float[]> xAxis = std::make_unique<float[]>(xCount);
+	std::unique_ptr<float[]> zAxis = std::make_unique<float[]>(xCount);
+	float xLim = 12.0;
+	float yLim = 12.0;
+
+	for (int i = 0; i < xCount; i++)
+	{
+		xAxis[i] = i * step;
+	}
+	for (int i = 0; i < zCount; i++)
+	{
+		zAxis[i] = i * step;
+	}
+	double pi = 3.1415926535;
+	int vInd = 0;
+	for (int i = 0; i < xCount; i++)
+	{
+		for (int j = 0; j < zCount; j++)
+		{
+			this->vertices[vInd].assign(xAxis[i], .75 * cos( (xAxis[i] * pi / 2 * 2) + (.001 * t)) + .5 * sin(zAxis[j] * pi / 2 + (.001 * t)) , zAxis[j]);
+			// * .25 * sin(zAxis[j] * pi / 2 
+			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
+			vInd++;
+		}
+	}
+
+	int tInd = 0;
+	for (int i = 0; i < xCount - 1; i++)
+	{
+		for (int j = 0; j < zCount - 1; j++)
+		{
+			tris[tInd] = (i * zCount) + j;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + 1;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + zCount;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + 1;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + zCount + 1;
+			tInd++;
+
+			tris[tInd] = (i * zCount) + j + zCount;
+			tInd++;
+		}
+	}
+
+	calcNormals();
+
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(device, tris.get(), triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
 	return true;
 }
 

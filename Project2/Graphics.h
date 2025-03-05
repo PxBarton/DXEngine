@@ -12,7 +12,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include <cmath>
-
+#include <WICTextureLoader.h>
 //#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
 //#pragma comment(lib,"DXGI.lib")
@@ -33,6 +33,7 @@ public:
 	Camera camera;
 	std::unique_ptr<Mesh> plane = nullptr;
 	std::unique_ptr<Mesh> cube = nullptr;
+	std::unique_ptr<Mesh> animatedPlane = nullptr;
 
 private:
 	int width = 0;
@@ -52,6 +53,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;
 
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
 
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indicesBuffer;

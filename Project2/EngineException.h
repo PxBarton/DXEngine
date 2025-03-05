@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include "COMException.h"
+#include "Utilities.h"
 
 class EngineException : public std::exception
 {

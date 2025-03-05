@@ -12,6 +12,7 @@ struct PS_INPUT
 {
 	float4 inPosition : SV_POSITION;
 	float3 inColor : COLOR;
+	//float3 inTex : TEXCOORD;
 	nointerpolation float3 inNormal : NORMAL;
 	//float3 inNormal : NORMAL;
 	float3 inWorldPos : WORLD_POSITION;
@@ -25,6 +26,9 @@ float GridPattern(float2 position, float lineWidth, float cellSize)
 	float minDist = min(gridDist.x, gridDist.y);
 	return smoothstep(0.0, lineWidth, minDist);
 }
+
+//Texture2D meshTex : TEXTURE: register(t0);
+//SamplerState meshSamplerState: SAMPLER: register(s0);
 
 float4 main(PS_INPUT input) : SV_TARGET
 {

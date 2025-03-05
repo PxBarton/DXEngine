@@ -7,7 +7,7 @@
 
 #include <string>
 #include <SDKDDKVer.h>
-
+//#include "Utilities.h"
 
 class EngineWindow
 {
@@ -45,6 +45,7 @@ private:
 	HINSTANCE hInst = nullptr;
 	HWND hWnd = nullptr;
 	Keyboard keyboard;
+	Timer timer;
 	
 	static LRESULT CALLBACK MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK MsgHelper(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

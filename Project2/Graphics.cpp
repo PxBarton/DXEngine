@@ -149,6 +149,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		DirectX::XMMATRIX planeTransform = DirectX::XMMatrixIdentity();
 		plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
 		cube = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
+		animatedPlane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
 		// setup for Plane geometry
 		const int planePointsX = 80;
 		const int planePointsZ = 80;
@@ -157,11 +158,22 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		// the number of total indices in the triangle array, triangles * 3
 		const int planeTriCount = (planePointsX - 1) * (planePointsZ - 1) * 2 * 3;
 		
+		const int wavePointsX = 40;
+		const int wavePointsZ = 40;
+		const int waveVertCount = wavePointsX * wavePointsZ;
+
+		// the number of total indices in the triangle array, triangles * 3
+		const int waveTriCount = (wavePointsX - 1) * (wavePointsZ - 1) * 2 * 3;
+
+
 		DWORD planeTris[planeTriCount];
+		DWORD waveTris[waveTriCount];
 		DWORD cubeTris[36];
 
-		plane->initMeshBuilder(planeVertCount, planeTriCount);
-		cube->initMeshBuilder(8, 36);
+		plane->initMesh(planeVertCount, planeTriCount);
+		animatedPlane->initMesh(waveVertCount, waveTriCount);
+		cube->initMesh(8, 36);
+
 		if (!plane->buildPlane(planePointsX, planePointsZ))
 		{
 			EngineException::Log("scene fuckup");
@@ -182,6 +194,23 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		if (FAILED(hr))
 		{
 			EngineException::Log(hr, "rasterizer state.");
+			return false;
+		}
+
+		//Create sampler description for sampler state
+		D3D11_SAMPLER_DESC sampDesc;
+		ZeroMemory(&sampDesc, sizeof(sampDesc));
+		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		sampDesc.MinLOD = 0;
+		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		hr = this->deviceP->CreateSamplerState(&sampDesc, this->samplerState.GetAddressOf()); //Create sampler state
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "Failed to create sampler state.");
 			return false;
 		}
 
@@ -269,6 +298,7 @@ bool Graphics::InitScene()
 		return false;
 	}
 
+	hr = DirectX::CreateWICTextureFromFile(deviceP.Get(), L"Resource Files\\tex7.png", nullptr, texture.GetAddressOf());
 	
 	return true;
 }
@@ -313,8 +343,15 @@ void Graphics::RenderFrame()
 	deviceContextP->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
 
 	
-	plane->Draw(world, camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	cube->Draw(world, camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//plane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	
+	//cube->rotate(0.0f, 0.001f, 0.001f);
+	//cube->translate(1.0f, 0.0f, 3.0f);
+	//cube->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+
+	animatedPlane->wave(20, 20, 0.25);
+	animatedPlane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+
 	swapchainP->Present(1u, NULL);
 
 
