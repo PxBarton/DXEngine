@@ -135,7 +135,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 		float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 		DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
-		camera.SetPosition(2.0f, 1.5f, -3.0f);
+		camera.SetPosition(2.0f, 8.0f, -16.0f);
 		//camera.SetLookAtPos(eye);
 		camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 
@@ -151,33 +151,47 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		cube = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
 		animatedPlane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
 		// setup for Plane geometry
-		const int planePointsX = 80;
-		const int planePointsZ = 80;
-		const int planeVertCount = planePointsX * planePointsZ;
+		//const int planePointsX = 80;
+		//const int planePointsZ = 80;
+		//const int planeVertCount = planePointsX * planePointsZ;
+
+		const float xLimit1 = -16.0f;
+		const float xLimit2 = 16.0f;
+		const float zLimit1 = -16.0f;
+		const float zLimit2 = 16.0f;
+		const int numPoints = 400;
+
+		const int planeVertCount = numPoints * numPoints;
 
 		// the number of total indices in the triangle array, triangles * 3
-		const int planeTriCount = (planePointsX - 1) * (planePointsZ - 1) * 2 * 3;
+		const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
 		
-		const int wavePointsX = 40;
-		const int wavePointsZ = 40;
+		const int wavePointsX = 200;
+		const int wavePointsZ = 200;
 		const int waveVertCount = wavePointsX * wavePointsZ;
 
 		// the number of total indices in the triangle array, triangles * 3
 		const int waveTriCount = (wavePointsX - 1) * (wavePointsZ - 1) * 2 * 3;
 
 
-		DWORD planeTris[planeTriCount];
-		DWORD waveTris[waveTriCount];
+		//DWORD planeTris[planeTriCount];
+
+		std::unique_ptr<DWORD[]> planeTris = std::make_unique<DWORD[]>(planeTriCount);
+
+		//DWORD waveTris[waveTriCount];
+		std::unique_ptr<DWORD[]> waveTris = std::make_unique<DWORD[]>(waveTriCount);
+
 		DWORD cubeTris[36];
 
 		plane->initMesh(planeVertCount, planeTriCount);
 		animatedPlane->initMesh(waveVertCount, waveTriCount);
 		cube->initMesh(8, 36);
 
-		if (!plane->buildPlane(planePointsX, planePointsZ))
-		{
-			EngineException::Log("scene fuckup");
-		}
+		//if (!plane->buildPlane(planePointsX, planePointsZ))
+		//if (!plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints))
+		//{
+		//	EngineException::Log("scene fuckup");
+		//}
 		if (!cube->buildCube(2.0f))
 		{
 			EngineException::Log("scene fuckup");
@@ -239,7 +253,13 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		return false;
 	}
 
-	
+	//Setup ImGui
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(this->deviceP.Get(), this->deviceContextP.Get());
+	ImGui::StyleColorsDark();
 
 	return true;
 }
@@ -342,15 +362,45 @@ void Graphics::RenderFrame()
 	}
 	deviceContextP->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
 
-	
-	//plane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	const float xLimit1 = -16.0f;
+	const float xLimit2 = 16.0f;
+	const float zLimit1 = -16.0f;
+	const float zLimit2 = 16.0f;
+	const int numPoints = 400;
+	static float param1[3] = { 0.0f, 0.0f, 0.0f };
+	const int planeVertCount = numPoints * numPoints;
+
+	// the number of total indices in the triangle array, triangles * 3
+	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
+
+	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, param1[0]);
+	plane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	
 	//cube->rotate(0.0f, 0.001f, 0.001f);
 	//cube->translate(1.0f, 0.0f, 3.0f);
 	//cube->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
-	animatedPlane->wave(20, 20, 0.25);
-	animatedPlane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//animatedPlane->wave(200, 200, 0.1);
+	//animatedPlane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+
+	// Start the Dear ImGui frame
+	static int counter = 0;
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	//Create ImGui Test Window
+	ImGui::Begin("Test");
+	if (ImGui::Button("Suck Me"))
+		counter += 1;
+	std::string clicks = "Sucks: " + std::to_string(counter);
+	//ImGui::Text(clicks.c_str());
+	ImGui::DragFloat3("Parameter 1", param1, 0.05f, -2.0f, 2.0f);
+	//ImGui::ShowDemoWindow();
+	ImGui::End();
+	//Assemble Together Draw Data
+	ImGui::Render();
+	//Render Draw Data
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	swapchainP->Present(1u, NULL);
 

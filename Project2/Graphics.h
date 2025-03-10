@@ -3,7 +3,11 @@
 #include "MinimalWin.h"
 //#include <Windows.h>
 
+#include <vector> 
+#include <array>
+#include <iostream>
 #include <algorithm>
+
 #include "EngineException.h"
 #include "Shaders.h"
 #include "AdapterInfo.h"
@@ -17,9 +21,10 @@
 //#pragma comment(lib,"DirectXTK.lib")
 //#pragma comment(lib,"DXGI.lib")
 //#include <wrl/client.h>
-#include <vector> 
-#include <array>
-#include <iostream>
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
 
 class Graphics
 {

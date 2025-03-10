@@ -189,8 +189,8 @@ bool Mesh::buildPlane(int xCount, int zCount)
 	{
 		for (int j = 0; j < zCount; j++)
 		{
-			this->vertices[vInd].assign(xAxis[i], .25 * cos(xAxis[i] * pi / 2) * .25 * sin(zAxis[j] * pi / 2) + .25 * cos(xAxis[i] * zAxis[j]), zAxis[j] * pi / 2);
-			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
+			//this->vertices[vInd].assign(xAxis[i], .25 * cos(xAxis[i] / 4 * pi / 2) * .25 * sin(zAxis[j] * pi / 2) + .25 * cos(xAxis[i] * zAxis[j]), zAxis[j] * pi / 2);
+			vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
 			vInd++;
 		}
 	}
@@ -240,6 +240,89 @@ bool Mesh::buildPlane(int xCount, int zCount)
 }
 
 
+bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1)
+{
+
+	std::unique_ptr<float[]> xAxis = std::make_unique<float[]>(numPoints);
+	std::unique_ptr<float[]> zAxis = std::make_unique<float[]>(numPoints);
+	
+	float xStep = (xLim2 - xLim1) / numPoints;
+	float zStep = (zLim2 - zLim1) / numPoints;
+
+
+	for (int i = 0; i < numPoints; i++)
+	{
+		xAxis[i] = xLim1 + i * xStep;
+	}
+	for (int i = 0; i < numPoints; i++)
+	{
+		zAxis[i] = zLim1 + i * zStep;
+	}
+	double pi = 3.1415926535;
+	int vInd = 0;
+	for (int i = 0; i < numPoints; i++)
+	{
+		for (int j = 0; j < numPoints; j++)
+		{
+			//this->vertices[vInd].assign(xAxis[i], .25 * cos(xAxis[i] / 4 * pi / 2) * .25 * sin(zAxis[j] * pi / 2) + .25 * cos(xAxis[i] * zAxis[j]), zAxis[j] * pi / 2);
+
+			vertices[vInd].assign(xAxis[i], param1 * 2 * cos(xAxis[i] * pi / 8) * sin(zAxis[j] * pi / 8), zAxis[j]);
+
+			//vertices[vInd].assign(xAxis[i], 2 * (cos(2 * xAxis[i] * pi / 2) + cos( 2 * zAxis[j] * pi / 2 )) * (exp(-abs(.3 * xAxis[i])) * exp(-abs(.3 * zAxis[j]))), zAxis[j]);
+
+			//vertices[vInd].assign(xAxis[i], exp(-abs(xAxis[i])) * exp(-abs(zAxis[j])), zAxis[j]);
+
+			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
+
+			vInd++;
+		}
+	}
+
+	int tInd = 0;
+	for (int i = 0; i < numPoints - 1; i++)
+	{
+		for (int j = 0; j < numPoints - 1; j++)
+		{
+			tris[tInd] = (i * numPoints) + j;
+			tInd++;
+
+			tris[tInd] = (i * numPoints) + j + 1;
+			tInd++;
+
+			tris[tInd] = (i * numPoints) + j + numPoints;
+			tInd++;
+
+			tris[tInd] = (i * numPoints) + j + 1;
+			tInd++;
+
+			tris[tInd] = (i * numPoints) + j + numPoints + 1;
+			tInd++;
+
+			tris[tInd] = (i * numPoints) + j + numPoints;
+			tInd++;
+		}
+	}
+
+	calcNormals();
+
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(device, tris.get(), triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
+	return true;
+}
+
+
 bool Mesh::wave(int xCount, int zCount, float step)
 {
 	float time = timer.GetMilisecondsElapsed();
@@ -265,7 +348,7 @@ bool Mesh::wave(int xCount, int zCount, float step)
 	{
 		for (int j = 0; j < zCount; j++)
 		{
-			this->vertices[vInd].assign(xAxis[i], .75 * cos( (xAxis[i] * pi / 2 * 2) + (.001 * t)) + .5 * sin(zAxis[j] * pi / 2 + (.001 * t)) , zAxis[j]);
+			this->vertices[vInd].assign(xAxis[i], .5 * cos( xCount / 4 + (.0005 * t)) * (.15 * sin(zAxis[j] * pi / 2 + (.001 * t)))  + (.3 * sin(xAxis[i] * 2.5 * zAxis[j] + (.001 * t)) ), zAxis[j]);
 			// * .25 * sin(zAxis[j] * pi / 2 
 			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
 			vInd++;

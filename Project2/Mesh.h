@@ -25,6 +25,7 @@ public:
 	const XMMATRIX& GetTransformMatrix();
 
 	bool buildCube(float size);
+	bool buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1);
 	bool buildPlane(int xCount, int zCount);
 	bool wave(int xCount, int zCount, float step);
 	std::vector<XMFLOAT3> triNormals{};

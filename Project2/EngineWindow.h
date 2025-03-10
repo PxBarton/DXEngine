@@ -3,6 +3,7 @@
 #include "MinimalWin.h"
 //#include <Windows.h>
 #include "Keyboard.h"
+#include "Mouse.h"
 #include "Graphics.h"
 
 #include <string>
@@ -45,11 +46,12 @@ private:
 	HINSTANCE hInst = nullptr;
 	HWND hWnd = nullptr;
 	Keyboard keyboard;
+	Mouse mouse;
 	Timer timer;
 	
-	static LRESULT CALLBACK MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	static LRESULT CALLBACK MsgHelper(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	LRESULT CALLBACK HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT MsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT MsgHelper(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
 
