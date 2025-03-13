@@ -63,7 +63,7 @@ void Mesh::rotate(float x, float y, float z)
 	setRotation(x * time, y * time, z * time);
 }
 
-void Mesh::Draw(const DirectX::XMMATRIX& viewProjectionMatrix)
+void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
 {
 	
 	
@@ -87,7 +87,7 @@ void Mesh::setWorldMatrix()
 	worldMatrix = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) * XMMatrixTranslation(position.x, position.y, position.z);
 }
 
-const DirectX::XMMATRIX& Mesh::GetTransformMatrix()
+const DirectX::XMMATRIX& Mesh::getTransformMatrix()
 {
 	return this->transformMatrix;
 }
@@ -240,7 +240,7 @@ bool Mesh::buildPlane(int xCount, int zCount)
 }
 
 
-bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1)
+bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1, float param2, float param3)
 {
 
 	std::unique_ptr<float[]> xAxis = std::make_unique<float[]>(numPoints);
@@ -266,11 +266,13 @@ bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int nu
 		{
 			//this->vertices[vInd].assign(xAxis[i], .25 * cos(xAxis[i] / 4 * pi / 2) * .25 * sin(zAxis[j] * pi / 2) + .25 * cos(xAxis[i] * zAxis[j]), zAxis[j] * pi / 2);
 
-			vertices[vInd].assign(xAxis[i], param1 * 2 * cos(xAxis[i] * pi / 8) * sin(zAxis[j] * pi / 8), zAxis[j]);
+			//vertices[vInd].assign(xAxis[i], param1 * 2 * cos(xAxis[i] * pi / 8) * sin(zAxis[j] * pi / 8 * param2), zAxis[j]);
 
 			//vertices[vInd].assign(xAxis[i], 2 * (cos(2 * xAxis[i] * pi / 2) + cos( 2 * zAxis[j] * pi / 2 )) * (exp(-abs(.3 * xAxis[i])) * exp(-abs(.3 * zAxis[j]))), zAxis[j]);
 
 			//vertices[vInd].assign(xAxis[i], exp(-abs(xAxis[i])) * exp(-abs(zAxis[j])), zAxis[j]);
+
+			vertices[vInd].assign(xAxis[i], 2 * param1 * (cos(2 * param2 * xAxis[i] * pi / 2) + cos(2 * zAxis[j] * pi / 2)) * (exp(-abs(.3 * param3 * xAxis[i])) * exp(-abs(.3 * zAxis[j]))), zAxis[j]);
 
 			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
 
@@ -323,7 +325,7 @@ bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int nu
 }
 
 
-bool Mesh::wave(int xCount, int zCount, float step)
+bool Mesh::buildWave(int xCount, int zCount, float step)
 {
 	float time = timer.GetMilisecondsElapsed();
 	timer.Restart();
@@ -378,6 +380,182 @@ bool Mesh::wave(int xCount, int zCount, float step)
 			tris[tInd] = (i * zCount) + j + zCount;
 			tInd++;
 		}
+	}
+
+	calcNormals();
+
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(device, tris.get(), triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
+	return true;
+}
+
+
+bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs)
+{
+	float hSlice = height / (hDivs + 1);    // 0 divs: divide by 1, not zero
+	float dRadius = (topRadius - baseRadius) / (hDivs + 1);    // negative if radius grows smaller toward top
+
+	// hDiv = 1 indicates a cylinder divided in half, so 1 + 2 for the base and the top rings = 3 rings
+	int ringCount = hDivs + 2;
+	int vInd = 0;
+	for (int i = 0; i < ringCount; i++)
+	{
+		float y = i * hSlice;
+		float r = baseRadius + i * dRadius;
+		float dTheta = 2.0 * XM_PI / rDivs;
+
+		for (int j = 1; j <= rDivs; j++)
+		{
+			float c = cos(j * dTheta);
+			float s = sin(j * dTheta);
+
+			this->vertices[vInd].assign(r * c, y, r * s);
+			vInd++;
+		}
+	}
+
+	int tInd = 0;
+	for (int i = 0; i < (hDivs + 1); i++)
+	{
+
+		for (int j = 0; j < (rDivs - 1); j++)
+		{
+			tris[tInd] = i * rDivs + (j + 1);  // 1
+			tInd++;
+
+			tris[tInd] = i * rDivs + j;  // 0
+			tInd++;
+
+			tris[tInd] = (i + 1) * rDivs + (j + 1);  // 5
+			tInd++;
+
+			tris[tInd] = (i + 1) * rDivs + (j + 1);  // 5
+			tInd++;
+
+			tris[tInd] = i * rDivs + j;  // 0
+			tInd++;
+
+			tris[tInd] = (i + 1) * rDivs + j;  // 4
+			tInd++;
+		}
+
+		tris[tInd] = (i + 1) * rDivs - rDivs;  // 1
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs - 1;  // 0
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs;  // 5
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs;  // 5
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs - 1;  // 0
+		tInd++;
+
+		tris[tInd] = (i + 2) * rDivs - 1;  // 4
+		tInd++;
+	}
+
+	calcNormals();
+
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(device, tris.get(), triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
+	return true;
+}
+
+
+bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3)
+{
+	float hSlice = height / (hDivs + 1);    // 0 divs: divide by 1, not zero
+	float dRadius = (topRadius - baseRadius) / (hDivs + 1);    // negative if radius grows smaller toward top
+
+	// hDiv = 1 indicates a cylinder divided in half, so 1 + 2 for the base and the top rings = 3 rings
+	int ringCount = hDivs + 2;
+	int vInd = 0;
+	for (int i = 0; i < ringCount; i++)
+	{
+		float y = i * hSlice;
+		float r = baseRadius + i * dRadius + (param1 * cos(param2 * i * XM_PI / 2) + param3 * sin(i * XM_PI / 16));
+		float dTheta = 2.0 * XM_PI / rDivs;
+
+		for (int j = 1; j <= rDivs; j++)
+		{
+			float c = cos(j * dTheta);
+			float s = sin(j * dTheta);
+
+			this->vertices[vInd].assign(r * c, y, r * s);
+			vInd++;
+		}
+	}
+
+	int tInd = 0;
+	for (int i = 0; i < (hDivs + 1); i++)
+	{
+
+		for (int j = 0; j < (rDivs - 1); j++)
+		{
+			tris[tInd] = i * rDivs + (j + 1);  // 1
+			tInd++;
+
+			tris[tInd] = i * rDivs + j;  // 0
+			tInd++;
+
+			tris[tInd] = (i + 1) * rDivs + (j + 1);  // 5
+			tInd++;
+
+			tris[tInd] = (i + 1) * rDivs + (j + 1);  // 5
+			tInd++;
+
+			tris[tInd] = i * rDivs + j;  // 0
+			tInd++;
+
+			tris[tInd] = (i + 1) * rDivs + j;  // 4
+			tInd++;
+		}
+
+		tris[tInd] = (i + 1) * rDivs - rDivs;  // 1
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs - 1;  // 0
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs;  // 5
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs;  // 5
+		tInd++;
+
+		tris[tInd] = (i + 1) * rDivs - 1;  // 0
+		tInd++;
+
+		tris[tInd] = (i + 2) * rDivs - 1;  // 4
+		tInd++;
 	}
 
 	calcNormals();

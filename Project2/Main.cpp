@@ -8,7 +8,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 {
     try
     {
-        EngineWindow wind(1000, 800, "trash");
+        EngineWindow wind(1200, 900, "trash");
         if (wind.InitGfx()) {
             while (wind.MessageProc() == true)
             {

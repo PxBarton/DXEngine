@@ -39,6 +39,7 @@ public:
 	std::unique_ptr<Mesh> plane = nullptr;
 	std::unique_ptr<Mesh> cube = nullptr;
 	std::unique_ptr<Mesh> animatedPlane = nullptr;
+	std::unique_ptr<Mesh> cylinder = nullptr;
 
 private:
 	int width = 0;

@@ -15,30 +15,22 @@ public:
 
 	std::unique_ptr<Vertex[]> vertices = nullptr;
 	std::unique_ptr<DWORD[]> tris = nullptr;
+	std::vector<XMFLOAT3> triNormals{};
 	int vertCount = 0;
 	int triCount = 0;
 	int t = 0;
 	
-	void translate(float x, float y, float z);
-	void rotate(float x, float y, float z);
-	void Draw(const XMMATRIX& viewProjectionMatrix);
-	const XMMATRIX& GetTransformMatrix();
-
-	bool buildCube(float size);
-	bool buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1);
-	bool buildPlane(int xCount, int zCount);
-	bool wave(int xCount, int zCount, float step);
-	std::vector<XMFLOAT3> triNormals{};
-
 	//DirectX::XMFLOAT3 triNormal(Vertex& A, Vertex& B, Vertex& C);
-	// XMVECTOR version
 	XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
 
 	bool calcNormals(Vertex verts[], DWORD tris[], int size, int numV);
-	// overload
 	bool calcNormals();
-	// XMVECTOR version
 	void calcNormalsV(Vertex verts[], DWORD tris[]);
+
+	void initRotation(float x, float y, float z);
+	void setRotation(float x, float y, float z);
+	void initPosition(float x, float y, float z);
+	void setPosition(float x, float y, float z);
 
 	void initMesh(int vertCount, int triCount)
 	{
@@ -48,13 +40,19 @@ public:
 		this->triCount = triCount;
 	}
 
-	void initRotation(float x, float y, float z);
-	void setRotation(float x, float y, float z);
-	void initPosition(float x, float y, float z);
-	void setPosition(float x, float y, float z);
+	bool buildCube(float size);
+	bool buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1, float param2, float param3);
+	bool buildPlane(int xCount, int zCount);
+	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs);
+	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3);
+	bool buildWave(int xCount, int zCount, float step);
 
+	const XMMATRIX& getTransformMatrix();
 	void setWorldMatrix();
-
+	void translate(float x, float y, float z);
+	void rotate(float x, float y, float z);
+	void draw(const XMMATRIX& viewProjectionMatrix);
+	
 private:
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indexBuffer;

@@ -146,10 +146,12 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		// Set up mesh geometry
 		//////////////
 	
-		DirectX::XMMATRIX planeTransform = DirectX::XMMatrixIdentity();
-		plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
-		cube = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
-		animatedPlane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), planeTransform, cb_vert);
+		DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
+		plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
+		cube = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
+		animatedPlane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
+		cylinder = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
+
 		// setup for Plane geometry
 		//const int planePointsX = 80;
 		//const int planePointsZ = 80;
@@ -196,6 +198,18 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		{
 			EngineException::Log("scene fuckup");
 		}
+		
+		float h = 12.0f;
+		float bRad = 5.0f;
+		float tRad = 5.0f;
+		int hDiv = 100;
+		int rDiv = 20;
+
+		int cylinderVertCount = (hDiv + 2) * (rDiv);
+		int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
+		cylinder->initMesh(cylinderVertCount, cylinderTriCount);
+		//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	
 		
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -333,7 +347,7 @@ void Graphics::RenderFrame()
 	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
 	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
-	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContextP->RSSetState(rasterizerState.Get());
 	deviceContextP->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
 	
@@ -352,10 +366,10 @@ void Graphics::RenderFrame()
 	
 
 	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
-	cb_light.data.ambientStrength = .2f;
+	cb_light.data.ambientStrength = .5f;
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	cb_light.data.lightStrength = 1.0f;
-	cb_light.data.lightPosition = XMFLOAT3(6.0f, 4.0f, 0.0f);
+	cb_light.data.lightPosition = XMFLOAT3(8.0f, 12.0f, -4.0f);
 	if (!cb_light.ApplyChanges())
 	{
 		return;
@@ -367,21 +381,31 @@ void Graphics::RenderFrame()
 	const float zLimit1 = -16.0f;
 	const float zLimit2 = 16.0f;
 	const int numPoints = 400;
-	static float param1[3] = { 0.0f, 0.0f, 0.0f };
+	static float paramSet[3] = { 0.0f, 0.0f, 0.0f };
 	const int planeVertCount = numPoints * numPoints;
 
 	// the number of total indices in the triangle array, triangles * 3
-	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
+	//const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
 
-	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, param1[0]);
-	plane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
+	//plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	
 	//cube->rotate(0.0f, 0.001f, 0.001f);
 	//cube->translate(1.0f, 0.0f, 3.0f);
-	//cube->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cube->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
-	//animatedPlane->wave(200, 200, 0.1);
-	//animatedPlane->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//animatedPlane->buildWave(200, 200, 0.1);
+	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	// 
+	
+	float h = 15.0f;
+	float bRad = 3.0f;
+	float tRad = 3.0f;
+	int hDiv = 100;
+	int rDiv = 20;
+	//cylinder->rotate(0.0f, 0.001f, 0.000f);
+	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2]);
+	cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
@@ -393,8 +417,26 @@ void Graphics::RenderFrame()
 	if (ImGui::Button("Suck Me"))
 		counter += 1;
 	std::string clicks = "Sucks: " + std::to_string(counter);
-	//ImGui::Text(clicks.c_str());
-	ImGui::DragFloat3("Parameter 1", param1, 0.05f, -2.0f, 2.0f);
+	ImGui::Text(clicks.c_str());
+	ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
+	ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
+	/*
+	for (int i = 0; i < cylinder->vertCount; i++)
+	{
+		ImGui::Text(std::to_string(cylinder->vertices[i].pos.x).c_str());
+		ImGui::Text(std::to_string(cylinder->vertices[i].pos.y).c_str());
+		ImGui::Text(std::to_string(cylinder->vertices[i].pos.z).c_str());
+		ImGui::Text("      ");
+	}
+	*/
+	ImGui::Text(("tris: " + std::to_string(cylinder->triCount)).c_str());
+	/*
+	for (int i = 0; i < cylinder->triCount; i+=3)
+	{
+		ImGui::Text( (std::to_string(cylinder->tris[i]) + " " + std::to_string(cylinder->tris[i+1]) + " " + std::to_string(cylinder->tris[i+2])).c_str());
+	}
+	*/
+	ImGui::Text(clicks.c_str());
 	//ImGui::ShowDemoWindow();
 	ImGui::End();
 	//Assemble Together Draw Data
@@ -431,108 +473,7 @@ void Graphics::RenderFrame()
 	//deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
 
 
-/*
-bool Graphics::buildShape()
-{
-	
-	Vertex vertList[] =
-	{
-		//Vertex(0.0f, 0.0f), //Center
-		Vertex(0.0f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f), //bottom
-		Vertex(-0.5f, -0.3f, 0.0f, 1.0f, 0.0f, 1.0f), //bottom
-		Vertex(-0.2f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f), //Left 
-		Vertex(0.2f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f), //Right 
-		Vertex(0.5f, -0.3f, 0.0f, 1.0f, 1.0f, 0.0f), //bottom
-	};
 
-	// DWORD alias for unsigned long
-	DWORD indexList[] =
-	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 3, 4
-	};
-
-	// 3 axis
-	Vertex vertList2[] =
-	{
-		Vertex(-10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
-		Vertex(10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
-		Vertex(0.0f, -10.0f, 0.0f, 0.0f, 1.0f, 0.0f),
-		Vertex(0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 0.0f),
-		Vertex(0.0f, 0.0f, -10.0f, 0.0f, 0.0f, 1.0f),
-		Vertex(0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f)
-	};
-
-	// x axis
-	DWORD indexList2[] =
-	{
-		0, 1, 2, 3, 4, 5
-
-	};
-
-	std::vector<Vertex> vertList3;
-	vertList3.push_back(Vertex(-10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
-	vertList3.push_back(Vertex(10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
-
-	std::vector<DWORD> indexList3;
-	indexList3.push_back(0);
-	indexList3.push_back(1);
-
-	// cube
-	Vertex vertList4[] =
-	{
-		Vertex(-1.f, -1.f, 1.f, 1.f, 1.f, 1.f),
-		Vertex(-1.f, -1.f, -1.f, 1.f, 1.f, 1.f),
-		Vertex(1.f, -1.f, -1.f, 1.f, 1.f, 1.f),
-		Vertex(1.f, -1.f, 1.f, 1.f, 1.f, 1.f),
-		Vertex(-1.f, 1.f, 1.f, 1.f, 1.f, 1.f),
-		Vertex(-1.f, 1.f, -1.f, 1.f, 1.f, 1.f),
-		Vertex(1.f, 1.f, -1.f, 1.f, 1.f, 1.f),
-		Vertex(1.f, 1.f, 1.f, 1.f, 1.f, 1.f)
-	};
-
-	DWORD triList4[] =
-	{
-		// sides
-		0, 3, 4,
-		4, 3, 7,
-
-		3, 2, 7,
-		7, 2, 6,
-
-		2, 1, 6,
-		6, 1, 5,
-
-		1, 0, 5,
-		5, 0, 4,
-
-		// bottom
-		0, 1, 3,
-		3, 1, 2,
-
-		// top
-		4, 7, 5,
-		5, 7, 6
-
-
-	};
-
-	//DirectX::XMFLOAT3 triNorm1 = triNormal(vertList4[0], vertList4[3], vertList4[4]);
-
-	//calcNormals(vertList4, triList4, sizeof(triList4));
-	//calcNormalsV(vertList4, triList4);
-
-	// This needs to be changed
-	//InitScene(vertList4, triList4, ARRAYSIZE(vertList4), ARRAYSIZE(triList4));
-
-	//InitScene(vertList3, indexList3, vertList3.size(), indexList3.size());
-	
-	
-	return true;
-}
-
-*/
 
 /*
 int main() {
