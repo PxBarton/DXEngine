@@ -131,7 +131,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		/////////////
 		// Camera
 		/////////////
-		float fovDeg = 90.0f;
+		float fovDeg = 60.0f;
 		float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 		float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 		DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
@@ -199,11 +199,11 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			EngineException::Log("scene fuckup");
 		}
 		
-		float h = 12.0f;
-		float bRad = 5.0f;
-		float tRad = 5.0f;
+		//float h = 12.0f;
+		//float bRad = 5.0f;
+		//float tRad = 5.0f;
 		int hDiv = 100;
-		int rDiv = 20;
+		int rDiv = 128;
 
 		int cylinderVertCount = (hDiv + 2) * (rDiv);
 		int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
@@ -382,6 +382,7 @@ void Graphics::RenderFrame()
 	const float zLimit2 = 16.0f;
 	const int numPoints = 400;
 	static float paramSet[3] = { 0.0f, 0.0f, 0.0f };
+	static float paramSet2[3] = { 1.0f, 1.0f, 1.0f };
 	const int planeVertCount = numPoints * numPoints;
 
 	// the number of total indices in the triangle array, triangles * 3
@@ -402,9 +403,9 @@ void Graphics::RenderFrame()
 	float bRad = 3.0f;
 	float tRad = 3.0f;
 	int hDiv = 100;
-	int rDiv = 20;
+	int rDiv = 128;
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
-	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2]);
+	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
 	cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	// Start the Dear ImGui frame
@@ -419,6 +420,7 @@ void Graphics::RenderFrame()
 	std::string clicks = "Sucks: " + std::to_string(counter);
 	ImGui::Text(clicks.c_str());
 	ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
+	ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
 	ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
 	/*
 	for (int i = 0; i < cylinder->vertCount; i++)

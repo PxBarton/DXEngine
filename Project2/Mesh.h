@@ -44,7 +44,7 @@ public:
 	bool buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1, float param2, float param3);
 	bool buildPlane(int xCount, int zCount);
 	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs);
-	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3);
+	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3, float param4);
 	bool buildWave(int xCount, int zCount, float step);
 
 	const XMMATRIX& getTransformMatrix();

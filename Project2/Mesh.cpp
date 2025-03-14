@@ -451,22 +451,22 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 			tInd++;
 		}
 
-		tris[tInd] = (i + 1) * rDivs - rDivs;  // 1
+		tris[tInd] = (i + 1) * rDivs - rDivs;  // 0
 		tInd++;
 
-		tris[tInd] = (i + 1) * rDivs - 1;  // 0
+		tris[tInd] = (i + 1) * rDivs - 1;  // 3
 		tInd++;
 
-		tris[tInd] = (i + 1) * rDivs;  // 5
+		tris[tInd] = (i + 1) * rDivs;  // 4
 		tInd++;
 
-		tris[tInd] = (i + 1) * rDivs;  // 5
+		tris[tInd] = (i + 1) * rDivs;  // 4
 		tInd++;
 
-		tris[tInd] = (i + 1) * rDivs - 1;  // 0
+		tris[tInd] = (i + 1) * rDivs - 1;  // 3
 		tInd++;
 
-		tris[tInd] = (i + 2) * rDivs - 1;  // 4
+		tris[tInd] = (i + 2) * rDivs - 1;  // 7
 		tInd++;
 	}
 
@@ -490,7 +490,7 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 }
 
 
-bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3)
+bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3, float param4)
 {
 	float hSlice = height / (hDivs + 1);    // 0 divs: divide by 1, not zero
 	float dRadius = (topRadius - baseRadius) / (hDivs + 1);    // negative if radius grows smaller toward top
@@ -501,7 +501,8 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 	for (int i = 0; i < ringCount; i++)
 	{
 		float y = i * hSlice;
-		float r = baseRadius + i * dRadius + (param1 * cos(param2 * i * XM_PI / 2) + param3 * sin(i * XM_PI / 16));
+		//float r = baseRadius + i * dRadius + (param1 * cos(param2 * i * XM_PI / 2) + param3 * sin(i * XM_PI / 16));
+		float r = baseRadius + i * dRadius + (param1 * cos(param2 * i * XM_PI / 16));
 		float dTheta = 2.0 * XM_PI / rDivs;
 
 		for (int j = 1; j <= rDivs; j++)
@@ -509,6 +510,7 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 			float c = cos(j * dTheta);
 			float s = sin(j * dTheta);
 
+			r = r + (param3 * sin(j * XM_PI/(4 * param4)));
 			this->vertices[vInd].assign(r * c, y, r * s);
 			vInd++;
 		}
