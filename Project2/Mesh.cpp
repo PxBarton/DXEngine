@@ -14,7 +14,48 @@ Mesh::Mesh(
 	//this->textures = textures;
 }
 
-//Mesh::Mesh() {}
+Mesh::Mesh(const Mesh& rvMesh)
+{
+	this->vertCount = rvMesh.vertCount;
+	this->triCount = rvMesh.triCount;
+	this->vertices = std::make_unique<Vertex[]>(this->vertCount);
+	for (int i = 0; i < vertCount; i++)
+	{
+		this->vertices[i] = rvMesh.vertices[i];
+	}
+	this->tris = std::make_unique<DWORD[]>(this->triCount);
+	for (int i = 0; i < triCount; i++)
+	{
+		this->tris[i] = rvMesh.tris[i];
+	}
+	this->device = rvMesh.device;
+	this->deviceContext = rvMesh.deviceContext;
+	//vertexBuffer = rvMesh.vertexBuffer;
+	//indexBuffer = rvMesh.indexBuffer;
+	this->cb_vs_vertexshader = rvMesh.cb_vs_vertexshader;
+	
+	this->positionVec = rvMesh.positionVec;
+	this->rotationVec = rvMesh.rotationVec;
+	this->position = rvMesh.position;
+	this->rotation = rvMesh.rotation;
+	this->worldMatrix = rvMesh.worldMatrix;
+	this->transformMatrix = rvMesh.transformMatrix;
+
+	HRESULT hr = this->vertexBuffer.Initialize(device, vertices.get(), vertCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = this->indexBuffer.Initialize(device, tris.get(), triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
+}
 
 void Mesh::initPosition(float x, float y, float z)
 {
@@ -169,7 +210,7 @@ bool Mesh::buildPlane(int xCount, int zCount)
 {
 
 	std::unique_ptr<float[]> xAxis = std::make_unique<float[]>(xCount);
-	std::unique_ptr<float[]> zAxis = std::make_unique<float[]>(xCount);
+	std::unique_ptr<float[]> zAxis = std::make_unique<float[]>(zCount);
 	float xLim = 12.0;
 	float yLim = 12.0;
 	float step = .1;
@@ -510,7 +551,7 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 			float c = cos(j * dTheta);
 			float s = sin(j * dTheta);
 
-			r = r + (param3 * sin(j * XM_PI/(4 * param4)));
+			r = r + (param3 * sin(j * XM_PI/(8 * param4)));
 			this->vertices[vInd].assign(r * c, y, r * s);
 			vInd++;
 		}

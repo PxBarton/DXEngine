@@ -11,6 +11,9 @@ public:
 		ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader);
 
 	Mesh() {};
+
+	Mesh(const Mesh& rvMesh);
+
 	Timer timer;
 
 	std::unique_ptr<Vertex[]> vertices = nullptr;

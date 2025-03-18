@@ -52,16 +52,16 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 			0,
 			D3D11_SDK_VERSION,
 			&scd,
-			swapchainP.GetAddressOf(),
-			deviceP.GetAddressOf(),
+			swapchain.GetAddressOf(),
+			device.GetAddressOf(),
 			NULL,
-			deviceContextP.GetAddressOf());
+			deviceContext.GetAddressOf());
 
-		wrl::ComPtr<ID3D11Texture2D> backBufferP;
+		wrl::ComPtr<ID3D11Texture2D> backBuffer;
 
-		IF_COM_FAIL(swapchainP->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBufferP.GetAddressOf())), "get buffer");
+		IF_COM_FAIL(swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf())), "get buffer");
 
-		IF_COM_FAIL(deviceP->CreateRenderTargetView(backBufferP.Get(), nullptr, renderTargetViewP.GetAddressOf()), "create target");
+		IF_COM_FAIL(device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTargetView.GetAddressOf()), "create target");
 
 
 		//Describe our Depth/Stencil Buffer
@@ -78,21 +78,21 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		depthStencilDesc.CPUAccessFlags = 0;
 		depthStencilDesc.MiscFlags = 0;
 
-		HRESULT hr = deviceP->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
+		HRESULT hr = device->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
 		if (FAILED(hr)) //If error occurred
 		{
 			EngineException::Log(hr, "Failed to create depth stencil buffer.");
 			return false;
 		}
 
-		hr = deviceP->CreateDepthStencilView(this->depthStencilBuffer.Get(), NULL, this->depthStencilView.GetAddressOf());
+		hr = device->CreateDepthStencilView(this->depthStencilBuffer.Get(), NULL, this->depthStencilView.GetAddressOf());
 		if (FAILED(hr)) //If error occurred
 		{
 			EngineException::Log(hr, "Failed to create depth stencil view.");
 			return false;
 		}
 		
-		deviceContextP->OMSetRenderTargets(1, renderTargetViewP.GetAddressOf(), depthStencilView.Get());
+		deviceContext->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
 		//Create depth stencil state
 		D3D11_DEPTH_STENCIL_DESC depthstencildesc;
@@ -102,7 +102,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		depthstencildesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL;
 		depthstencildesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
 
-		hr = deviceP->CreateDepthStencilState(&depthstencildesc, this->depthStencilState.GetAddressOf());
+		hr = device->CreateDepthStencilState(&depthstencildesc, this->depthStencilState.GetAddressOf());
 		if (FAILED(hr))
 		{
 			EngineException::Log(hr, "Failed to create depth stencil state.");
@@ -119,7 +119,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		viewport.MaxDepth = 1.0f;
 
 		//Set the Viewport
-		deviceContextP->RSSetViewports(1, &viewport);
+		deviceContext->RSSetViewports(1, &viewport);
 
 
 
@@ -127,89 +127,11 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		{
 			EngineException::Log("shader fuckup");
 		}
-		
-		/////////////
-		// Camera
-		/////////////
-		float fovDeg = 60.0f;
-		float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
-		float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-		DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
-		camera.SetPosition(2.0f, 8.0f, -16.0f);
-		//camera.SetLookAtPos(eye);
-		camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 
 		// initialize constant buffers when vertex & pixel shaders filled in the mesh object
 		InitScene();
-
-		//////////////
-		// Set up mesh geometry
-		//////////////
-	
-		DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
-		plane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
-		cube = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
-		animatedPlane = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
-		cylinder = std::make_unique<Mesh>(this->deviceP.Get(), this->deviceContextP.Get(), initTransform, cb_vert);
-
-		// setup for Plane geometry
-		//const int planePointsX = 80;
-		//const int planePointsZ = 80;
-		//const int planeVertCount = planePointsX * planePointsZ;
-
-		const float xLimit1 = -16.0f;
-		const float xLimit2 = 16.0f;
-		const float zLimit1 = -16.0f;
-		const float zLimit2 = 16.0f;
-		const int numPoints = 400;
-
-		const int planeVertCount = numPoints * numPoints;
-
-		// the number of total indices in the triangle array, triangles * 3
-		const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
 		
-		const int wavePointsX = 200;
-		const int wavePointsZ = 200;
-		const int waveVertCount = wavePointsX * wavePointsZ;
-
-		// the number of total indices in the triangle array, triangles * 3
-		const int waveTriCount = (wavePointsX - 1) * (wavePointsZ - 1) * 2 * 3;
-
-
-		//DWORD planeTris[planeTriCount];
-
-		std::unique_ptr<DWORD[]> planeTris = std::make_unique<DWORD[]>(planeTriCount);
-
-		//DWORD waveTris[waveTriCount];
-		std::unique_ptr<DWORD[]> waveTris = std::make_unique<DWORD[]>(waveTriCount);
-
-		DWORD cubeTris[36];
-
-		plane->initMesh(planeVertCount, planeTriCount);
-		animatedPlane->initMesh(waveVertCount, waveTriCount);
-		cube->initMesh(8, 36);
-
-		//if (!plane->buildPlane(planePointsX, planePointsZ))
-		//if (!plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints))
-		//{
-		//	EngineException::Log("scene fuckup");
-		//}
-		if (!cube->buildCube(2.0f))
-		{
-			EngineException::Log("scene fuckup");
-		}
 		
-		//float h = 12.0f;
-		//float bRad = 5.0f;
-		//float tRad = 5.0f;
-		int hDiv = 100;
-		int rDiv = 128;
-
-		int cylinderVertCount = (hDiv + 2) * (rDiv);
-		int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-		cylinder->initMesh(cylinderVertCount, cylinderTriCount);
-		//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-	
 		
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -218,7 +140,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		rasterizerDesc.AntialiasedLineEnable = true;
-		hr = deviceP->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
+		hr = device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
 		if (FAILED(hr))
 		{
 			EngineException::Log(hr, "rasterizer state.");
@@ -235,7 +157,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 		sampDesc.MinLOD = 0;
 		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		hr = this->deviceP->CreateSamplerState(&sampDesc, this->samplerState.GetAddressOf()); //Create sampler state
+		hr = this->device->CreateSamplerState(&sampDesc, this->samplerState.GetAddressOf()); //Create sampler state
 		if (FAILED(hr))
 		{
 			EngineException::Log(hr, "Failed to create sampler state.");
@@ -256,7 +178,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 		D3D11_BLEND_DESC blendDesc = { 0 };
 		blendDesc.RenderTarget[0] = rtbd;
 
-		hr = this->deviceP->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
+		hr = this->device->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
 		IF_COM_FAIL(hr, "Failed to create blend state.");
 
 		
@@ -272,7 +194,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplWin32_Init(hWnd);
-	ImGui_ImplDX11_Init(this->deviceP.Get(), this->deviceContextP.Get());
+	ImGui_ImplDX11_Init(this->device.Get(), this->deviceContext.Get());
 	ImGui::StyleColorsDark();
 
 	return true;
@@ -298,7 +220,7 @@ bool Graphics::InitShaders()
 	
 	
 	
-	if (!vertexShader.Initialize(this->deviceP, L"..\\x64\\Debug\\VertexShader.cso", layout, numElements))
+	if (!vertexShader.Initialize(this->device, L"..\\x64\\Debug\\VertexShader.cso", layout, numElements))
 	{
 		EngineException::Log("vertex shader problem");
 		return false;
@@ -306,7 +228,7 @@ bool Graphics::InitShaders()
 	
 	
 
-	if (!pixelShader.Initialize(this->deviceP, L"..\\x64\\Debug\\PixelShader.cso"))
+	if (!pixelShader.Initialize(this->device, L"..\\x64\\Debug\\PixelShader.cso"))
 	{
 		EngineException::Log("pixel shader problem");
 		return false;
@@ -318,41 +240,209 @@ bool Graphics::InitShaders()
 
 bool Graphics::InitScene()
 {
-	HRESULT hr = cb_vert.Initialize(this->deviceP.Get(), deviceContextP.Get());
+	// Constant buffers, camera. mesh geometry setup
+
+	HRESULT hr = cb_vert.Initialize(this->device.Get(), deviceContext.Get());
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "constant buffer: vertex");
 		return false;
 	}
 
-	hr = cb_light.Initialize(this->deviceP.Get(), deviceContextP.Get());
+	hr = cb_light.Initialize(this->device.Get(), deviceContext.Get());
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "constant buffer: pixel/light");
 		return false;
 	}
 
-	hr = DirectX::CreateWICTextureFromFile(deviceP.Get(), L"Resource Files\\tex7.png", nullptr, texture.GetAddressOf());
+	hr = DirectX::CreateWICTextureFromFile(device.Get(), L"Resource Files\\tex7.png", nullptr, texture.GetAddressOf());
+
+	/////////////
+	// Camera
+	/////////////
+	float fovDeg = 60.0f;
+	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
+	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+	DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
+	camera.SetPosition(2.0f, 8.0f, -16.0f);
+	//camera.SetLookAtPos(eye);
+	camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
+	DirectX::XMMATRIX cameraVP = camera.GetViewMatrix() * camera.GetProjectionMatrix();
+
+	//////////////
+	// Set up mesh geometry
+	//////////////
+
 	
+
+	DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
+	plane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cube = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	animatedPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+
+	//std::unique_ptr<Mesh> cube2 = std::make_unique<Mesh>(&cube);
+
+	// setup for Plane geometry
+	//const int planePointsX = 80;
+	//const int planePointsZ = 80;
+	//const int planeVertCount = planePointsX * planePointsZ;
+
+	const float xLimit1 = -16.0f;
+	const float xLimit2 = 16.0f;
+	const float zLimit1 = -16.0f;
+	const float zLimit2 = 16.0f;
+	const int numPoints = 400;
+
+	const int planeVertCount = numPoints * numPoints;
+
+	// the number of total indices in the triangle array, triangles * 3
+	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
+
+	const int wavePointsX = 200;
+	const int wavePointsZ = 200;
+	const int waveVertCount = wavePointsX * wavePointsZ;
+
+	// the number of total indices in the triangle array, triangles * 3
+	const int waveTriCount = (wavePointsX - 1) * (wavePointsZ - 1) * 2 * 3;
+
+
+	//DWORD planeTris[planeTriCount];
+
+	std::unique_ptr<DWORD[]> planeTris = std::make_unique<DWORD[]>(planeTriCount);
+
+	//DWORD waveTris[waveTriCount];
+	std::unique_ptr<DWORD[]> waveTris = std::make_unique<DWORD[]>(waveTriCount);
+
+	DWORD cubeTris[36];
+
+	plane->initMesh(planeVertCount, planeTriCount);
+	animatedPlane->initMesh(waveVertCount, waveTriCount);
+	cube->initMesh(8, 36);
+
+	//if (!plane->buildPlane(planePointsX, planePointsZ))
+	//if (!plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints))
+	//{
+	//	EngineException::Log("scene fuckup");
+	//}
+	if (!cube->buildCube(2.0f))
+	{
+		EngineException::Log("scene fuckup");
+	}
+
+	//float h = 12.0f;
+	//float bRad = 5.0f;
+	//float tRad = 5.0f;
+	//int hDiv = 128;
+	//int rDiv = 256;
+
+	//int cylinderVertCount = (hDiv + 2) * (rDiv);
+	//int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
+	//cylinder->initMesh(cylinderVertCount, cylinderTriCount);
+	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+
+	float h = 3.0f;
+	float bRad = 3.0f;
+	float tRad = 2.0f;
+	int hDiv = 20;
+	int rDiv = 64;
+
+	int cylinderVertCount = (hDiv + 2) * (rDiv);
+	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
+	//cylinder->initMesh(cylinderVertCount, cylinderTriCount);
+	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	
+	cubeSystem = std::make_unique<MeshSystem>();
+
+	std::unique_ptr<Mesh> cylinder1 = nullptr;
+	std::unique_ptr<Mesh> cylinder2 = nullptr;
+	std::unique_ptr<Mesh> cylinder3 = nullptr;
+	std::unique_ptr<Mesh> cylinder4 = nullptr;
+
+	cylinder1 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder2 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder3 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder4 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+
+	int meshCount = 12;
+	cubeSystem->initSystem(meshCount, camera, cb_vert);
+	/*
+	cubeSystem->meshArray[0] = std::move(cylinder1);
+	cubeSystem->meshArray[1] = std::move(cylinder2);
+	cubeSystem->meshArray[2] = std::move(cylinder3);
+	cubeSystem->meshArray[3] = std::move(cylinder4);
+	for (int i = 0; i < 4; i++)
+	{
+		cubeSystem->meshArray[i]->initMesh(cylinderVertCount, cylinderTriCount);
+		cubeSystem->meshArray[i]->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	}
+	
+	cubeSystem->meshVector.push_back(*cylinder1);
+	cubeSystem->meshVector.push_back(*cylinder2);
+	cubeSystem->meshVector.push_back(*cylinder3);
+	cubeSystem->meshVector.push_back(*cylinder4);
+	for (int i = 0; i < 4; i++)
+	{
+		cubeSystem->meshVector[i].initMesh(cylinderVertCount, cylinderTriCount);
+		cubeSystem->meshVector[i].buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	}
+	*/
+
+	for (int i = 0; i < meshCount; i++)
+	{
+		std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+		mesh->initMesh(cylinderVertCount, cylinderTriCount);
+		mesh->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+		cubeSystem->meshVector.push_back(*mesh);
+	}
+	
+
+	
+	// attempting use of Mesh custom copy constructor
+	cubeSystem2 = std::make_unique<MeshSystem>();
+	cubeSystem2->initSystem(2, camera, cb_vert);
+
+	std::unique_ptr<Mesh> cylinder5 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder5->initMesh(cylinderVertCount, cylinderTriCount);
+	cylinder5->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+
+	std::unique_ptr<Mesh> cylinder6 = std::make_unique<Mesh>(*cylinder5);
+	cubeSystem2->meshArray[0] = std::move(cylinder6);
+
+	std::unique_ptr<Mesh> cylinder7 = std::make_unique<Mesh>(*cylinder5);
+	cubeSystem2->meshArray[1] = std::move(cylinder7);
+	
+
+	// std vectors + no copy constructor
+	cubeSystem3 = std::make_unique<MeshSystem>();
+	cubeSystem3->initSystem(2, camera, cb_vert);
+
+	cylinder8 = std::make_shared<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder8->initMesh(cylinderVertCount, cylinderTriCount);
+	cylinder8->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+
+	//std::unique_ptr<Mesh> cylinder9 = std::make_unique<Mesh>(*cylinder8);
+	cubeSystem3->meshVector.push_back(*cylinder8);
+
+	//std::unique_ptr<Mesh> cylinder10 = std::make_unique<Mesh>(*cylinder8);
+	cubeSystem3->meshVector.push_back(*cylinder8);
 	return true;
 }
 
 
 void Graphics::RenderFrame()
 {
-
-	
-
 	const float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	deviceContextP->ClearRenderTargetView(renderTargetViewP.Get(), color);
-	deviceContextP->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	deviceContextP->IASetInputLayout(vertexShader.GetInputLayout());
-	deviceContextP->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	deviceContextP->RSSetState(rasterizerState.Get());
-	deviceContextP->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
+	deviceContext->ClearRenderTargetView(renderTargetView.Get(), color);
+	deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	deviceContext->IASetInputLayout(vertexShader.GetInputLayout());
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContext->RSSetState(rasterizerState.Get());
+	deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
 	
-	deviceContextP->VSSetShader(vertexShader.GetShader(), NULL, 0);
-	deviceContextP->PSSetShader(pixelShader.GetShader(), NULL, 0);
+	deviceContext->VSSetShader(vertexShader.GetShader(), NULL, 0);
+	deviceContext->PSSetShader(pixelShader.GetShader(), NULL, 0);
 
 	//UINT stride = sizeof(Vertex);
 	UINT offset = 0;
@@ -374,7 +464,7 @@ void Graphics::RenderFrame()
 	{
 		return;
 	}
-	deviceContextP->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
+	deviceContext->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
 
 	const float xLimit1 = -16.0f;
 	const float xLimit2 = 16.0f;
@@ -383,6 +473,7 @@ void Graphics::RenderFrame()
 	const int numPoints = 400;
 	static float paramSet[3] = { 0.0f, 0.0f, 0.0f };
 	static float paramSet2[3] = { 1.0f, 1.0f, 1.0f };
+	static float param = 1.0f;
 	const int planeVertCount = numPoints * numPoints;
 
 	// the number of total indices in the triangle array, triangles * 3
@@ -399,14 +490,20 @@ void Graphics::RenderFrame()
 	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	// 
 	
-	float h = 15.0f;
-	float bRad = 3.0f;
-	float tRad = 3.0f;
-	int hDiv = 100;
-	int rDiv = 128;
+	//float h = 15.0f;
+	//float bRad = 4.0f;
+	//float tRad = 2.0f;
+	//int hDiv = 128;
+	//int rDiv = 256;
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
-	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
+	//cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+
+	//cubeSystem->gridSystem(24, 24, 3, 4, param);
+	cubeSystem2->gridSystem(12, 12, 1, 2, param);
+	//cubeSystem3->gridSystem(12, 12, 1, 2, param);
+
+	//cylinder8->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
@@ -421,6 +518,7 @@ void Graphics::RenderFrame()
 	ImGui::Text(clicks.c_str());
 	ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
 	ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
+	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
 	ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
 	/*
 	for (int i = 0; i < cylinder->vertCount; i++)
@@ -446,7 +544,7 @@ void Graphics::RenderFrame()
 	//Render Draw Data
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-	swapchainP->Present(1u, NULL);
+	swapchain->Present(1u, NULL);
 
 
 }

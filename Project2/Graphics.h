@@ -3,7 +3,6 @@
 #include "MinimalWin.h"
 //#include <Windows.h>
 
-#include <vector> 
 #include <array>
 #include <iostream>
 #include <algorithm>
@@ -14,6 +13,7 @@
 #include "Vertex.h"
 #include "Buffers.h"
 #include "Mesh.h"
+#include "MeshSystem.h"
 #include "Camera.h"
 #include <cmath>
 #include <WICTextureLoader.h>
@@ -36,10 +36,15 @@ public:
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
+	
 	std::unique_ptr<Mesh> plane = nullptr;
 	std::unique_ptr<Mesh> cube = nullptr;
 	std::unique_ptr<Mesh> animatedPlane = nullptr;
 	std::unique_ptr<Mesh> cylinder = nullptr;
+	std::unique_ptr<MeshSystem> cubeSystem = nullptr;
+	std::unique_ptr<MeshSystem> cubeSystem2 = nullptr;
+	std::unique_ptr<MeshSystem> cubeSystem3 = nullptr;
+	std::shared_ptr<Mesh> cylinder8 = nullptr;
 
 private:
 	int width = 0;
@@ -49,16 +54,15 @@ private:
 	PixelShader pixelShader;
 	std::vector<XMFLOAT3> triNormals;
 
-	Microsoft::WRL::ComPtr<ID3D11Device> deviceP;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContextP;
-	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchainP;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetViewP;
+	Microsoft::WRL::ComPtr<ID3D11Device> device;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext;
+	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchain;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;
-
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
 
