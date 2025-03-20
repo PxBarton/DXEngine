@@ -331,9 +331,9 @@ bool Graphics::InitScene()
 		EngineException::Log("scene fuckup");
 	}
 
-	//float h = 12.0f;
-	//float bRad = 5.0f;
-	//float tRad = 5.0f;
+	float h = 12.0f;
+	float bRad = 5.0f;
+	float tRad = 5.0f;
 	//int hDiv = 128;
 	//int rDiv = 256;
 
@@ -342,15 +342,15 @@ bool Graphics::InitScene()
 	//cylinder->initMesh(cylinderVertCount, cylinderTriCount);
 	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 
-	float h = 3.0f;
-	float bRad = 3.0f;
-	float tRad = 2.0f;
+	//float h = 3.0f;
+	//float bRad = 3.0f;
+	//float tRad = 2.0f;
 	int hDiv = 20;
 	int rDiv = 64;
 
 	int cylinderVertCount = (hDiv + 2) * (rDiv);
 	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-	//cylinder->initMesh(cylinderVertCount, cylinderTriCount);
+	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
 	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	
 	cubeSystem = std::make_unique<MeshSystem>();
@@ -416,17 +416,17 @@ bool Graphics::InitScene()
 
 	// std vectors + no copy constructor
 	cubeSystem3 = std::make_unique<MeshSystem>();
-	cubeSystem3->initSystem(2, camera, cb_vert);
+	cubeSystem3->initSystem(4, camera, cb_vert);
 
 	cylinder8 = std::make_shared<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	cylinder8->initMesh(cylinderVertCount, cylinderTriCount);
-	cylinder8->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	//cylinder8->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 
 	//std::unique_ptr<Mesh> cylinder9 = std::make_unique<Mesh>(*cylinder8);
-	cubeSystem3->meshVector.push_back(*cylinder8);
+	//cubeSystem3->meshVector.push_back(*cylinder8);
 
 	//std::unique_ptr<Mesh> cylinder10 = std::make_unique<Mesh>(*cylinder8);
-	cubeSystem3->meshVector.push_back(*cylinder8);
+	//cubeSystem3->meshVector.push_back(*cylinder8);
 	return true;
 }
 
@@ -490,18 +490,23 @@ void Graphics::RenderFrame()
 	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	// 
 	
-	//float h = 15.0f;
-	//float bRad = 4.0f;
-	//float tRad = 2.0f;
+	float h = 10.0f;
+	float bRad = 2.0f;
+	float tRad = 1.5f;
 	//int hDiv = 128;
 	//int rDiv = 256;
+	int hDiv = 20;
+	int rDiv = 64;
+
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
-	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	//cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
+	cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	//cubeSystem->gridSystem(24, 24, 3, 4, param);
-	cubeSystem2->gridSystem(12, 12, 1, 2, param);
-	//cubeSystem3->gridSystem(12, 12, 1, 2, param);
+	//cubeSystem2->gridSystem(12, 12, 1, 2, param);
+	// 
+	
+	//cubeSystem3->gridSystem(12, 12, 2, 2, param);
 
 	//cylinder8->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
@@ -512,12 +517,11 @@ void Graphics::RenderFrame()
 	ImGui::NewFrame();
 	//Create ImGui Test Window
 	ImGui::Begin("Test");
-	if (ImGui::Button("Suck Me"))
-		counter += 1;
-	std::string clicks = "Sucks: " + std::to_string(counter);
-	ImGui::Text(clicks.c_str());
-	ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
-	ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
+	
+	//ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
+	//ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
+	ImGui::SliderFloat3("Parameters", paramSet, 0.0f, 2.0f);
+	ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
 	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
 	ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
 	/*
@@ -536,8 +540,14 @@ void Graphics::RenderFrame()
 		ImGui::Text( (std::to_string(cylinder->tris[i]) + " " + std::to_string(cylinder->tris[i+1]) + " " + std::to_string(cylinder->tris[i+2])).c_str());
 	}
 	*/
+	
+	ImGui::End();
+
+	ImGui::Begin("Test2");
+	if (ImGui::Button("Suck Me"))
+		counter += 1;
+	std::string clicks = "Sucks: " + std::to_string(counter);
 	ImGui::Text(clicks.c_str());
-	//ImGui::ShowDemoWindow();
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();

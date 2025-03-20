@@ -54,10 +54,10 @@ void MeshSystem::gridSystem(float xLength, float zLength, int xCount, int zCount
 	{
 		for (int j = 0; j < zCount; j++)
 		{
-			meshArray[i * zCount + j]->initPosition(xAxis[i], 0.0, zAxis[j]);
-			meshArray[i * zCount + j]->draw(viewProjMat);
-			//meshVector[i * zCount + j].initPosition(xAxis[i], 0.0, zAxis[j]);
-			//meshVector[i * zCount + j].draw(viewProjMat);
+			//meshArray[i * zCount + j]->initPosition(xAxis[i], 0.0, zAxis[j]);
+			//meshArray[i * zCount + j]->draw(viewProjMat);
+			meshVector[i * zCount + j].initPosition(xAxis[i], 0.0, zAxis[j]);
+			meshVector[i * zCount + j].draw(viewProjMat);
 		}
 	}
 
