@@ -14,6 +14,8 @@ struct VS_INPUT
 	float3 inPos : POSITION;
 	float3 inColor : COLOR;
 	float3 inNormal : NORMAL;
+	float3 instancePos : INSTANCEDATA;
+	uint instanceID : SV_InstanceID;
 };
 
 struct VS_OUTPUT
@@ -30,6 +32,9 @@ VS_OUTPUT main(VS_INPUT input)
 	input.inPos.x += xOffset;
 	input.inPos.y += yOffset;
 	input.inPos.z += zOffset;
+	//input.inPos += input.instanceID * input.instancePos;
+	input.inPos.x += input.instancePos.x;
+	
 	//output.outPosition = float4(input.inPos, 1.0f);
 	output.outPosition = mul(float4(input.inPos, 1.0f), wvpMatrix);
 	output.outColor = input.inColor;

@@ -106,8 +106,6 @@ void Mesh::rotate(float x, float y, float z)
 
 void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
 {
-	
-	
 	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
 
 	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
@@ -120,6 +118,50 @@ void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
 	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
 	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 	deviceContext->DrawIndexed(indexBuffer.BufferSize(), 0, 0);
+}
+
+void Mesh::initInstances(std::vector<InstancePosition> instData)
+{
+	HRESULT hr = instanceBuffer.Initialize(device, &instData[0], 8);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "instance buffer");
+
+	}
+	vertInstBuffers[0] = vertexBuffer.Get();
+	vertInstBuffers[1] = instanceBuffer.Get();
+}
+
+void Mesh::initInstances(std::unique_ptr<InstancePosition[]> instanceData)
+{
+	HRESULT hr = instanceBuffer.Initialize(device, &instanceData[0], 8);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "instance buffer");
+
+	}
+	vertInstBuffers[0] = vertexBuffer.Get();
+	vertInstBuffers[1] = instanceBuffer.Get();
+}
+
+void Mesh::drawInstances(const XMMATRIX& viewProjectionMatrix)
+{
+	
+	
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
+
+	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
+	cb_vs_vertexshader->ApplyChanges();
+
+	UINT offset = 0;
+	const UINT* vStride = vertexBuffer.StridePtr();
+	const UINT* iStride = instanceBuffer.StridePtr();
+	std::vector<const UINT*> strides{ vStride, iStride };
+	deviceContext->IASetVertexBuffers(0, 2, &vertInstBuffers[0], strides[0], &offset);
+	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->DrawIndexedInstanced(indexBuffer.BufferSize(), 8, 0, 0, 0);
 }
 
 void Mesh::setWorldMatrix()
@@ -526,6 +568,8 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 		EngineException::Log(hr, "index buffer");
 
 	}
+
+	
 
 	return true;
 }

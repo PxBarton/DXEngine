@@ -44,7 +44,13 @@ public:
 	std::unique_ptr<MeshSystem> cubeSystem = nullptr;
 	std::unique_ptr<MeshSystem> cubeSystem2 = nullptr;
 	std::unique_ptr<MeshSystem> cubeSystem3 = nullptr;
+	std::unique_ptr<Mesh> cylinder1 = nullptr;
+	std::unique_ptr<Mesh> cylinder2 = nullptr;
 	std::shared_ptr<Mesh> cylinder8 = nullptr;
+
+	int numMeshes = 8;
+	std::vector<InstancePosition> instData{ numMeshes };
+	std::unique_ptr<InstancePosition[]> instanceData = nullptr;
 
 private:
 	int width = 0;
@@ -68,8 +74,10 @@ private:
 
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indicesBuffer;
+	InstanceBuffer<InstancePosition> instanceBuffer;
 	ConstantBuffer<CB_VS_vertexshader> cb_vert;
 	ConstantBuffer<CB_PS_light> cb_light;
+
 	//Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 
 	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;

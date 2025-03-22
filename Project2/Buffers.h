@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef VertexBuffer_h__
-#define VertexBuffer_h__
-
 #include "EngineException.h"
 #include "Light.h"
 
@@ -14,6 +11,10 @@
 
 ////////////////////////////////////////////////
 ////    Vertex Buffer    ///////////////////////
+
+#ifndef VertexBuffer_h__
+#define VertexBuffer_h__
+
 
 template<class T>
 class VertexBuffer
@@ -68,7 +69,7 @@ public:
 		{
 			this->stride = std::make_unique<UINT>(sizeof(T));
 		}
-		
+
 
 		D3D11_BUFFER_DESC vertexBufferDesc;
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -86,6 +87,7 @@ public:
 		HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->buffer.GetAddressOf());
 		return hr;
 	}
+
 	/*
 	HRESULT Initialize(ID3D11Device* device, std::vector<T> *data, UINT numVertices)
 	{
@@ -119,9 +121,103 @@ public:
 		return hr;
 	}
 	*/
+
 };
 
 #endif // VertexBuffer_h__
+
+
+
+////////////////////////////////
+////  Instance Buffer  /////////
+
+
+struct InstancePosition
+{
+	XMFLOAT3 pos;
+};
+
+
+struct InstanceTransform
+{
+	XMMATRIX transform = XMMatrixIdentity();
+};
+
+
+template<class T>
+class InstanceBuffer
+{
+private:
+	InstanceBuffer(const InstanceBuffer<T>& rhs);
+
+private:
+	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+	std::unique_ptr<UINT> stride;
+	UINT bufferSize = 0;
+
+public:
+	InstanceBuffer() {}
+
+	ID3D11Buffer* Get()const
+	{
+		return buffer.Get();
+	}
+
+	ID3D11Buffer* const* GetAddressOf()const
+	{
+		return buffer.GetAddressOf();
+	}
+
+	UINT BufferSize() const
+	{
+		return this->bufferSize;
+	}
+
+	const UINT Stride() const
+	{
+		return *this->stride.get();
+	}
+
+	const UINT* StridePtr() const
+	{
+		return this->stride.get();
+	}
+
+	// T* data
+	HRESULT Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device, T* data, UINT numInstances)
+	{
+		if (buffer.Get() != nullptr)
+		{
+			buffer.Reset();
+		}
+
+		this->bufferSize = numInstances;
+
+		if (this->stride.get() == nullptr)
+		{
+			this->stride = std::make_unique<UINT>(sizeof(T));
+		}
+
+
+		D3D11_BUFFER_DESC instanceBufferDesc;
+		ZeroMemory(&instanceBufferDesc, sizeof(instanceBufferDesc));
+
+		instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		instanceBufferDesc.ByteWidth = sizeof(T) * numInstances;
+		instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		instanceBufferDesc.CPUAccessFlags = 0;
+		instanceBufferDesc.MiscFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA instanceBufferData;
+		ZeroMemory(&instanceBufferData, sizeof(instanceBufferData));
+		instanceBufferData.pSysMem = data;
+
+		HRESULT hr = device->CreateBuffer(&instanceBufferDesc, &instanceBufferData, this->buffer.GetAddressOf());
+		return hr;
+	}
+
+};
+
 
 
 ////////////////////////////////////////////////
@@ -224,6 +320,7 @@ struct CB_VS_vertexshader
 	float yOffset = 0; //4bytes
 	DirectX::XMMATRIX wvpMatrix;
 	DirectX::XMMATRIX worldMatrix;
+	BOOL instance;
 };
 
 struct CB_PS_light

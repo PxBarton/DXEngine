@@ -213,7 +213,9 @@ bool Graphics::InitShaders()
 		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 
 			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"NORMAL", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  }
+			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"INSTANCEDATA", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 1,
+			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA, 1  }
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
@@ -331,9 +333,9 @@ bool Graphics::InitScene()
 		EngineException::Log("scene fuckup");
 	}
 
-	float h = 12.0f;
-	float bRad = 5.0f;
-	float tRad = 5.0f;
+	float h = 10.0f;
+	float bRad = 3.0f;
+	float tRad = 3.0f;
 	//int hDiv = 128;
 	//int rDiv = 256;
 
@@ -350,20 +352,23 @@ bool Graphics::InitScene()
 
 	int cylinderVertCount = (hDiv + 2) * (rDiv);
 	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
-	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	
 	cubeSystem = std::make_unique<MeshSystem>();
 
-	std::unique_ptr<Mesh> cylinder1 = nullptr;
-	std::unique_ptr<Mesh> cylinder2 = nullptr;
+	//std::unique_ptr<Mesh> cylinder1 = nullptr;
+	//std::unique_ptr<Mesh> cylinder2 = nullptr;
 	std::unique_ptr<Mesh> cylinder3 = nullptr;
 	std::unique_ptr<Mesh> cylinder4 = nullptr;
 
+	DirectX::XMMATRIX initTranslate = XMMatrixTranslation(4.0, 0.0, 4.0);
+
 	cylinder1 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cylinder2 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	cylinder2 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTranslate, cb_vert);
 	cylinder3 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	cylinder4 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+
+	cylinder1->initMesh(cylinderVertCount, cylinderTriCount);
+	cylinder2->initMesh(cylinderVertCount, cylinderTriCount);
 
 	int meshCount = 12;
 	cubeSystem->initSystem(meshCount, camera, cb_vert);
@@ -394,7 +399,7 @@ bool Graphics::InitScene()
 		std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 		mesh->initMesh(cylinderVertCount, cylinderTriCount);
 		mesh->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-		cubeSystem->meshVector.push_back(*mesh);
+		//cubeSystem->meshVector.push_back(*mesh);
 	}
 	
 
@@ -427,6 +432,30 @@ bool Graphics::InitScene()
 
 	//std::unique_ptr<Mesh> cylinder10 = std::make_unique<Mesh>(*cylinder8);
 	//cubeSystem3->meshVector.push_back(*cylinder8);
+
+
+	XMVECTOR tempPos;
+	instanceData = std::make_unique<InstancePosition[]>(numMeshes);
+	
+	for (int i = 0; i < numMeshes; i++)
+	{
+		float dx = 6.0;
+		float dz = 6.0;
+		tempPos = XMVectorSet(i * dx, 0.0, i * dz, 0.0);
+		XMStoreFloat3(&instData[i].pos, tempPos);
+	}
+	for (int i = 0; i < numMeshes; i++)
+	{
+		float dx = 6.0;
+		float dz = 6.0;
+		instanceData[i].pos = XMFLOAT3(i * dx, 0.0, i * dz);
+	}
+
+
+	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
+	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	cylinder->initInstances((instData));
+
 	return true;
 }
 
@@ -499,16 +528,21 @@ void Graphics::RenderFrame()
 	int rDiv = 64;
 
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
-	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
+	//cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	//cubeSystem->gridSystem(24, 24, 3, 4, param);
 	//cubeSystem2->gridSystem(12, 12, 1, 2, param);
-	// 
+	
 	
 	//cubeSystem3->gridSystem(12, 12, 2, 2, param);
-
+	//cylinder1->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
+	//cylinder2->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
+	//cylinder1->draw(carmera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cylinder2->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	//cylinder8->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cylinder1->initInstances(instData);
+	cylinder->drawInstances(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
@@ -544,10 +578,12 @@ void Graphics::RenderFrame()
 	ImGui::End();
 
 	ImGui::Begin("Test2");
-	if (ImGui::Button("Suck Me"))
+	if (ImGui::Button("Test"))
 		counter += 1;
-	std::string clicks = "Sucks: " + std::to_string(counter);
+	std::string clicks = "Instance Position 3: " + std::to_string(instData[4].pos.x);
 	ImGui::Text(clicks.c_str());
+	std::string info = "Instances: " + std::to_string(cylinder->getNumInstances());
+	ImGui::Text(info.c_str());
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();

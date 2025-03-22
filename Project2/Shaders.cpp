@@ -13,7 +13,7 @@ bool VertexShader::Initialize(Microsoft::WRL::ComPtr<ID3D11Device>& device,
 	{
 		std::wstring errorMsg = L"Failed to load shader: ";
 		errorMsg += shaderpath;
-		EngineException::Log(hr, errorMsg);
+		//EngineException::Log(hr, errorMsg);
 		return false;
 	}
 
@@ -25,7 +25,7 @@ bool VertexShader::Initialize(Microsoft::WRL::ComPtr<ID3D11Device>& device,
 	{
 		std::wstring errorMsg = L"Failed to create vertex shader: ";
 		errorMsg += shaderpath;
-		EngineException::Log(hr, errorMsg);
+		//EngineException::Log(hr, errorMsg);
 		return false;
 	}
 
@@ -66,7 +66,7 @@ bool PixelShader::Initialize(Microsoft::WRL::ComPtr<ID3D11Device>& device, std::
 	{
 		std::wstring errorMsg = L"Failed to load shader: ";
 		errorMsg += shaderpath;
-		EngineException::Log(hr, errorMsg);
+		//EngineException::Log(hr, errorMsg);
 		return false;
 	}
 
@@ -78,7 +78,7 @@ bool PixelShader::Initialize(Microsoft::WRL::ComPtr<ID3D11Device>& device, std::
 	{
 		std::wstring errorMsg = L"Failed to create vertex shader: ";
 		errorMsg += shaderpath;
-		EngineException::Log(hr, errorMsg);
+		//EngineException::Log(hr, errorMsg);
 		return false;
 	}
 

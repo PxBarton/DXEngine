@@ -55,13 +55,25 @@ public:
 	void translate(float x, float y, float z);
 	void rotate(float x, float y, float z);
 	void draw(const XMMATRIX& viewProjectionMatrix);
+
+	void initInstances(std::vector<InstancePosition> instData);
+	void initInstances(std::unique_ptr<InstancePosition[]> instanceData);
+	void drawInstances(const XMMATRIX& viewProjectionMatrix);
 	
+
+	int getNumInstances()
+	{
+		return instanceBuffer.BufferSize();
+	}
+
 private:
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indexBuffer;
+	InstanceBuffer<InstancePosition> instanceBuffer;
 	ID3D11Device* device = nullptr;
 	ID3D11DeviceContext* deviceContext = nullptr;
 	ConstantBuffer<CB_VS_vertexshader>* cb_vs_vertexshader = nullptr;
+	ID3D11Buffer* vertInstBuffers[2] = {};
 
 	XMVECTOR positionVec = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR rotationVec = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
