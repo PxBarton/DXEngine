@@ -104,21 +104,15 @@ void Mesh::rotate(float x, float y, float z)
 	setRotation(x * time, y * time, z * time);
 }
 
-void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
+
+void Mesh::initMesh(int vertCount, int triCount)
 {
-	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
-
-	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
-	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
-	cb_vs_vertexshader->ApplyChanges();
-
-	UINT offset = 0;
-
-	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
-	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-	deviceContext->DrawIndexed(indexBuffer.BufferSize(), 0, 0);
+	vertices = std::make_unique<Vertex[]>(vertCount);
+	tris = std::make_unique<DWORD[]>(triCount);
+	this->vertCount = vertCount;
+	this->triCount = triCount;
 }
+
 
 void Mesh::initInstances(std::vector<InstancePosition> instData)
 {
@@ -144,6 +138,46 @@ void Mesh::initInstances(std::unique_ptr<InstancePosition[]> instanceData)
 	vertInstBuffers[1] = instanceBuffer.Get();
 }
 
+
+void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
+{
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
+
+	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
+	cb_vs_vertexshader->ApplyChanges();
+
+	UINT offset = 0;
+
+	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
+	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->DrawIndexed(indexBuffer.BufferSize(), 0, 0);
+}
+
+
+void Mesh::initBuffers()
+{
+	UINT offset = 0;
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
+	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
+	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+}
+
+
+void Mesh::drawFast(const DirectX::XMMATRIX& viewProjectionMatrix, const XMMATRIX& transformMatrix)
+{
+	
+
+	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
+	cb_vs_vertexshader->ApplyChanges();
+
+	deviceContext->DrawIndexed(indexBuffer.BufferSize(), 0, 0);
+}
+
+
 void Mesh::drawInstances(const XMMATRIX& viewProjectionMatrix)
 {
 	
@@ -164,10 +198,17 @@ void Mesh::drawInstances(const XMMATRIX& viewProjectionMatrix)
 	deviceContext->DrawIndexedInstanced(indexBuffer.BufferSize(), 8, 0, 0, 0);
 }
 
+
 void Mesh::setWorldMatrix()
 {
 	// change to quaternions
 	worldMatrix = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) * XMMatrixTranslation(position.x, position.y, position.z);
+}
+
+void Mesh::setTransformMatrix()
+{
+	// change to quaternions
+	transformMatrix = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) * XMMatrixTranslation(position.x, position.y, position.z);
 }
 
 const DirectX::XMMATRIX& Mesh::getTransformMatrix()

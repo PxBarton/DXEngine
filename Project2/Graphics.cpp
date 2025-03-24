@@ -454,7 +454,8 @@ bool Graphics::InitScene()
 
 	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
 	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-	cylinder->initInstances((instData));
+	cylinder->initBuffers();
+	//cylinder->initInstances((instData));
 
 	return true;
 }
@@ -482,7 +483,8 @@ void Graphics::RenderFrame()
 	// set up world
 	// id matrix implies the origin at 0, 0, 0
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-	
+	DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX viewProjection = camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
 	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
 	cb_light.data.ambientStrength = .5f;
@@ -530,6 +532,13 @@ void Graphics::RenderFrame()
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
 	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
 	//cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	cylinder->drawFast(viewProjection, transform);
+
+	for (int i = 0; i < numMeshes; i++)
+	{
+		DirectX::XMMATRIX translation = XMMatrixTranslation(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
+		cylinder->drawFast(viewProjection, translation);
+	}
 
 	//cubeSystem->gridSystem(24, 24, 3, 4, param);
 	//cubeSystem2->gridSystem(12, 12, 1, 2, param);
@@ -542,7 +551,7 @@ void Graphics::RenderFrame()
 	//cylinder2->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	//cylinder8->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	//cylinder1->initInstances(instData);
-	cylinder->drawInstances(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cylinder->drawInstances(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
