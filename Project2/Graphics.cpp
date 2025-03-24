@@ -531,13 +531,23 @@ void Graphics::RenderFrame()
 
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
 	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	//cylinder->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	cylinder->drawFast(viewProjection, transform);
+	
+	cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
+	cylinder->setTransformMatrix(cylinder->getScaleMatrix());
+	cylinder->draw(viewProjection);
+	
+	//cylinder->drawFast(viewProjection);
 
 	for (int i = 0; i < numMeshes; i++)
 	{
-		DirectX::XMMATRIX translation = XMMatrixTranslation(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
-		cylinder->drawFast(viewProjection, translation);
+		DirectX::XMMATRIX instancePosition = XMMatrixTranslation(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
+		//DirectX::XMMATRIX instanceScale = XMMatrixScaling(1.0f, 1.0 + , 1.0f);
+		
+		//cylinder->translate(0.0, 0.001, 0.0);
+		cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
+		cylinder->setTransformMatrix(instancePosition * cylinder->getScaleMatrix());
+		//cylinder->setTransformMatrix(instancePosition);
+		cylinder->drawFast(viewProjection);
 	}
 
 	//cubeSystem->gridSystem(24, 24, 3, 4, param);

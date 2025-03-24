@@ -90,6 +90,29 @@ void Mesh::setRotation(float x, float y, float z)
 	setWorldMatrix();
 }
 
+
+void Mesh::initScale(float x, float y, float z)
+{
+	scale = XMFLOAT3(x, y, z);
+	scaleVec = XMLoadFloat3(&scale);
+	scaleMatrix = XMMatrixScaling(x, y, z);
+}
+
+void Mesh::setScale(float x, float y, float z)
+{
+	scale.x += x;
+	scale.y += y;
+	scale.z += z;
+	scaleVec = XMLoadFloat3(&scale);
+	scaleMatrix = XMMatrixScaling(scale.x, scale.y, scale.z);
+}
+
+const XMMATRIX Mesh::getScaleMatrix()
+{
+	return scaleMatrix;
+}
+
+
 void Mesh::translate(float x, float y, float z)
 {
 	float time = timer.GetMilisecondsElapsed();
@@ -102,6 +125,13 @@ void Mesh::rotate(float x, float y, float z)
 	float time = timer.GetMilisecondsElapsed();
 	timer.Restart();
 	setRotation(x * time, y * time, z * time);
+}
+
+void Mesh::scaleMesh(float x, float y, float z)
+{
+	float time = timer.GetMilisecondsElapsed();
+	timer.Restart();
+	setScale(x, y * time, z);
 }
 
 
@@ -165,12 +195,10 @@ void Mesh::initBuffers()
 }
 
 
-void Mesh::drawFast(const DirectX::XMMATRIX& viewProjectionMatrix, const XMMATRIX& transformMatrix)
+void Mesh::drawFast(const DirectX::XMMATRIX& viewProjectionMatrix)
 {
-	
-
-	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vs_vertexshader->data.wvpMatrix = this->transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vs_vertexshader->data.worldMatrix = this->transformMatrix * worldMatrix; //Calculate World
 	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
 	cb_vs_vertexshader->ApplyChanges();
 
@@ -209,6 +237,13 @@ void Mesh::setTransformMatrix()
 {
 	// change to quaternions
 	transformMatrix = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) * XMMatrixTranslation(position.x, position.y, position.z);
+	transformMatrix = transformMatrix * XMMatrixScaling(scale.x, scale.y, scale.z);
+}
+
+void Mesh::setTransformMatrix(XMMATRIX newTransform)
+{
+	// change to quaternions
+	transformMatrix = newTransform;
 }
 
 const DirectX::XMMATRIX& Mesh::getTransformMatrix()

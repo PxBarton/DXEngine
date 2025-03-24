@@ -34,6 +34,9 @@ public:
 	void setRotation(float x, float y, float z);
 	void initPosition(float x, float y, float z);
 	void setPosition(float x, float y, float z);
+	void initScale(float x, float y, float z);
+	void setScale(float x, float y, float z);
+	const XMMATRIX getScaleMatrix();
 
 	bool buildCube(float size);
 	bool buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1, float param2, float param3);
@@ -45,15 +48,17 @@ public:
 	const XMMATRIX& getTransformMatrix();
 	void setWorldMatrix();
 	void setTransformMatrix();
+	void setTransformMatrix(XMMATRIX newTransform);
 	void translate(float x, float y, float z);
 	void rotate(float x, float y, float z);
+	void scaleMesh(float x, float y, float z);
 
 	void initMesh(int vertCount, int triCount);
 	void initInstances(std::vector<InstancePosition> instData);
 	void initInstances(std::unique_ptr<InstancePosition[]> instanceData);
 	void initBuffers();
 	void draw(const XMMATRIX& viewProjectionMatrix);
-	void drawFast(const XMMATRIX& viewProjectionMatrix, const XMMATRIX& transformMatrix);
+	void drawFast(const XMMATRIX& viewProjectionMatrix);
 	void drawInstances(const XMMATRIX& viewProjectionMatrix);
 	
 
@@ -73,8 +78,11 @@ private:
 
 	XMVECTOR positionVec = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR rotationVec = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+	XMVECTOR scaleVec = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
 	XMFLOAT3 position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMFLOAT3 rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	XMFLOAT3 scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	XMMATRIX scaleMatrix = XMMatrixScaling(1.0f, 1.0f, 1.0f);
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	XMMATRIX transformMatrix = XMMatrixIdentity();
 };
