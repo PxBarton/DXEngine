@@ -64,7 +64,7 @@ void Mesh::initPosition(float x, float y, float z)
 	setWorldMatrix();
 }
 
-void Mesh::setPosition(float x, float y, float z)
+void Mesh::animatePosition(float x, float y, float z)
 {
 	position.x += x;
 	position.y += y;
@@ -81,7 +81,7 @@ void Mesh::initRotation(float x, float y, float z)
 	setWorldMatrix();
 }
 
-void Mesh::setRotation(float x, float y, float z)
+void Mesh::animateRotation(float x, float y, float z)
 {
 	rotation.x += x;
 	rotation.y += y;
@@ -98,7 +98,7 @@ void Mesh::initScale(float x, float y, float z)
 	scaleMatrix = XMMatrixScaling(x, y, z);
 }
 
-void Mesh::setScale(float x, float y, float z)
+void Mesh::animateScale(float x, float y, float z)
 {
 	scale.x += x;
 	scale.y += y;
@@ -112,7 +112,7 @@ const XMMATRIX Mesh::getScaleMatrix()
 	return scaleMatrix;
 }
 
-
+/*
 void Mesh::translate(float x, float y, float z)
 {
 	float time = timer.GetMilisecondsElapsed();
@@ -133,7 +133,7 @@ void Mesh::scaleMesh(float x, float y, float z)
 	timer.Restart();
 	setScale(x, y * time, z);
 }
-
+*/
 
 void Mesh::initMesh(int vertCount, int triCount)
 {

@@ -347,7 +347,7 @@ bool Graphics::InitScene()
 	//float h = 3.0f;
 	//float bRad = 3.0f;
 	//float tRad = 2.0f;
-	int hDiv = 20;
+	int hDiv = 200;
 	int rDiv = 64;
 
 	int cylinderVertCount = (hDiv + 2) * (rDiv);
@@ -433,7 +433,7 @@ bool Graphics::InitScene()
 	//std::unique_ptr<Mesh> cylinder10 = std::make_unique<Mesh>(*cylinder8);
 	//cubeSystem3->meshVector.push_back(*cylinder8);
 
-
+	//setNumMeshes(80);
 	XMVECTOR tempPos;
 	instanceData = std::make_unique<InstancePosition[]>(numMeshes);
 	
@@ -453,8 +453,8 @@ bool Graphics::InitScene()
 
 
 	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
-	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-	cylinder->initBuffers();
+	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	//cylinder->initBuffers();
 	//cylinder->initInstances((instData));
 
 	return true;
@@ -526,27 +526,25 @@ void Graphics::RenderFrame()
 	float tRad = 1.5f;
 	//int hDiv = 128;
 	//int rDiv = 256;
-	int hDiv = 20;
+	int hDiv = 200;
 	int rDiv = 64;
 
 	//cylinder->rotate(0.0f, 0.001f, 0.000f);
-	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	
-	cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
-	cylinder->setTransformMatrix(cylinder->getScaleMatrix());
-	cylinder->draw(viewProjection);
+	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
+	cylinder->initBuffers();
+	//cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
+	//cylinder->setTransformMatrix(cylinder->getScaleMatrix());
+	//cylinder->draw(viewProjection);
 	
 	//cylinder->drawFast(viewProjection);
 
+	
 	for (int i = 0; i < numMeshes; i++)
 	{
-		DirectX::XMMATRIX instancePosition = XMMatrixTranslation(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
-		//DirectX::XMMATRIX instanceScale = XMMatrixScaling(1.0f, 1.0 + , 1.0f);
-		
-		//cylinder->translate(0.0, 0.001, 0.0);
-		cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
-		cylinder->setTransformMatrix(instancePosition * cylinder->getScaleMatrix());
-		//cylinder->setTransformMatrix(instancePosition);
+		cylinder->initPosition(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
+		cylinder->initScale(paramSet2[0], paramSet2[1], paramSet2[2]);
+		cylinder->setTransformMatrix(cylinder->getScaleMatrix());
+	
 		cylinder->drawFast(viewProjection);
 	}
 
@@ -557,7 +555,7 @@ void Graphics::RenderFrame()
 	//cubeSystem3->gridSystem(12, 12, 2, 2, param);
 	//cylinder1->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
 	//cylinder2->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	//cylinder1->draw(carmera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//cylinder1->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	//cylinder2->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	//cylinder8->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	//cylinder1->initInstances(instData);
@@ -599,9 +597,9 @@ void Graphics::RenderFrame()
 	ImGui::Begin("Test2");
 	if (ImGui::Button("Test"))
 		counter += 1;
-	std::string clicks = "Instance Position 3: " + std::to_string(instData[4].pos.x);
+	std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes-1].pos.x);
 	ImGui::Text(clicks.c_str());
-	std::string info = "Instances: " + std::to_string(cylinder->getNumInstances());
+	std::string info = "Instances: " + std::to_string(numMeshes);
 	ImGui::Text(info.c_str());
 	ImGui::End();
 	//Assemble Together Draw Data

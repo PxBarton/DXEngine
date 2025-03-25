@@ -48,9 +48,14 @@ public:
 	std::unique_ptr<Mesh> cylinder2 = nullptr;
 	std::shared_ptr<Mesh> cylinder8 = nullptr;
 
-	int numMeshes = 8;
+	int numMeshes = 2000;
 	std::vector<InstancePosition> instData{ numMeshes };
 	std::unique_ptr<InstancePosition[]> instanceData = nullptr;
+
+	void setNumMeshes(int num)
+	{
+		numMeshes = num;
+	}
 
 private:
 	int width = 0;

@@ -31,11 +31,11 @@ public:
 	void calcNormalsV(Vertex verts[], DWORD tris[]);
 
 	void initRotation(float x, float y, float z);
-	void setRotation(float x, float y, float z);
+	void animateRotation(float x, float y, float z);
 	void initPosition(float x, float y, float z);
-	void setPosition(float x, float y, float z);
+	void animatePosition(float x, float y, float z);
 	void initScale(float x, float y, float z);
-	void setScale(float x, float y, float z);
+	void animateScale(float x, float y, float z);
 	const XMMATRIX getScaleMatrix();
 
 	bool buildCube(float size);
