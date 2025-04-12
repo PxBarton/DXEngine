@@ -9,39 +9,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     try
     {
         EngineWindow wind(1200, 900, "trash");
-        if (wind.InitGfx()) {
+        if (wind.InitEngine()) {
             while (wind.MessageProc() == true)
             {
                 wind.Update();
-                wind.gfx->RenderFrame();
+                wind.rndr->RenderFrame();
             }
         }
         
-
-
-        /*
-        MSG msg = { };
-
-        while (GetMessage(&msg, nullptr, 0, 0) > 0)
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        */
-
         return 0;
     }
     catch (const EngineException& e)
     {
         MessageBoxA(nullptr, e.what(), e.getType(), MB_OK | MB_ICONEXCLAMATION);
-    }
-    catch (const std::exception& e)
-    {
-        MessageBoxA(nullptr, e.what(), "Std Exception", MB_OK | MB_ICONEXCLAMATION);
-    }
-    catch (...)
-    {
-        MessageBoxA(nullptr, "No Details Available", "Unknown Exception", MB_OK | MB_ICONEXCLAMATION);
     }
     return -1;
 }

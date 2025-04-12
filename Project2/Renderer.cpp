@@ -1,11 +1,11 @@
-#include "Graphics.h"
+#include "Renderer.h"
 
 namespace wrl = Microsoft::WRL;
 
-Graphics::Graphics() 
+Renderer::Renderer() 
 {}
 
-bool Graphics::Init(HWND hWnd, int width, int height)
+bool Renderer::Init(HWND hWnd, int width, int height)
 {
 	this->hWnd = hWnd;
 	this->width = width;
@@ -44,7 +44,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 
 		D3D11CreateDeviceAndSwapChain(
 			//NULL,    // default is first adapter in list (Nvidia 1650) 
-			adapters[0].pAdapter,
+			adapters[0].adapter,
 			D3D_DRIVER_TYPE_UNKNOWN,
 			NULL,
 			NULL,
@@ -203,7 +203,7 @@ bool Graphics::Init(HWND hWnd, int width, int height)
 ///////////////////////////////
 // Input Layout desc is here
 ///////////////////////////////
-bool Graphics::InitShaders()
+bool Renderer::InitShaders()
 {
 	
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -240,7 +240,7 @@ bool Graphics::InitShaders()
 }
 
 
-bool Graphics::InitScene()
+bool Renderer::InitScene()
 {
 	// Constant buffers, camera. mesh geometry setup
 
@@ -461,7 +461,7 @@ bool Graphics::InitScene()
 }
 
 
-void Graphics::RenderFrame()
+void Renderer::RenderFrame()
 {
 	const float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	deviceContext->ClearRenderTargetView(renderTargetView.Get(), color);

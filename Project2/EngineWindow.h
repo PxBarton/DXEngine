@@ -2,9 +2,10 @@
 
 #include "MinimalWin.h"
 //#include <Windows.h>
-#include "Keyboard.h"
-#include "Mouse.h"
-#include "Graphics.h"
+//#include "Keyboard.h"
+//#include "Mouse.h"
+#include "InputDevices.h"
+#include "Renderer.h"
 
 #include <string>
 #include <SDKDDKVer.h>
@@ -32,12 +33,12 @@ public:
 	EngineWindow(const EngineWindow&) = delete;
 	EngineWindow& operator=(const EngineWindow&) = delete;
 	void setTitle(const std::wstring& title);
-	bool InitGfx();
+	bool InitEngine();
 	const WCHAR* getWndClass();
 	bool MessageProc();
 	void Update();
 	//Graphics gfx;
-	std::unique_ptr<Graphics> gfx = std::make_unique<Graphics>();
+	std::unique_ptr<Renderer> rndr = std::make_unique<Renderer>();
 	
 private:
 	int width;

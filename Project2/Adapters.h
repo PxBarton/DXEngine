@@ -13,7 +13,7 @@ class AdapterData
 {
 public:
 	AdapterData(IDXGIAdapter* pAdapter);
-	IDXGIAdapter* pAdapter = nullptr;
+	IDXGIAdapter* adapter = nullptr;
 	DXGI_ADAPTER_DESC description;
 };
 

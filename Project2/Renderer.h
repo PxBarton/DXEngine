@@ -9,7 +9,7 @@
 
 #include "EngineException.h"
 #include "Shaders.h"
-#include "AdapterInfo.h"
+#include "Adapters.h"
 #include "Vertex.h"
 #include "Buffers.h"
 #include "Mesh.h"
@@ -26,13 +26,13 @@
 #include "imgui_impl_dx11.h"
 
 
-class Graphics
+class Renderer
 {
 public:
 
 public:
-	Graphics();
-	~Graphics() = default;
+	Renderer();
+	~Renderer() = default;
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	Camera camera;

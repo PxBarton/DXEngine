@@ -19,19 +19,7 @@ EngineWindow::EngineWindow(int w, int h, const char* t) noexcept
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
 
-
     RegisterClassEx(&wc);
-    /*
-    if (!RegisterClassEx(&wc))
-    {
-        MessageBox(nullptr,
-            L"Call to RegisterClassEx failed!",
-            L"Windows Desktop Guided Tour",
-            0);
-
-        //return 1;
-    }
-    */ 
 
     hWnd = CreateWindowEx(
         // Optional window styles.
@@ -78,7 +66,7 @@ const WCHAR* EngineWindow::getWndClass()
     return windowClass;
 }
 
-bool EngineWindow::InitGfx()
+bool EngineWindow::InitEngine()
 {
     static bool raw_input_initialized = false;
     if (raw_input_initialized == false)
@@ -99,7 +87,7 @@ bool EngineWindow::InitGfx()
         raw_input_initialized = true;
     }
 
-    if (!gfx->Init(hWnd, width, height))
+    if (!rndr->Init(hWnd, width, height))
     {
         return false;
     }
@@ -156,7 +144,7 @@ void EngineWindow::Update()
         {
             if (me.GetType() == MouseEvent::EventType::RAW_MOVE)
             {
-                this->gfx->camera.AdjustRotation((float)me.GetPosY() * 0.01f, (float)me.GetPosX() * 0.01f, 0);
+                this->rndr->camera.AdjustRotation((float)me.GetPosY() * 0.01f, (float)me.GetPosX() * 0.01f, 0);
             }
         }
     }
@@ -166,47 +154,67 @@ void EngineWindow::Update()
     // move forward, back, left, right
     if (keyboard.KeyIsPressed('Y'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetForwardVector() * cameraSpeed * time);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetForwardVector() * cameraSpeed * time);
     }
     if (keyboard.KeyIsPressed('B'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetBackwardVector() * cameraSpeed * time);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetBackwardVector() * cameraSpeed * time);
     }
     if (keyboard.KeyIsPressed('G'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetLeftVector() * cameraSpeed * time);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetLeftVector() * cameraSpeed * time);
     }
     if (keyboard.KeyIsPressed('H'))
     {
-        this->gfx->camera.AdjustPosition(this->gfx->camera.GetRightVector() * cameraSpeed * time);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetRightVector() * cameraSpeed * time);
     }
 
     // up, down
     if (keyboard.KeyIsPressed('R'))
     {
-        this->gfx->camera.AdjustPosition(0.0f, 1.0f * cameraSpeed * dt, 0.0f);
+        this->rndr->camera.AdjustPosition(0.0f, 1.0f * cameraSpeed * dt, 0.0f);
     }
     if (keyboard.KeyIsPressed('C'))
     {
-        this->gfx->camera.AdjustPosition(0.0f, -1.0f * cameraSpeed * dt, 0.0f);
+        this->rndr->camera.AdjustPosition(0.0f, -1.0f * cameraSpeed * dt, 0.0f);
     }
 
     // rotation
     if (keyboard.KeyIsPressed('W'))
     {
-        this->gfx->camera.AdjustRotation(-0.01f, 0.0f, 0.0f);
+        this->rndr->camera.AdjustRotation(-0.01f, 0.0f, 0.0f);
     }
     if (keyboard.KeyIsPressed('Z'))
     {
-        this->gfx->camera.AdjustRotation(0.01f, 0.0f, 0.0f);
+        this->rndr->camera.AdjustRotation(0.01f, 0.0f, 0.0f);
     }
     if (keyboard.KeyIsPressed('A'))
     {
-        this->gfx->camera.AdjustRotation(0.0f, -0.01f, 0.00f);
+        this->rndr->camera.AdjustRotation(0.0f, -0.01f, 0.00f);
     }
     if (keyboard.KeyIsPressed('S'))
     {
-        this->gfx->camera.AdjustRotation(0.0f, 0.01f, -0.00f);
+        this->rndr->camera.AdjustRotation(0.0f, 0.01f, -0.00f);
+    }
+
+    // rotation about origin
+    if (keyboard.KeyIsPressed(VK_UP))
+    {
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetForwardVector() * cameraSpeed * 5 * time);
+    }
+    if (keyboard.KeyIsPressed(VK_DOWN))
+    {
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetBackwardVector() * cameraSpeed * 5 * time);
+    }
+    if (keyboard.KeyIsPressed(VK_LEFT))
+    {
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetLeftVector() * cameraSpeed * time);
+        this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
+    }
+    if (keyboard.KeyIsPressed(VK_RIGHT))
+    {
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetRightVector() * cameraSpeed * time);
+        this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
     }
     
 }
