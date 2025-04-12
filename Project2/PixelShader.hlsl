@@ -13,8 +13,8 @@ struct PS_INPUT
 	float4 inPosition : SV_POSITION;
 	float3 inColor : COLOR;
 	//float3 inTex : TEXCOORD;
-	nointerpolation float3 inNormal : NORMAL;
-	//float3 inNormal : NORMAL;
+	//nointerpolation float3 inNormal : NORMAL;
+	float3 inNormal : NORMAL;
 	float3 inWorldPos : WORLD_POSITION;
 };
 
