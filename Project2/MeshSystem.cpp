@@ -4,21 +4,21 @@
 MeshSystem::MeshSystem(
 	ID3D11Device* device,
 	ID3D11DeviceContext* deviceContext,
-	ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader,
+	ConstantBuffer<CB_vertex>& cb_vertex,
 	Camera& camera)
 {
 	this->device = device;
 	this->deviceContext = deviceContext;
-	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	this->cb_vertex = &cb_vertex;
 	this->camera = &camera;
 }
 
 MeshSystem::MeshSystem()
 {}
 
-void MeshSystem::initSystem(int totalCount, Camera& camera, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
+void MeshSystem::initSystem(int totalCount, Camera& camera, ConstantBuffer<CB_vertex>& cb_vertex)
 {
-	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	this->cb_vertex = &cb_vertex;
 	this->camera = &camera;
 	meshArray = std::make_unique<std::unique_ptr<Mesh>[]>(totalCount);
 }

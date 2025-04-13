@@ -88,39 +88,6 @@ public:
 		return hr;
 	}
 
-	/*
-	HRESULT Initialize(ID3D11Device* device, std::vector<T> *data, UINT numVertices)
-	{
-		if (buffer.Get() != nullptr)
-		{
-			buffer.Reset();
-		}
-
-		this->bufferSize = numVertices;
-
-		if (this->stride.get() == nullptr)
-		{
-			this->stride = std::make_unique<UINT>(sizeof(T));
-		}
-
-
-		D3D11_BUFFER_DESC vertexBufferDesc;
-		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = sizeof(T) * numVertices;
-		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		vertexBufferDesc.CPUAccessFlags = 0;
-		vertexBufferDesc.MiscFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA vertexBufferData;
-		ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-		vertexBufferData.pSysMem = data;
-
-		HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->buffer.GetAddressOf());
-		return hr;
-	}
-	*/
 
 };
 
@@ -157,7 +124,7 @@ private:
 
 public:
 	InstanceBuffer() {}
-
+ 
 	ID3D11Buffer* Get()const
 	{
 		return buffer.Get();
@@ -275,30 +242,7 @@ public:
 		HRESULT hr = device->CreateBuffer(&indexBufferDesc, &indexBufferData, buffer.GetAddressOf());
 		return hr;
 	}
-	/*
-	HRESULT Initialize(ID3D11Device* device, std::vector<DWORD> *data, UINT numIndices)
-	{
-		if (buffer.Get() != nullptr)
-		{
-			buffer.Reset();
-		}
-
-		this->bufferSize = numIndices;
-		//Load Index Data
-		D3D11_BUFFER_DESC indexBufferDesc;
-		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		indexBufferDesc.ByteWidth = sizeof(DWORD) * numIndices;
-		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		indexBufferDesc.CPUAccessFlags = 0;
-		indexBufferDesc.MiscFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA indexBufferData;
-		indexBufferData.pSysMem = data;
-		HRESULT hr = device->CreateBuffer(&indexBufferDesc, &indexBufferData, buffer.GetAddressOf());
-		return hr;
-	}
-	*/
+	
 };
 
 #endif // IndicesBuffer_h__
@@ -314,7 +258,7 @@ public:
 
 // types
 
-struct CB_VS_vertexshader
+struct CB_vertex
 {
 	float xOffset = 0; //4bytes
 	float yOffset = 0; //4bytes
@@ -323,7 +267,7 @@ struct CB_VS_vertexshader
 	BOOL instance;
 };
 
-struct CB_PS_light
+struct CB_light
 {
 	// 12 + 4 = 16 bytes
 	DirectX::XMFLOAT3 ambientColor;

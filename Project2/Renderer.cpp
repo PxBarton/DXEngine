@@ -22,7 +22,6 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 	try
 	{
 		DXGI_SWAP_CHAIN_DESC scd = { 0 };
-		//ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
 		scd.BufferDesc.Width = width;
 		scd.BufferDesc.Height = height;
@@ -59,10 +58,19 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 
 		wrl::ComPtr<ID3D11Texture2D> backBuffer;
 
-		IF_COM_FAIL(swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf())), "get buffer");
+		HRESULT hr = swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
+		if (FAILED(hr)) //If error occurred
+		{
+			EngineException::Log(hr, "Failed to create back buffer.");
+			return false;
+		}
 
-		IF_COM_FAIL(device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTargetView.GetAddressOf()), "create target");
-
+		hr = device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTargetView.GetAddressOf());
+		if (FAILED(hr)) //If error occurred
+		{
+			EngineException::Log(hr, "Failed to create render target view.");
+			return false;
+		}
 
 		//Describe our Depth/Stencil Buffer
 		D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -78,7 +86,7 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		depthStencilDesc.CPUAccessFlags = 0;
 		depthStencilDesc.MiscFlags = 0;
 
-		HRESULT hr = device->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
+		hr = device->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
 		if (FAILED(hr)) //If error occurred
 		{
 			EngineException::Log(hr, "Failed to create depth stencil buffer.");
@@ -120,18 +128,6 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 
 		//Set the Viewport
 		deviceContext->RSSetViewports(1, &viewport);
-
-
-
-		if (!InitShaders())
-		{
-			EngineException::Log("shader fuckup");
-		}
-
-		// initialize constant buffers when vertex & pixel shaders filled in the mesh object
-		InitScene();
-		
-		
 		
 		//Create Rasterizer State
 		D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -181,6 +177,14 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		hr = this->device->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
 		IF_COM_FAIL(hr, "Failed to create blend state.");
 
+		if (!InitShaders())
+		{
+			EngineException::Log("shader fuckup");
+		}
+
+		// initialize constant buffers when vertex & pixel shaders filled in the mesh object
+		InitScene();
+
 		
 	}
 	catch (COMException exception)
@@ -221,7 +225,6 @@ bool Renderer::InitShaders()
 	UINT numElements = ARRAYSIZE(layout);
 	
 	
-	
 	if (!vertexShader.Initialize(this->device, L"..\\x64\\Debug\\VertexShader.cso", layout, numElements))
 	{
 		EngineException::Log("vertex shader problem");
@@ -229,7 +232,6 @@ bool Renderer::InitShaders()
 	}
 	
 	
-
 	if (!pixelShader.Initialize(this->device, L"..\\x64\\Debug\\PixelShader.cso"))
 	{
 		EngineException::Log("pixel shader problem");
@@ -275,8 +277,6 @@ bool Renderer::InitScene()
 	//////////////
 	// Set up mesh geometry
 	//////////////
-
-	
 
 	DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
 	plane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
@@ -611,60 +611,3 @@ void Renderer::RenderFrame()
 
 
 }
-
-
-////////////////////////////////////////////////////
-
-// dont remove yet
-	/*
-	// camera changes get applied to the constant buffer data
-	cb_vert.data.wvpMatrix = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
-	cb_vert.data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vert.data.wvpMatrix);
-	cb_vert.data.worldMatrix = world;
-	if (!cb_vert.ApplyChanges())
-	{
-		return;
-	}
-
-	// buffers are populated
-	deviceContextP->VSSetConstantBuffers(0, 1, cb_vert.GetAddressOf());
-	deviceContextP->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
-	deviceContextP->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	*/
-
-	// this is it
-	//deviceContextP->DrawIndexed(indicesBuffer.BufferSize(), 0, 0);
-
-
-
-
-/*
-int main() {
-	int arr1[] = {1, 2, 3};
-	int arr2[] = {4, 5, 6};
-	int arr3[] = {7, 8, 9};
-
-	int totalSize = sizeof(arr1) + sizeof(arr2) + sizeof(arr3);
-	int* bigArray = new int[totalSize / sizeof(int)];
-
-	int* current = bigArray;
-
-	std::memcpy(current, arr1, sizeof(arr1));
-	current += sizeof(arr1) / sizeof(int);
-
-	std::memcpy(current, arr2, sizeof(arr2));
-	current += sizeof(arr2) / sizeof(int);
-
-	std::memcpy(current, arr3, sizeof(arr3));
-
-	// Print the big array
-	for (int i = 0; i < totalSize / sizeof(int); ++i) {
-		std::cout << bigArray[i] << " ";
-	}
-	std::cout << std::endl;
-
-	delete[] bigArray;
-*/
-
-
-

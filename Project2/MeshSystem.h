@@ -10,7 +10,7 @@ public:
 	
 	MeshSystem(ID3D11Device* device,
 		ID3D11DeviceContext* deviceContext,
-		ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader,
+		ConstantBuffer<CB_vertex>& cb_vertex,
 		Camera& camera);
 
 	MeshSystem();
@@ -21,7 +21,7 @@ public:
 	std::unique_ptr<Mesh[]> meshMatrix = nullptr;
 	std::vector<Mesh> meshVector = {};
 
-	void initSystem(int totalCount, Camera& camera, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader);
+	void initSystem(int totalCount, Camera& camera, ConstantBuffer<CB_vertex>& cb_vertex);
 	void ringSystem(float radius, int meshCount);
 	void gridSystem(float xLength, float zLength, int xCount, int zCount, float param);
 	void stack(float height, float stackCount);
@@ -29,5 +29,5 @@ public:
 private:
 	ID3D11Device* device = nullptr;
 	ID3D11DeviceContext* deviceContext = nullptr;
-	ConstantBuffer<CB_VS_vertexshader>* cb_vs_vertexshader;
+	ConstantBuffer<CB_vertex>* cb_vertex;
 };

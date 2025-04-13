@@ -80,8 +80,8 @@ private:
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indicesBuffer;
 	InstanceBuffer<InstancePosition> instanceBuffer;
-	ConstantBuffer<CB_VS_vertexshader> cb_vert;
-	ConstantBuffer<CB_PS_light> cb_light;
+	ConstantBuffer<CB_vertex> cb_vert;
+	ConstantBuffer<CB_light> cb_light;
 
 	//Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 

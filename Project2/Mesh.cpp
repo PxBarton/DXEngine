@@ -5,12 +5,12 @@ Mesh::Mesh(
 	ID3D11Device* device,
 	ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX& transformMatrix,
-	ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
+	ConstantBuffer<CB_vertex>& cb_vertex)
 {
 	this->device = device;
 	this->deviceContext = deviceContext;
 	this->transformMatrix = transformMatrix;
-	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	this->cb_vertex = &cb_vertex;
 	//this->textures = textures;
 }
 
@@ -32,7 +32,7 @@ Mesh::Mesh(const Mesh& rvMesh)
 	this->deviceContext = rvMesh.deviceContext;
 	//vertexBuffer = rvMesh.vertexBuffer;
 	//indexBuffer = rvMesh.indexBuffer;
-	this->cb_vs_vertexshader = rvMesh.cb_vs_vertexshader;
+	this->cb_vertex = rvMesh.cb_vertex;
 	
 	this->positionVec = rvMesh.positionVec;
 	this->rotationVec = rvMesh.rotationVec;
@@ -112,28 +112,6 @@ const XMMATRIX Mesh::getScaleMatrix()
 	return scaleMatrix;
 }
 
-/*
-void Mesh::translate(float x, float y, float z)
-{
-	float time = timer.GetMilisecondsElapsed();
-	timer.Restart();
-	setPosition(x * time, y * time, z * time);
-}
-
-void Mesh::rotate(float x, float y, float z)
-{
-	float time = timer.GetMilisecondsElapsed();
-	timer.Restart();
-	setRotation(x * time, y * time, z * time);
-}
-
-void Mesh::scaleMesh(float x, float y, float z)
-{
-	float time = timer.GetMilisecondsElapsed();
-	timer.Restart();
-	setScale(x, y * time, z);
-}
-*/
 
 void Mesh::initMesh(int vertCount, int triCount)
 {
@@ -171,12 +149,12 @@ void Mesh::initInstances(std::unique_ptr<InstancePosition[]> instanceData)
 
 void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
 {
-	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vertex->GetAddressOf());
 
-	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
-	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
-	cb_vs_vertexshader->ApplyChanges();
+	cb_vertex->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vertex->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vertex->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vertex->data.wvpMatrix);
+	cb_vertex->ApplyChanges();
 
 	UINT offset = 0;
 
@@ -189,7 +167,7 @@ void Mesh::draw(const DirectX::XMMATRIX& viewProjectionMatrix)
 void Mesh::initBuffers()
 {
 	UINT offset = 0;
-	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vertex->GetAddressOf());
 	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), vertexBuffer.StridePtr(), &offset);
 	deviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 }
@@ -197,10 +175,10 @@ void Mesh::initBuffers()
 
 void Mesh::drawFast(const DirectX::XMMATRIX& viewProjectionMatrix)
 {
-	cb_vs_vertexshader->data.wvpMatrix = this->transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-	cb_vs_vertexshader->data.worldMatrix = this->transformMatrix * worldMatrix; //Calculate World
-	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
-	cb_vs_vertexshader->ApplyChanges();
+	cb_vertex->data.wvpMatrix = this->transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vertex->data.worldMatrix = this->transformMatrix * worldMatrix; //Calculate World
+	cb_vertex->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vertex->data.wvpMatrix);
+	cb_vertex->ApplyChanges();
 
 	deviceContext->DrawIndexed(indexBuffer.BufferSize(), 0, 0);
 }
@@ -210,12 +188,12 @@ void Mesh::drawInstances(const XMMATRIX& viewProjectionMatrix)
 {
 	
 	
-	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vertex->GetAddressOf());
 
-	cb_vs_vertexshader->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-	cb_vs_vertexshader->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
-	cb_vs_vertexshader->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vs_vertexshader->data.wvpMatrix);
-	cb_vs_vertexshader->ApplyChanges();
+	cb_vertex->data.wvpMatrix = transformMatrix * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+	cb_vertex->data.worldMatrix = transformMatrix * worldMatrix; //Calculate World
+	cb_vertex->data.wvpMatrix = DirectX::XMMatrixTranspose(cb_vertex->data.wvpMatrix);
+	cb_vertex->ApplyChanges();
 
 	UINT offset = 0;
 	const UINT* vStride = vertexBuffer.StridePtr();
@@ -806,11 +784,7 @@ bool Mesh::calcNormals(Vertex verts[], DWORD tris[], int size, int numV)
 		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, triNormV);
 		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, triNormV);
 		verts[index3].normalV = DirectX::XMVectorAdd(verts[index3].normalV, triNormV);
-
-		//DirectX::XMVECTOR norm1;
-		//DirectX::XMVECTOR norm2;
-		//DirectX::XMVECTOR norm3;
-
+		
 	}
 
 	for (int i = 0; i < numV; i++)
@@ -818,104 +792,16 @@ bool Mesh::calcNormals(Vertex verts[], DWORD tris[], int size, int numV)
 		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
 		DirectX::XMStoreFloat3(&verts[i].normal, verts[i].normalV);
 	}
-	/*
-	if (verts[(sizeof(verts)) / 2].normal.y < 0.1)
-	{
-		return false;
-	}
-	*/
 	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// do not use
-
-void Mesh::calcNormalsV(Vertex verts[], DWORD tris[])
-{
-	for (int i = 0; i < (sizeof(tris)) / 3; i++)
-	{
-		int index1 = tris[i * 3 + 0];
-		int index2 = tris[i * 3 + 1];
-		int index3 = tris[i * 3 + 2];
-
-		DirectX::XMVECTOR triNormV = triNormalV(verts[index1], verts[index2], verts[index3]);
-
-		verts[index1].normalV = DirectX::XMVectorAdd(verts[index1].normalV, triNormV);
-		verts[index2].normalV = DirectX::XMVectorAdd(verts[index2].normalV, triNormV);
-		verts[index3].normalV = DirectX::XMVectorAdd(verts[index3].normalV, triNormV);
-
-	}
-
-	for (int i = 0; i < sizeof(verts); i++)
-	{
-		verts[i].normalV = DirectX::XMVector3Normalize(verts[i].normalV);
-	}
-
-
-}
-
-
-/*
-DirectX::XMFLOAT3 Mesh::triNormal(Vertex& A, Vertex& B, Vertex& C)
-{
-	// convert triangle Vertex.pos to vectors
-	DirectX::XMVECTOR vA = DirectX::XMLoadFloat3(&A.pos);
-	DirectX::XMVECTOR vB = DirectX::XMLoadFloat3(&B.pos);
-	DirectX::XMVECTOR vC = DirectX::XMLoadFloat3(&C.pos);
-
-	// define vectors for cross
-	DirectX::XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
-	DirectX::XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
-
-	DirectX::XMVECTOR norm1 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
-
-	//DirectX::XMVECTOR norm2 = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(U, V));
-
-	DirectX::XMFLOAT3 norm;
-	DirectX::XMStoreFloat3(&norm, norm1);
-
-	return (norm);
-*/
 
 
 
 ///////////////////////////////////////////////////
-
-//	python plane
-
-/*
-
-origin = [0, 0, 0]
-xLim = 40
-yLim = 40
-step = .5
-xAxis = np.arange(-xLim/2, xLim/2+1, step)
-yAxis = np.arange(-yLim/2, yLim/2+1, step)
-x = len(xAxis)
-y = len(yAxis)
-
-def makePlane(X, Y) :
-	points = []
-	#X = np.arange(C[0], C[0] + Xaxis, 1)
-	#Y = np.arange(C[1], C[1] + Yaxis, 1)
-	#X = np.linspace(0, Xaxis, 10)
-	#Y = np.linspace(0, Yaxis, 10)
-	for i in range(len(X)) :
-		for j in range(len(Y)) :
-			coord = [X[i], Y[j], 0]
-			points.append(coord)
-			return points
-
-for i in range(x-1):
-	for j in range(y-1):
-		face = [(i*y)+j, (i*y)+j+1, (i*y)+j+y+1, (i*y)+j+y]
-		tri1 = [(i*y)+j, (i*y)+j+1, (i*y)+j+y]
-		tri2 = [(i*y)+j+1, (i*y)+j+y+1, (i*y)+j+y]
-		faces.append(face)
-
-*/
 
 /*
 void ModelRenderer::UpdateInstanceBuffer()

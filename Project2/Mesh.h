@@ -8,7 +8,7 @@ public:
 	Mesh(ID3D11Device* device,
 		ID3D11DeviceContext* deviceContext,
 		const XMMATRIX& transformMatrix,
-		ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader);
+		ConstantBuffer<CB_vertex>& cb_vertex);
 
 	Mesh() {};
 
@@ -23,13 +23,11 @@ public:
 	int triCount = 0;
 	int t = 0;
 	
-	//DirectX::XMFLOAT3 triNormal(Vertex& A, Vertex& B, Vertex& C);
 	XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
+	bool calcNormals();
 
 	bool calcNormals(Vertex verts[], DWORD tris[], int size, int numV);
-	bool calcNormals();
-	void calcNormalsV(Vertex verts[], DWORD tris[]);
-
+	
 	void initRotation(float x, float y, float z);
 	void animateRotation(float x, float y, float z);
 	void initPosition(float x, float y, float z);
@@ -49,9 +47,6 @@ public:
 	void setWorldMatrix();
 	void setTransformMatrix();
 	void setTransformMatrix(XMMATRIX newTransform);
-	void translate(float x, float y, float z);
-	void rotate(float x, float y, float z);
-	void scaleMesh(float x, float y, float z);
 
 	void initMesh(int vertCount, int triCount);
 	void initInstances(std::vector<InstancePosition> instData);
@@ -73,15 +68,17 @@ private:
 	InstanceBuffer<InstancePosition> instanceBuffer;
 	ID3D11Device* device = nullptr;
 	ID3D11DeviceContext* deviceContext = nullptr;
-	ConstantBuffer<CB_VS_vertexshader>* cb_vs_vertexshader = nullptr;
+	ConstantBuffer<CB_vertex>* cb_vertex = nullptr;
 	ID3D11Buffer* vertInstBuffers[2] = {};
 
 	XMVECTOR positionVec = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR rotationVec = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR scaleVec = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
+
 	XMFLOAT3 position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMFLOAT3 rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMFLOAT3 scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
+
 	XMMATRIX scaleMatrix = XMMatrixScaling(1.0f, 1.0f, 1.0f);
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	XMMATRIX transformMatrix = XMMatrixIdentity();
