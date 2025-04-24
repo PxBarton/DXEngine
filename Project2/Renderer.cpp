@@ -374,104 +374,13 @@ bool Renderer::SceneSetup()
 	float h = 10.0f;
 	float bRad = 3.0f;
 	float tRad = 3.0f;
-	//int hDiv = 128;
-	//int rDiv = 256;
-
-	//int cylinderVertCount = (hDiv + 2) * (rDiv);
-	//int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-	//cylinder->initMesh(cylinderVertCount, cylinderTriCount);
-	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-
-	//float h = 3.0f;
-	//float bRad = 3.0f;
-	//float tRad = 2.0f;
 	int hDiv = 200;
 	int rDiv = 64;
 
 	int cylinderVertCount = (hDiv + 2) * (rDiv);
 	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
 	
-	cubeSystem = std::make_unique<MeshSystem>();
-
-	//std::unique_ptr<Mesh> cylinder1 = nullptr;
-	//std::unique_ptr<Mesh> cylinder2 = nullptr;
-	std::unique_ptr<Mesh> cylinder3 = nullptr;
-	std::unique_ptr<Mesh> cylinder4 = nullptr;
-
-	DirectX::XMMATRIX initTranslate = XMMatrixTranslation(4.0, 0.0, 4.0);
-
-	cylinder1 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cylinder2 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTranslate, cb_vert);
-	cylinder3 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cylinder4 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-
-	cylinder1->initMesh(cylinderVertCount, cylinderTriCount);
-	cylinder2->initMesh(cylinderVertCount, cylinderTriCount);
-
-	int meshCount = 12;
-	cubeSystem->initSystem(meshCount, camera, cb_vert);
-	/*
-	cubeSystem->meshArray[0] = std::move(cylinder1);
-	cubeSystem->meshArray[1] = std::move(cylinder2);
-	cubeSystem->meshArray[2] = std::move(cylinder3);
-	cubeSystem->meshArray[3] = std::move(cylinder4);
-	for (int i = 0; i < 4; i++)
-	{
-		cubeSystem->meshArray[i]->initMesh(cylinderVertCount, cylinderTriCount);
-		cubeSystem->meshArray[i]->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-	}
 	
-	cubeSystem->meshVector.push_back(*cylinder1);
-	cubeSystem->meshVector.push_back(*cylinder2);
-	cubeSystem->meshVector.push_back(*cylinder3);
-	cubeSystem->meshVector.push_back(*cylinder4);
-	for (int i = 0; i < 4; i++)
-	{
-		cubeSystem->meshVector[i].initMesh(cylinderVertCount, cylinderTriCount);
-		cubeSystem->meshVector[i].buildCylinder(h, bRad, tRad, hDiv, rDiv);
-	}
-	*/
-
-	for (int i = 0; i < meshCount; i++)
-	{
-		std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-		mesh->initMesh(cylinderVertCount, cylinderTriCount);
-		mesh->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-		//cubeSystem->meshVector.push_back(*mesh);
-	}
-	
-
-	
-	// attempting use of Mesh custom copy constructor
-	cubeSystem2 = std::make_unique<MeshSystem>();
-	cubeSystem2->initSystem(2, camera, cb_vert);
-
-	std::unique_ptr<Mesh> cylinder5 = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cylinder5->initMesh(cylinderVertCount, cylinderTriCount);
-	cylinder5->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-
-	std::unique_ptr<Mesh> cylinder6 = std::make_unique<Mesh>(*cylinder5);
-	cubeSystem2->meshArray[0] = std::move(cylinder6);
-
-	std::unique_ptr<Mesh> cylinder7 = std::make_unique<Mesh>(*cylinder5);
-	cubeSystem2->meshArray[1] = std::move(cylinder7);
-	
-
-	// std vectors + no copy constructor
-	cubeSystem3 = std::make_unique<MeshSystem>();
-	cubeSystem3->initSystem(4, camera, cb_vert);
-
-	cylinder8 = std::make_shared<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cylinder8->initMesh(cylinderVertCount, cylinderTriCount);
-	//cylinder8->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-
-	//std::unique_ptr<Mesh> cylinder9 = std::make_unique<Mesh>(*cylinder8);
-	//cubeSystem3->meshVector.push_back(*cylinder8);
-
-	//std::unique_ptr<Mesh> cylinder10 = std::make_unique<Mesh>(*cylinder8);
-	//cubeSystem3->meshVector.push_back(*cylinder8);
-
-	//setNumMeshes(80);
 	XMVECTOR tempPos;
 	instanceData = std::make_unique<InstancePosition[]>(numMeshes);
 	
@@ -523,13 +432,9 @@ void Renderer::RenderSetup()
 	//plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
 	//plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
-	//cube->rotate(0.0f, 0.001f, 0.001f);
-	//cube->translate(1.0f, 0.0f, 3.0f);
-	//cube->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-
 	//animatedPlane->buildWave(200, 200, 0.1);
 	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	// 
+	
 
 	float h = 10.0f;
 	float bRad = 2.0f;
@@ -539,13 +444,12 @@ void Renderer::RenderSetup()
 	int hDiv = 200;
 	int rDiv = 64;
 
-	//cylinder->rotate(0.0f, 0.001f, 0.000f);
+	
 	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
 	cylinder->initBuffers();
 	//cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
 	//cylinder->setTransformMatrix(cylinder->getScaleMatrix());
 	//cylinder->draw(viewProjection);
-
 	//cylinder->drawFast(viewProjection);
 
 
@@ -557,19 +461,6 @@ void Renderer::RenderSetup()
 
 		cylinder->drawFast(viewProjection);
 	}
-
-	//cubeSystem->gridSystem(24, 24, 3, 4, param);
-	//cubeSystem2->gridSystem(12, 12, 1, 2, param);
-
-
-	//cubeSystem3->gridSystem(12, 12, 2, 2, param);
-	//cylinder1->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	//cylinder2->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	//cylinder1->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	//cylinder2->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	//cylinder8->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	//cylinder1->initInstances(instData);
-	//cylinder->drawInstances(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	// Start the Dear ImGui frame
 	static int counter = 0;

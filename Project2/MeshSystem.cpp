@@ -4,7 +4,7 @@ MeshSystem::MeshSystem()
 {}
 
 
-void MeshSystem::ringSystem(float radius, int meshCount)
+void MeshSystem::ringSystem(float radius, int ringCount, int perRingCount)
 {
 	
 }
