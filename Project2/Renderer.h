@@ -36,7 +36,7 @@ public:
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
-	
+
 	std::unique_ptr<Mesh> plane = nullptr;
 	std::unique_ptr<Mesh> cube = nullptr;
 	std::unique_ptr<Mesh> animatedPlane = nullptr;
@@ -48,7 +48,7 @@ public:
 	std::unique_ptr<Mesh> cylinder2 = nullptr;
 	std::shared_ptr<Mesh> cylinder8 = nullptr;
 
-	int numMeshes = 4000;
+	int numMeshes = 4;
 	std::vector<InstancePosition> instData{ numMeshes };
 	std::unique_ptr<InstancePosition[]> instanceData = nullptr;
 
@@ -83,14 +83,7 @@ private:
 	ConstantBuffer<CB_vertex> cb_vert;
 	ConstantBuffer<CB_light> cb_light;
 
-	//Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-
-	//Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayoutP;
-
 	bool InitShaders();
-	//bool InitScene(Vertex v[], DWORD i[], UINT lenV, UINT lenI);
-	bool InitScene();
-	// C++ STL <vector> version
-	//bool InitScene(std::vector<Vertex> v, std::vector<DWORD> i, UINT lenV, UINT lenI);
-
+	bool SceneSetup();
+	void RenderSetup();
 };

@@ -1,19 +1,5 @@
 #include "Camera.h"
 
-/*
-	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-	static DirectX::XMVECTOR eye = DirectX::XMVectorSet(2.0f, 1.5f, -3.0f, 0.0f);
-	static DirectX::XMVECTOR lookAt = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	static DirectX::XMVECTOR upDir = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(eye, lookAt, upDir);
-	float fovDeg = 60.0f;
-	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
-	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	float nearZ = 0.1f;
-	float farZ = 1000.0f;
-	DirectX::XMMATRIX projectionMat = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, nearZ, farZ);
-*/
-
 Camera::Camera()
 {
 	this->pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -22,7 +8,6 @@ Camera::Camera()
 	this->rotVector = XMLoadFloat3(&this->rot);
 	this->UpdateViewMatrix();
 }
-
 
 void Camera::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
 {
@@ -40,22 +25,22 @@ const XMMATRIX& Camera::GetProjectionMatrix() const
 	return this->projectionMatrix;
 }
 
-const XMVECTOR& Camera::GetPositionVector() const
+const XMVECTOR& Camera::GetPositionV() const
 {
 	return this->posVector;
 }
 
-const XMFLOAT3& Camera::GetPositionFloat3() const
+const XMFLOAT3& Camera::GetPositionF() const
 {
 	return this->pos;
 }
 
-const XMVECTOR& Camera::GetRotationVector() const
+const XMVECTOR& Camera::GetRotationV() const
 {
 	return this->rotVector;
 }
 
-const XMFLOAT3& Camera::GetRotationFloat3() const
+const XMFLOAT3& Camera::GetRotationF() const
 {
 	return this->rot;
 }
@@ -64,13 +49,6 @@ void Camera::SetPosition(const XMVECTOR& pos)
 {
 	XMStoreFloat3(&this->pos, pos);
 	this->posVector = pos;
-	this->UpdateViewMatrix();
-}
-
-void Camera::SetPosition(const XMFLOAT3& pos)
-{
-	this->pos = pos;
-	this->posVector = XMLoadFloat3(&this->pos);
 	this->UpdateViewMatrix();
 }
 
@@ -85,15 +63,6 @@ void Camera::AdjustPosition(const XMVECTOR& pos)
 {
 	this->posVector += pos;
 	XMStoreFloat3(&this->pos, this->posVector);
-	this->UpdateViewMatrix();
-}
-
-void Camera::AdjustPosition(const XMFLOAT3& pos)
-{
-	this->pos.x += pos.y;
-	this->pos.y += pos.y;
-	this->pos.z += pos.z;
-	this->posVector = XMLoadFloat3(&this->pos);
 	this->UpdateViewMatrix();
 }
 
@@ -113,13 +82,6 @@ void Camera::SetRotation(const XMVECTOR& rot)
 	this->UpdateViewMatrix();
 }
 
-void Camera::SetRotation(const XMFLOAT3& rot)
-{
-	this->rot = rot;
-	this->rotVector = XMLoadFloat3(&this->rot);
-	this->UpdateViewMatrix();
-}
-
 void Camera::SetRotation(float x, float y, float z)
 {
 	this->rot = XMFLOAT3(x, y, z);
@@ -134,14 +96,7 @@ void Camera::AdjustRotation(const XMVECTOR& rot)
 	this->UpdateViewMatrix();
 }
 
-void Camera::AdjustRotation(const XMFLOAT3& rot)
-{
-	this->rot.x += rot.x;
-	this->rot.y += rot.y;
-	this->rot.z += rot.z;
-	this->rotVector = XMLoadFloat3(&this->rot);
-	this->UpdateViewMatrix();
-}
+
 
 void Camera::AdjustRotation(float x, float y, float z)
 {
@@ -154,7 +109,7 @@ void Camera::AdjustRotation(float x, float y, float z)
 
 void Camera::SetLookAtPos(XMFLOAT3 lookAtPos)
 {
-	//Verify that look at pos is not the same as cam pos. They cannot be the same as that wouldn't make sense and would result in undefined behavior.
+	// Verify that look at pos != cam pos
 	if (lookAtPos.x == this->pos.x && lookAtPos.y == this->pos.y && lookAtPos.z == this->pos.z)
 		return;
 
@@ -180,53 +135,52 @@ void Camera::SetLookAtPos(XMFLOAT3 lookAtPos)
 	this->SetRotation(pitch, yaw, 0.0f);
 }
 
-const XMVECTOR& Camera::GetForwardVector()
+const XMVECTOR& Camera::GetForwardV()
 {
-	return this->vec_forward;
+	return this->forwardV;
 }
 
-const XMVECTOR& Camera::GetRightVector()
+const XMVECTOR& Camera::GetRightV()
 {
-	return this->vec_right;
+	return this->rightV;
 }
 
-const XMVECTOR& Camera::GetBackwardVector()
+const XMVECTOR& Camera::GetBackwardV()
 {
-	return this->vec_backward;
+	return this->backV;
 }
 
-const XMVECTOR& Camera::GetLeftVector()
+const XMVECTOR& Camera::GetLeftV()
 {
-	return this->vec_left;
+	return this->leftV;
 }
 
-void Camera::UpdateViewMatrix() //Updates view matrix and also updates the movement vectors
+void Camera::UpdateViewMatrix() //Updates view matrix and direction vectors
 {
 	// XMVector3TransformCoord ignores the w component of the input vector, and uses a value of 1.0 instead. 
 	// The w component of the returned vector will always be 1.0.
 	
-	//Calculate camera rotation matrix
+	// Calculate camera rotation matrix
 	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rot.x, this->rot.y, this->rot.z);
-	//Calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
-	XMVECTOR camTarget = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR, camRotationMatrix);
-	//Adjust cam target to be offset by the camera's current position
+	// Calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
+	XMVECTOR camTarget = XMVector3TransformCoord(this->defaultForwardV, camRotationMatrix);
+	// Adjust cam target to be offset by the camera's current position
 	camTarget += this->posVector;
-	//Calculate up direction based on current rotation
-	XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR, camRotationMatrix);
-	//Rebuild view matrix
+	// Calculate up direction based on current rotation
+	XMVECTOR upDir = XMVector3TransformCoord(this->defaultUpV, camRotationMatrix);
+	// Rebuild view matrix
 	this->viewMatrix = XMMatrixLookAtLH(this->posVector, camTarget, upDir);
 
-	// should be using quaternions
-	// XMVECTOR XM_CALLCONV XMVector3Rotate(
-	// [in] FXMVECTOR V,
-	//	[in] FXMVECTOR RotationQuaternion
-	//	) noexcept;
-
-	 
-	// here is why XMVECTOR is retained 
 	XMMATRIX vecRotationMatrix = XMMatrixRotationRollPitchYaw(0.0f, this->rot.y, 0.0f);
-	this->vec_forward = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR, vecRotationMatrix);
-	this->vec_backward = XMVector3TransformCoord(this->DEFAULT_BACKWARD_VECTOR, vecRotationMatrix);
-	this->vec_left = XMVector3TransformCoord(this->DEFAULT_LEFT_VECTOR, vecRotationMatrix);
-	this->vec_right = XMVector3TransformCoord(this->DEFAULT_RIGHT_VECTOR, vecRotationMatrix);
+	this->forwardV = XMVector3TransformCoord(this->defaultForwardV, vecRotationMatrix);
+	this->backV = XMVector3TransformCoord(this->defaultBackV, vecRotationMatrix);
+	this->leftV = XMVector3TransformCoord(this->defaultLeftV, vecRotationMatrix);
+	this->rightV = XMVector3TransformCoord(this->defaultRightV, vecRotationMatrix);
 }
+
+// should be using quaternions
+
+// XMVECTOR XM_CALLCONV XMVector3Rotate(
+// [in] FXMVECTOR V,
+//	[in] FXMVECTOR RotationQuaternion
+//	) noexcept;

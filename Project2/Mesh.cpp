@@ -527,7 +527,7 @@ bool Mesh::buildWave(int xCount, int zCount, float step)
 		EngineException::Log(hr, "vertex buffer");
 
 	}
-	// ARRAYSIZE(i)
+	
 	hr = indexBuffer.Initialize(device, tris.get(), triCount);
 	if (FAILED(hr))
 	{

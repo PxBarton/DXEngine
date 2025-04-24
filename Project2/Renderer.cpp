@@ -175,7 +175,11 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		blendDesc.RenderTarget[0] = rtbd;
 
 		hr = this->device->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
-		IF_COM_FAIL(hr, "Failed to create blend state.");
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "Failed to create blend state.");
+			return false;
+		}
 
 		if (!InitShaders())
 		{
@@ -183,8 +187,7 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		}
 
 		// initialize constant buffers when vertex & pixel shaders filled in the mesh object
-		InitScene();
-
+		SceneSetup();
 		
 	}
 	catch (COMException exception)
@@ -203,6 +206,41 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 
 	return true;
 }
+
+///////////////////////////////
+// Frame presented to swap chain here
+///////////////////////////////
+void Renderer::RenderFrame()
+{
+	const float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	deviceContext->ClearRenderTargetView(renderTargetView.Get(), color);
+	deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	deviceContext->IASetInputLayout(vertexShader.GetInputLayout());
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContext->RSSetState(rasterizerState.Get());
+	deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
+
+	deviceContext->VSSetShader(vertexShader.GetShader(), NULL, 0);
+	deviceContext->PSSetShader(pixelShader.GetShader(), NULL, 0);
+
+	UINT offset = 0;
+
+	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
+	cb_light.data.ambientStrength = .5f;
+	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	cb_light.data.lightStrength = 1.0f;
+	cb_light.data.lightPosition = XMFLOAT3(8.0f, 12.0f, -4.0f);
+	if (!cb_light.ApplyChanges())
+	{
+		return;
+	}
+	deviceContext->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
+
+	RenderSetup();
+
+	swapchain->Present(1u, NULL);
+}
+
 
 ///////////////////////////////
 // Input Layout desc is here
@@ -242,7 +280,7 @@ bool Renderer::InitShaders()
 }
 
 
-bool Renderer::InitScene()
+bool Renderer::SceneSetup()
 {
 	// Constant buffers, camera. mesh geometry setup
 
@@ -461,41 +499,13 @@ bool Renderer::InitScene()
 }
 
 
-void Renderer::RenderFrame()
+void Renderer::RenderSetup()
 {
-	const float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	deviceContext->ClearRenderTargetView(renderTargetView.Get(), color);
-	deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	deviceContext->IASetInputLayout(vertexShader.GetInputLayout());
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	deviceContext->RSSetState(rasterizerState.Get());
-	deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
-	
-	deviceContext->VSSetShader(vertexShader.GetShader(), NULL, 0);
-	deviceContext->PSSetShader(pixelShader.GetShader(), NULL, 0);
-
-	//UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-
-	
-	//cb_vert.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
-
 	// set up world
 	// id matrix implies the origin at 0, 0, 0
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX viewProjection = camera.GetViewMatrix() * camera.GetProjectionMatrix();
-
-	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
-	cb_light.data.ambientStrength = .5f;
-	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	cb_light.data.lightStrength = 1.0f;
-	cb_light.data.lightPosition = XMFLOAT3(8.0f, 12.0f, -4.0f);
-	if (!cb_light.ApplyChanges())
-	{
-		return;
-	}
-	deviceContext->PSSetConstantBuffers(0, 1, cb_light.GetAddressOf());
 
 	const float xLimit1 = -16.0f;
 	const float xLimit2 = 16.0f;
@@ -512,7 +522,7 @@ void Renderer::RenderFrame()
 
 	//plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
 	//plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	
+
 	//cube->rotate(0.0f, 0.001f, 0.001f);
 	//cube->translate(1.0f, 0.0f, 3.0f);
 	//cube->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
@@ -520,7 +530,7 @@ void Renderer::RenderFrame()
 	//animatedPlane->buildWave(200, 200, 0.1);
 	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	// 
-	
+
 	float h = 10.0f;
 	float bRad = 2.0f;
 	float tRad = 1.5f;
@@ -535,23 +545,23 @@ void Renderer::RenderFrame()
 	//cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
 	//cylinder->setTransformMatrix(cylinder->getScaleMatrix());
 	//cylinder->draw(viewProjection);
-	
+
 	//cylinder->drawFast(viewProjection);
 
-	
+
 	for (int i = 0; i < numMeshes; i++)
 	{
 		cylinder->initPosition(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
 		cylinder->initScale(paramSet2[0], paramSet2[1], paramSet2[2]);
 		cylinder->setTransformMatrix(cylinder->getScaleMatrix());
-	
+
 		cylinder->drawFast(viewProjection);
 	}
 
 	//cubeSystem->gridSystem(24, 24, 3, 4, param);
 	//cubeSystem2->gridSystem(12, 12, 1, 2, param);
-	
-	
+
+
 	//cubeSystem3->gridSystem(12, 12, 2, 2, param);
 	//cylinder1->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
 	//cylinder2->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
@@ -568,7 +578,7 @@ void Renderer::RenderFrame()
 	ImGui::NewFrame();
 	//Create ImGui Test Window
 	ImGui::Begin("Test");
-	
+
 	//ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
 	//ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
 	ImGui::SliderFloat3("Parameters", paramSet, 0.0f, 2.0f);
@@ -591,13 +601,13 @@ void Renderer::RenderFrame()
 		ImGui::Text( (std::to_string(cylinder->tris[i]) + " " + std::to_string(cylinder->tris[i+1]) + " " + std::to_string(cylinder->tris[i+2])).c_str());
 	}
 	*/
-	
+
 	ImGui::End();
 
 	ImGui::Begin("Test2");
 	if (ImGui::Button("Test"))
 		counter += 1;
-	std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes-1].pos.x);
+	std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes - 1].pos.x);
 	ImGui::Text(clicks.c_str());
 	std::string info = "Instances: " + std::to_string(numMeshes);
 	ImGui::Text(info.c_str());
@@ -606,8 +616,7 @@ void Renderer::RenderFrame()
 	ImGui::Render();
 	//Render Draw Data
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-	swapchain->Present(1u, NULL);
-
-
 }
+
+
+
