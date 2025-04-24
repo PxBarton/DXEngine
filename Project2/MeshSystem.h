@@ -1,33 +1,28 @@
 #pragma once
 
 #include <vector> 
-#include "Mesh.h"
-#include "Camera.h"
+#pragma once
+
+#include <DirectXMath.h>
+#include <cmath>
+#include <vector>
+#include <memory>
 
 class MeshSystem
 {
 public:
-	
-	MeshSystem(ID3D11Device* device,
-		ID3D11DeviceContext* deviceContext,
-		ConstantBuffer<CB_vertex>& cb_vertex,
-		Camera& camera);
-
 	MeshSystem();
-
-	Camera* camera;
-	DirectX::XMMATRIX viewProjMat = DirectX::XMMatrixIdentity();
-	std::unique_ptr<std::unique_ptr<Mesh>[]> meshArray = nullptr;
-	std::unique_ptr<Mesh[]> meshMatrix = nullptr;
-	std::vector<Mesh> meshVector = {};
-
-	void initSystem(int totalCount, Camera& camera, ConstantBuffer<CB_vertex>& cb_vertex);
-	void ringSystem(float radius, int meshCount);
+	
+	int getCount();
+	void setCount(int meshCount);
+	void ringSystem(float radius, int ringCount, int perRingCount);
 	void gridSystem(float xLength, float zLength, int xCount, int zCount, float param);
 	void stack(float height, float stackCount);
 
 private:
-	ID3D11Device* device = nullptr;
-	ID3D11DeviceContext* deviceContext = nullptr;
-	ConstantBuffer<CB_vertex>* cb_vertex;
+	int count = 0;
+	std::unique_ptr<DirectX::XMFLOAT3[]> meshArray = nullptr;
+	std::unique_ptr<std::unique_ptr<DirectX::XMFLOAT3>[]> meshGrid = nullptr;
+	std::vector<DirectX::XMFLOAT3> meshVector = {};
+	std::vector<std::vector<DirectX::XMFLOAT3>> meshVectorGrid = {};
 };
