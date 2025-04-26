@@ -317,17 +317,13 @@ bool Renderer::SceneSetup()
 	//////////////
 
 	DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
+
+	flatPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	plane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	cube = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	animatedPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	cylinder = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 
-	//std::unique_ptr<Mesh> cube2 = std::make_unique<Mesh>(&cube);
-
-	// setup for Plane geometry
-	//const int planePointsX = 80;
-	//const int planePointsZ = 80;
-	//const int planeVertCount = planePointsX * planePointsZ;
 
 	const float xLimit1 = -160.0f;
 	const float xLimit2 = 160.0f;
@@ -360,16 +356,8 @@ bool Renderer::SceneSetup()
 	plane->initMesh(planeVertCount, planeTriCount);
 	animatedPlane->initMesh(waveVertCount, waveTriCount);
 	cube->initMesh(8, 36);
-
-	//if (!plane->buildPlane(planePointsX, planePointsZ))
-	//if (!plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints))
-	//{
-	//	EngineException::Log("scene fuckup");
-	//}
-	if (!cube->buildCube(2.0f))
-	{
-		EngineException::Log("scene fuckup");
-	}
+	cube->buildCube(2.0f);
+	
 
 	float h = 10.0f;
 	float bRad = 3.0f;
@@ -389,13 +377,10 @@ bool Renderer::SceneSetup()
 	//cylinder->initBuffers();
 	//cylinder->initInstances((instData));
 
-	cylinderSystem = std::make_unique<MeshSystem>();
-	cylinderSystem->gridSystem(40, 40, 5, 5, 0.0);
 
-	flatPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	
 	flatPlane->initMesh(planeVertCount, planeTriCount);
 	flatPlane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, 0.0, 0.0, 0.0);
-	//flatPlane->draw(cameraVP);
 
 	return true;
 }
@@ -425,40 +410,9 @@ void Renderer::RenderSetup()
 	//plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
 	//plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
-	//animatedPlane->buildWave(200, 200, 0.1);
-	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-	
-
-	float h = 10.0f;
-	float bRad = 2.0f;
-	float tRad = 1.5f;
-	//int hDiv = 128;
-	//int rDiv = 256;
-	int hDiv = 200;
-	int rDiv = 64;
-
-	
-	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	cylinder->initBuffers();
-	//cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
-	//cylinder->setTransformMatrix(cylinder->getScaleMatrix());
-	//cylinder->draw(viewProjection);
-	//cylinder->drawFast(viewProjection);
-
-
-	for (int i = 0; i < cylinderSystem->getCount(); i++)
-	{
-		//cylinder->initPosition(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
-		cylinder->initPosition(cylinderSystem->getSystemVector()[i].x,
-								cylinderSystem->getSystemVector()[i].y,
-								cylinderSystem->getSystemVector()[i].z);
-		cylinder->initScale(paramSet2[0], paramSet2[1], paramSet2[2]);
-		cylinder->setTransformMatrix(cylinder->getScaleMatrix());
-
-		cylinder->drawFast(viewProjection);
-	}
-
-	flatPlane->draw(viewProjection);
+	//flatPlane->draw(viewProjection);
+	animatedPlane->buildWave(200, 200, 0.1);
+	animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 
 	// Start the Dear ImGui frame
@@ -474,33 +428,7 @@ void Renderer::RenderSetup()
 	ImGui::SliderFloat3("Parameters", paramSet, 0.0f, 2.0f);
 	ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
 	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
-	ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
-	/*
-	for (int i = 0; i < cylinder->vertCount; i++)
-	{
-		ImGui::Text(std::to_string(cylinder->vertices[i].pos.x).c_str());
-		ImGui::Text(std::to_string(cylinder->vertices[i].pos.y).c_str());
-		ImGui::Text(std::to_string(cylinder->vertices[i].pos.z).c_str());
-		ImGui::Text("      ");
-	}
-	*/
-	ImGui::Text(("tris: " + std::to_string(cylinder->triCount)).c_str());
-	/*
-	for (int i = 0; i < cylinder->triCount; i+=3)
-	{
-		ImGui::Text( (std::to_string(cylinder->tris[i]) + " " + std::to_string(cylinder->tris[i+1]) + " " + std::to_string(cylinder->tris[i+2])).c_str());
-	}
-	*/
 	
-	/*
-	for (int i = 0; i < cylinderSystem->getCount(); i++)
-	{
-		
-		ImGui::Text( (std::to_string(cylinderSystem->getSystemVector()[i].x) + " " + 
-							std::to_string(cylinderSystem->getSystemVector()[i].y) + " " +
-							std::to_string(cylinderSystem->getSystemVector()[i].z) ).c_str() );
-	}
-	*/
 	ImGui::End();
 
 	ImGui::Begin("Test2");
@@ -508,8 +436,8 @@ void Renderer::RenderSetup()
 		counter += 1;
 	//std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes - 1].pos.x);
 	//ImGui::Text(clicks.c_str());
-	std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());
-	ImGui::Text(info.c_str());
+	//std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());
+	//ImGui::Text(info.c_str());
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();
