@@ -41,21 +41,10 @@ public:
 	std::unique_ptr<Mesh> cube = nullptr;
 	std::unique_ptr<Mesh> animatedPlane = nullptr;
 	std::unique_ptr<Mesh> cylinder = nullptr;
-	std::unique_ptr<MeshSystem> cubeSystem = nullptr;
-	std::unique_ptr<MeshSystem> cubeSystem2 = nullptr;
-	std::unique_ptr<MeshSystem> cubeSystem3 = nullptr;
-	std::unique_ptr<Mesh> cylinder1 = nullptr;
-	std::unique_ptr<Mesh> cylinder2 = nullptr;
-	std::shared_ptr<Mesh> cylinder8 = nullptr;
-
-	int numMeshes = 4;
-	std::vector<InstancePosition> instData{ numMeshes };
-	std::unique_ptr<InstancePosition[]> instanceData = nullptr;
-
-	void setNumMeshes(int num)
-	{
-		numMeshes = num;
-	}
+	std::unique_ptr<Mesh> axisGrid = nullptr;
+	std::unique_ptr<MeshSystem> cylinderSystem;
+	std::unique_ptr<Mesh> flatPlane = nullptr;
+	
 
 private:
 	int width = 0;

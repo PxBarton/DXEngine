@@ -62,6 +62,30 @@ public:
 		return instanceBuffer.BufferSize();
 	}
 
+	
+	void drawXZGrid()
+	{
+		XMFLOAT3 center = XMFLOAT3(0.0, 0.0, 0.0);
+		float length = 100;
+		int lineCount = 10;
+		float lineSpacing = length / lineCount;
+		float lineWidth = 0.025;
+		
+		float xStart = center.x - length / 2;
+		float xEnd = center.x + length / 2;
+		float zStart = center.z - length / 2;
+		float zEnd = center.z + length / 2;
+
+		initMesh(lineCount * 4 * 2, lineCount * 6 * 2);
+		
+		HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "vertex buffer");
+
+		}
+	}
+
 private:
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indexBuffer;
