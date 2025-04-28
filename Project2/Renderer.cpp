@@ -353,7 +353,7 @@ bool Renderer::SceneSetup()
 
 	DWORD cubeTris[36];
 
-	plane->initMesh(planeVertCount, planeTriCount);
+	plane->initMesh(160000, (400 - 1) * (400 - 1) * 2 * 3);
 	animatedPlane->initMesh(waveVertCount, waveTriCount);
 	cube->initMesh(8, 36);
 	cube->buildCube(2.0f);
@@ -369,14 +369,10 @@ bool Renderer::SceneSetup()
 	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
 	
 	
-	XMVECTOR tempPos;
-
-	
 	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
 	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	//cylinder->initBuffers();
 	//cylinder->initInstances((instData));
-
 
 	
 	flatPlane->initMesh(planeVertCount, planeTriCount);
@@ -399,20 +395,20 @@ void Renderer::RenderSetup()
 	const float zLimit1 = -16.0f;
 	const float zLimit2 = 16.0f;
 	const int numPoints = 400;
-	static float paramSet[3] = { 0.0f, 0.0f, 0.0f };
-	static float paramSet2[3] = { 1.0f, 1.0f, 1.0f };
+	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
+	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
 	static float param = 1.0f;
 	const int planeVertCount = numPoints * numPoints;
 
 	// the number of total indices in the triangle array, triangles * 3
-	//const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
-
-	//plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
-	//plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
+	
+	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
+	plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 	//flatPlane->draw(viewProjection);
-	animatedPlane->buildWave(200, 200, 0.1);
-	animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//animatedPlane->buildWave(200, 200, 0.1);
+	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
 
 	// Start the Dear ImGui frame
@@ -425,7 +421,7 @@ void Renderer::RenderSetup()
 
 	//ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
 	//ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
-	ImGui::SliderFloat3("Parameters", paramSet, 0.0f, 2.0f);
+	ImGui::SliderFloat3("Parameters", paramSet, 0.1f, 2.0f);
 	ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
 	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
 	
