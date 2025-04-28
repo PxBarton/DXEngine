@@ -133,7 +133,7 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
@@ -318,65 +318,46 @@ bool Renderer::SceneSetup()
 
 	DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
 
+	cube = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	flatPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	plane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cube = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	animatedPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	cylinder = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 
+	// cube setup
+	cube->initMesh(8, 36);
+	cube->buildCube(2.0f);
 
-	const float xLimit1 = -160.0f;
-	const float xLimit2 = 160.0f;
-	const float zLimit1 = -160.0f;
-	const float zLimit2 = 160.0f;
-	const int numPoints = 10;
+	// flat plane setup
+	const float xLimit1 = -16.0f;
+	const float xLimit2 = 16.0f;
+	const float zLimit1 = -16.0f;
+	const float zLimit2 = 16.0f;
+	const int numPoints = 8;
 
 	const int planeVertCount = numPoints * numPoints;
 
 	// the number of total indices in the triangle array, triangles * 3
 	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
 
-	const int wavePointsX = 200;
-	const int wavePointsZ = 200;
-	const int waveVertCount = wavePointsX * wavePointsZ;
+	flatPlane->initMesh(planeVertCount, planeTriCount);
+	flatPlane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, 0.0, 0.0, 0.0);
 
-	// the number of total indices in the triangle array, triangles * 3
-	const int waveTriCount = (wavePointsX - 1) * (wavePointsZ - 1) * 2 * 3;
-
-
-	//DWORD planeTris[planeTriCount];
-
-	std::unique_ptr<DWORD[]> planeTris = std::make_unique<DWORD[]>(planeTriCount);
-
-	//DWORD waveTris[waveTriCount];
-	std::unique_ptr<DWORD[]> waveTris = std::make_unique<DWORD[]>(waveTriCount);
-
-	DWORD cubeTris[36];
-
-	plane->initMesh(160000, (400 - 1) * (400 - 1) * 2 * 3);
-	animatedPlane->initMesh(waveVertCount, waveTriCount);
-	cube->initMesh(8, 36);
-	cube->buildCube(2.0f);
+	// parameter plane setup
+	plane->initMesh(planeVertCount, planeTriCount);
 	
-
+	// cylinder setup
 	float h = 10.0f;
 	float bRad = 3.0f;
 	float tRad = 3.0f;
-	int hDiv = 200;
-	int rDiv = 64;
+	int hDiv = 8;
+	int rDiv = 6;
 
 	int cylinderVertCount = (hDiv + 2) * (rDiv);
 	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
 	
-	
 	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
-	//cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
+	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	//cylinder->initBuffers();
-	//cylinder->initInstances((instData));
-
-	
-	flatPlane->initMesh(planeVertCount, planeTriCount);
-	flatPlane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, 0.0, 0.0, 0.0);
 
 	return true;
 }
@@ -394,23 +375,17 @@ void Renderer::RenderSetup()
 	const float xLimit2 = 16.0f;
 	const float zLimit1 = -16.0f;
 	const float zLimit2 = 16.0f;
-	const int numPoints = 400;
+	const int numPoints = 8;
 	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
 	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
 	static float param = 1.0f;
-	const int planeVertCount = numPoints * numPoints;
-
-	// the number of total indices in the triangle array, triangles * 3
-	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
 	
 	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
-	plane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	//plane->draw(viewProjection);
 
 	//flatPlane->draw(viewProjection);
-	//animatedPlane->buildWave(200, 200, 0.1);
-	//animatedPlane->draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 
-
+	cylinder->draw(viewProjection);
 	// Start the Dear ImGui frame
 	static int counter = 0;
 	ImGui_ImplDX11_NewFrame();

@@ -403,13 +403,13 @@ bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int nu
 		{
 			//this->vertices[vInd].assign(xAxis[i], .25 * cos(xAxis[i] / 4 * pi / 2) * .25 * sin(zAxis[j] * pi / 2) + .25 * cos(xAxis[i] * zAxis[j]), zAxis[j] * pi / 2);
 
-			//vertices[vInd].assign(xAxis[i], param1 * 2 * cos(xAxis[i] * pi / 8) * sin(zAxis[j] * pi / 8 * param2), zAxis[j]);
+			vertices[vInd].assign(xAxis[i], param1 * 2 * cos(xAxis[i] * pi / 8) * sin(zAxis[j] * pi / 8 * param2), zAxis[j]);
 
 			//vertices[vInd].assign(xAxis[i], 2 * (cos(2 * xAxis[i] * pi / 2) + cos( 2 * zAxis[j] * pi / 2 )) * (exp(-abs(.3 * xAxis[i])) * exp(-abs(.3 * zAxis[j]))), zAxis[j]);
 
 			//vertices[vInd].assign(xAxis[i], exp(-abs(xAxis[i])) * exp(-abs(zAxis[j])), zAxis[j]);
 
-			vertices[vInd].assign(xAxis[i], 2 * param1 * (cos(2 * param2 * xAxis[i] * pi / 2) + cos(2 * zAxis[j] * pi / 2)) * (exp(-abs(.3 * param3 * xAxis[i])) * exp(-abs(.3 * zAxis[j]))), zAxis[j]);
+			//vertices[vInd].assign(xAxis[i], 2 * param1 * (cos(2 * param2 * xAxis[i] * pi / 2) + cos(2 * zAxis[j] * pi / 2)) * (exp(-abs(.3 * param3 * xAxis[i])) * exp(-abs(.3 * zAxis[j]))), zAxis[j]);
 
 			//vertices[vInd].assign(xAxis[i], 0.0f, zAxis[j]);
 
