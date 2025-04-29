@@ -197,6 +197,11 @@ void EngineWindow::Update()
         this->rndr->camera.AdjustRotation(0.0f, 0.01f, -0.00f);
     }
 
+    // look at origin
+    if (keyboard.KeyIsPressed('O'))
+    {
+        this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
+    }
     // rotation about origin
     if (keyboard.KeyIsPressed(VK_UP))
     {
