@@ -214,13 +214,15 @@ void EngineWindow::Update()
     }
     if (keyboard.KeyIsPressed(VK_LEFT))
     {
-        this->rndr->camera.AdjustPosition(this->rndr->camera.GetLeftV() * cameraSpeed * time);
         this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetLeftV() * cameraSpeed * time);
+        //this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
     }
     if (keyboard.KeyIsPressed(VK_RIGHT))
     {
-        this->rndr->camera.AdjustPosition(this->rndr->camera.GetRightV() * cameraSpeed * time);
         this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetRightV() * cameraSpeed * time);
+        //this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
     }
     
 }
