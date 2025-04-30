@@ -36,6 +36,7 @@ public:
 	bool Init(HWND hWnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
+	XMFLOAT3 origin = XMFLOAT3(0.0, 0.0, 0.0);
 
 	std::unique_ptr<Mesh> plane = nullptr;
 	std::unique_ptr<Mesh> cube = nullptr;
@@ -44,6 +45,7 @@ public:
 	std::unique_ptr<Mesh> axisGrid = nullptr;
 	std::unique_ptr<MeshSystem> cylinderSystem;
 	std::unique_ptr<Mesh> flatPlane = nullptr;
+	std::unique_ptr<Mesh> building = nullptr;
 	
 
 private:

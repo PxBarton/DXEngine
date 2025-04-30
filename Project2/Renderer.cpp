@@ -133,8 +133,9 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+		rasterizerDesc.MultisampleEnable = true;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
 		if (FAILED(hr))
@@ -322,10 +323,11 @@ bool Renderer::SceneSetup()
 	flatPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	plane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	cylinder = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	building = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 
 	// cube setup
-	cube->initMesh(8, 36);
-	cube->buildCube(2.0f);
+	cube->initMesh(36, 36);
+	cube->buildCubeFlat(2.0f);
 
 	// flat plane setup
 	const float xLimit1 = -16.0f;
@@ -359,6 +361,8 @@ bool Renderer::SceneSetup()
 	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	//cylinder->initBuffers();
 
+	building->buildPolyStack(1, origin, 6, 4, 4, 3, 1, 1, 1, 1, 1.2, 0);
+
 	return true;
 }
 
@@ -381,11 +385,17 @@ void Renderer::RenderSetup()
 	static float param = 1.0f;
 	
 	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
+
 	//plane->draw(viewProjection);
 
 	//flatPlane->draw(viewProjection);
 
-	cylinder->draw(viewProjection);
+	//cylinder->draw(viewProjection);
+	
+	//building->draw(viewProjection);
+
+	cube->draw(viewProjection);
+
 	// Start the Dear ImGui frame
 	static int counter = 0;
 	ImGui_ImplDX11_NewFrame();

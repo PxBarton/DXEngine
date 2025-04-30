@@ -25,8 +25,11 @@ public:
 	
 	XMVECTOR triNormalV(Vertex& A, Vertex& B, Vertex& C);
 	bool calcNormals();
+	bool flatNormals();
+
 
 	bool calcNormals(Vertex verts[], DWORD tris[], int size, int numV);
+	
 	
 	void initRotation(float x, float y, float z);
 	void animateRotation(float x, float y, float z);
@@ -42,8 +45,11 @@ public:
 	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs);
 	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3, float param4);
 	bool buildWave(int xCount, int zCount, float step);
-	bool buildPolyStack(float center, float length, float width, float innerLength, float innerWidth,
-		float height1, float height2, float height3, float height4, float relief, float twist);
+	bool buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan, float innerXSpan, float innerZSpan,
+		float height1, float height2, float height3, float height4, float out, float twist);
+
+	bool buildCubeFlat(float size);
+	bool buildPyramidFlat(float side);
 
 	const XMMATRIX& getTransformMatrix();
 	void setWorldMatrix();

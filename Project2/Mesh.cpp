@@ -719,10 +719,212 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 }
 
 
-bool Mesh::buildPolyStack(float center, float length, float width, float innerLength, float innerWidth,
-					float height1, float height2, float height3, float height4, float relief, float twist)
+bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan, float innerXSpan, float innerZSpan,
+					float height1, float height2, float height3, float height4, float out, float twist)
 {
+	// int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
+	initMesh(8 + (32 * stacks), (4 * stacks * 8 * 2 * 3));
+	std::unique_ptr<XMFLOAT3[]> section = std::make_unique<XMFLOAT3[]>(32);
+	// assigning clockwise from left
+
+	// plane 1
+	section[0] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z + (innerZSpan / 2));
+	section[1] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z + (zSpan / 2));
+	section[2] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z + (zSpan / 2));
+	section[3] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z + (innerZSpan / 2));
+
+	section[4] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z - (innerZSpan / 2));
+	section[5] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z - (zSpan / 2));
+	section[6] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z - (zSpan / 2));
+	section[7] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z - (innerZSpan / 2));
+
+	// plane 2
+	for (int i = 0; i < 8; i++)
+	{
+		section[8 + i].x = section[i].x * out;
+		section[8 + i].y = height1;
+		section[8 + i].z = section[i].z * out;
+	}
 	
+	// plane 3
+	for (int i = 0; i < 8; i++)
+	{
+		section[16 + i].x = section[i].x * out;
+		section[16 + i].y = height1 + height2;
+		section[16 + i].z = section[i].z * out;
+	}
+
+	// plane 4
+	for (int i = 0; i < 8; i++)
+	{
+		section[24 + i].x = section[i].x;
+		section[24 + i].y = height1 + height2 + height3;
+		section[24 + i].z = section[i].z;
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		vertices[i].assign(section[i].x, section[i].y, section[i].z);
+	}
+
+	int tInd = 0;
+	for (int i = 0; i < (stacks * 4); i++)
+	{
+
+		for (int j = 0; j < (8 - 1); j++)
+		{
+			tris[tInd] = i * 8 + (j + 1);  // 1
+			tInd++;
+
+			tris[tInd] = i * 8 + j;  // 0
+			tInd++;
+
+			tris[tInd] = (i + 1) * 8 + (j + 1);  // 5
+			tInd++;
+
+			tris[tInd] = (i + 1) * 8 + (j + 1);  // 5
+			tInd++;
+
+			tris[tInd] = i * 8 + j;  // 0
+			tInd++;
+
+			tris[tInd] = (i + 1) * 8 + j;  // 4
+			tInd++;
+		}
+
+		tris[tInd] = (i + 1) * 8 - 8;  // 1
+		tInd++;
+
+		tris[tInd] = (i + 1) * 8 - 1;  // 0
+		tInd++;
+
+		tris[tInd] = (i + 1) * 8;  // 5
+		tInd++;
+
+		tris[tInd] = (i + 1) * 8;  // 5
+		tInd++;
+
+		tris[tInd] = (i + 1) * 8 - 1;  // 0
+		tInd++;
+
+		tris[tInd] = (i + 2) * 8 - 1;  // 4
+		tInd++;
+	}
+
+	calcNormals();
+
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(device, tris.get(), triCount);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
+	return true;
+}
+
+
+bool Mesh::buildCubeFlat(float size)
+{
+	// cube
+	Vertex vertList[] =
+	{
+		Vertex(-1.f, -1.f, -1.f),
+		Vertex(1.f, -1.f, -1.f),
+		Vertex(1.f, -1.f, 1.f),
+		Vertex(-1.f, -1.f, 1.f),
+		Vertex(-1.f, 1.f, -1.f),
+		Vertex(1.f, 1.f, -1.f),
+		Vertex(1.f, 1.f, 1.f),
+		Vertex(-1.f, 1.f, 1.f)
+	};
+
+	DWORD triList[] =
+	{
+		// sides
+		0, 3, 4,
+		4, 3, 7,
+
+		3, 2, 7,
+		7, 2, 6,
+
+		2, 1, 6,
+		6, 1, 5,
+
+		1, 0, 5,
+		5, 0, 4,
+
+		// bottom
+		0, 1, 3,
+		3, 1, 2,
+
+		// top
+		4, 7, 5,
+		5, 7, 6
+
+		
+	};
+
+	for (int i = 0; i <= vertCount - 1; i++)
+	{
+		vertices[i] = vertList[ triList[i] ];
+	}
+	for (int i = 0; i <= triCount - 1; i++)
+	{
+		tris[i] = i;
+	}
+
+	flatNormals();
+
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), 36);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "vertex buffer");
+
+	}
+	// ARRAYSIZE(i)
+	hr = indexBuffer.Initialize(device, tris.get(), 36);
+	if (FAILED(hr))
+	{
+		EngineException::Log(hr, "index buffer");
+
+	}
+
+	return true;
+}
+
+
+bool Mesh::flatNormals()
+{
+	for (int i = 0; i < vertCount / 3; i++)
+	{
+		int index1 = i * 3 + 0;
+		int index2 = i * 3 + 1;
+		int index3 = i * 3 + 2;
+
+		DirectX::XMVECTOR triNormV = triNormalV(this->vertices[index1], this->vertices[index2], this->vertices[index3]);
+		XMFLOAT3 normal;
+		DirectX::XMStoreFloat3(&normal, triNormV);
+
+		this->vertices[index1].normalV = triNormV;
+		this->vertices[index2].normalV = triNormV;
+		this->vertices[index3].normalV = triNormV;
+
+	}
+
+	for (int i = 0; i < vertCount; i++)
+	{
+		DirectX::XMStoreFloat3(&this->vertices[i].normal, this->vertices[i].normalV);
+	}
+
+	return true;
 }
 
 
