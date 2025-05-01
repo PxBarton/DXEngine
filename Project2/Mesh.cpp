@@ -723,8 +723,18 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 					float height1, float height2, float height3, float height4, float out, float twist)
 {
 	// int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-	initMesh(8 + (32 * stacks), (4 * stacks * 8 * 2 * 3));
-	std::unique_ptr<XMFLOAT3[]> section = std::make_unique<XMFLOAT3[]>(32);
+	//initMesh(8 + (32 * stacks), (4 * stacks * 8 * 2 * 3));
+
+	// 4 layers * 8 quads * 2 triangles/quad * 3 vertices  
+	int vCount = 8 * 2 * 4 * 3;
+	// 8 * 2 * 4
+	int tCount = 48 * 4;
+	std::unique_ptr<XMFLOAT3[]> section = std::make_unique<XMFLOAT3[]>(vCount);
+	std::unique_ptr<DWORD[]> triList = std::make_unique<DWORD[]>(tCount);
+
+	initMesh(vCount, tCount);
+
+
 	// assigning clockwise from left
 
 	// plane 1
@@ -762,10 +772,12 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 		section[24 + i].z = section[i].z;
 	}
 
+	/*
 	for (int i = 0; i < 32; i++)
 	{
 		vertices[i].assign(section[i].x, section[i].y, section[i].z);
 	}
+	*/
 
 	int tInd = 0;
 	for (int i = 0; i < (stacks * 4); i++)
@@ -773,45 +785,54 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 
 		for (int j = 0; j < (8 - 1); j++)
 		{
-			tris[tInd] = i * 8 + (j + 1);  // 1
+			triList[tInd] = i * 8 + (j + 1);  // 1
 			tInd++;
 
-			tris[tInd] = i * 8 + j;  // 0
+			triList[tInd] = i * 8 + j;  // 0
 			tInd++;
 
-			tris[tInd] = (i + 1) * 8 + (j + 1);  // 5
+			triList[tInd] = (i + 1) * 8 + (j + 1);  // 5
 			tInd++;
 
-			tris[tInd] = (i + 1) * 8 + (j + 1);  // 5
+			triList[tInd] = (i + 1) * 8 + (j + 1);  // 5
 			tInd++;
 
-			tris[tInd] = i * 8 + j;  // 0
+			triList[tInd] = i * 8 + j;  // 0
 			tInd++;
 
-			tris[tInd] = (i + 1) * 8 + j;  // 4
+			triList[tInd] = (i + 1) * 8 + j;  // 4
 			tInd++;
 		}
 
-		tris[tInd] = (i + 1) * 8 - 8;  // 1
+		triList[tInd] = (i + 1) * 8 - 8;  // 1
 		tInd++;
 
-		tris[tInd] = (i + 1) * 8 - 1;  // 0
+		triList[tInd] = (i + 1) * 8 - 1;  // 0
 		tInd++;
 
-		tris[tInd] = (i + 1) * 8;  // 5
+		triList[tInd] = (i + 1) * 8;  // 5
 		tInd++;
 
-		tris[tInd] = (i + 1) * 8;  // 5
+		triList[tInd] = (i + 1) * 8;  // 5
 		tInd++;
 
-		tris[tInd] = (i + 1) * 8 - 1;  // 0
+		triList[tInd] = (i + 1) * 8 - 1;  // 0
 		tInd++;
 
-		tris[tInd] = (i + 2) * 8 - 1;  // 4
+		triList[tInd] = (i + 2) * 8 - 1;  // 4
 		tInd++;
 	}
 
-	calcNormals();
+	for (int i = 0; i <= vertCount - 1; i++)
+	{
+		vertices[i] = Vertex(section[triList[i]].x, section[triList[i]].y, section[triList[i]].z);
+	}
+	for (int i = 0; i <= triCount - 1; i++)
+	{
+		tris[i] = i;
+	}
+
+	flatNormals();
 
 	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
 	if (FAILED(hr))
@@ -941,7 +962,7 @@ DirectX::XMVECTOR Mesh::triNormalV(Vertex& A, Vertex& B, Vertex& C)
 	DirectX::XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
 	DirectX::XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
 
-	DirectX::XMVECTOR normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
+	DirectX::XMVECTOR normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(t, s));
 
 
 	return (normalV);

@@ -309,7 +309,7 @@ bool Renderer::SceneSetup()
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
 	camera.SetPosition(2.0f, 8.0f, -16.0f);
-	//camera.SetLookAtPos(eye);
+	camera.SetLookAtPos(eye);
 	camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 	DirectX::XMMATRIX cameraVP = camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
@@ -327,7 +327,7 @@ bool Renderer::SceneSetup()
 
 	// cube setup
 	cube->initMesh(36, 36);
-	cube->buildCubeFlat(2.0f);
+	//cube->buildCubeFlat(2.0f);
 
 	// flat plane setup
 	const float xLimit1 = -16.0f;
@@ -392,9 +392,9 @@ void Renderer::RenderSetup()
 
 	//cylinder->draw(viewProjection);
 	
-	//building->draw(viewProjection);
+	building->draw(viewProjection);
 
-	cube->draw(viewProjection);
+	//cube->draw(viewProjection);
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
