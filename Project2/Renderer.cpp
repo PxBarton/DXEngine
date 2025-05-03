@@ -361,7 +361,7 @@ bool Renderer::SceneSetup()
 	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	//cylinder->initBuffers();
 
-	building->buildPolyStack(4, origin, 6, 4, 4, 3, 1, 1, 1, 1, 1.2, 0);
+	//building->buildPolyStack(4, origin, 6, 4, 4, 3, 1, 1, 1, 1, 1.2, 0);
 
 	return true;
 }
@@ -380,8 +380,12 @@ void Renderer::RenderSetup()
 	const float zLimit1 = -16.0f;
 	const float zLimit2 = 16.0f;
 	const int numPoints = 8;
+
 	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
 	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
+
+	static float paramSet3[3] = { 1.0f, 1.0f, 1.0f };
+	static float paramSet4[3] = { 1.0f, 1.0f, 1.0f };
 	static float param = 1.0f;
 	
 	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
@@ -391,7 +395,11 @@ void Renderer::RenderSetup()
 	//flatPlane->draw(viewProjection);
 
 	//cylinder->draw(viewProjection);
-	
+
+	building->buildPolyStack(4, origin, 6,
+		paramSet3[0], paramSet3[1], paramSet3[2],
+		1, paramSet4[0], 1, paramSet4[1], paramSet4[2], 0);
+
 	building->draw(viewProjection);
 
 	//cube->draw(viewProjection);
@@ -406,10 +414,13 @@ void Renderer::RenderSetup()
 
 	//ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
 	//ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
-	ImGui::SliderFloat3("Parameters", paramSet, 0.1f, 2.0f);
-	ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
-	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
+	//ImGui::SliderFloat3("Parameters", paramSet, 0.1f, 2.0f);
+	//ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
+	//ImGui::SliderFloat("Param", &param, 0.001, 20.00);
 	
+	ImGui::SliderFloat3("Parameters", paramSet3, 0.5f, 4.0f);
+	ImGui::SliderFloat3("Parameters2", paramSet4, 0.25f, 3.0f);
+
 	ImGui::End();
 
 	ImGui::Begin("Test2");
