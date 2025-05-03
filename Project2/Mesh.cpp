@@ -729,9 +729,8 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	// int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
 	//initMesh(8 + (32 * stacks), (4 * stacks * 8 * 2 * 3));
 
-	// 3 layers * 8 quads * 2 triangles/quad * 3 vertices  
+	// 4 layers * 8 quads * 2 triangles/quad * 3 vertices  = 192 = 48 * 4
 	int vCount = 8 * 2 * 4 * 3;
-	// 
 	int tCount = 48 * 4;
 	std::unique_ptr<XMFLOAT3[]> section = std::make_unique<XMFLOAT3[]>(vCount);
 	std::unique_ptr<DWORD[]> triList = std::make_unique<DWORD[]>(tCount);
@@ -786,12 +785,12 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	}
 
 	float sectionHeight = height1 + height2 + height3 + height4;
-
+	float h = 0;
 
 
 	// define triangles 
 	int tInd = 0;
-	for (int i = 0; i < (stacks * 4); i++)
+	for (int i = 0; i < (4); i++)
 	{
 
 		for (int j = 0; j < (8 - 1); j++)
@@ -835,11 +834,12 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	}
 
 	int sectionPoints = tInd;
+	int totalPoints = sectionPoints * stacks;
 
-	initMesh(tInd, tInd);
+	initMesh(totalPoints, totalPoints);
 
 	// convert to flat-shaded system and assign to buffers
-
+	/*
 	for (int i = 0; i <= tInd - 1; i++)
 	{
 		vertices[i] = Vertex(section[triList[i]].x, section[triList[i]].y, section[triList[i]].z);
@@ -848,17 +848,27 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	{
 		tris[i] = i;
 	}
+	*/
+	for (int i = 0; i < stacks; i++)
+	{
+		for (int j = 0; j <= sectionPoints - 1; j++)
+		{
+			h = sectionHeight * i;
+			vertices[i * sectionPoints + j] = Vertex(section[triList[j]].x, section[triList[j]].y + h, section[triList[j]].z);
+			tris[i * sectionPoints + j] = i * sectionPoints + j;
+		}
+	}
 
 	flatNormals();
 
-	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), tInd);
+	HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), totalPoints);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "vertex buffer");
 
 	}
 	// ARRAYSIZE(i)
-	hr = indexBuffer.Initialize(device, tris.get(), tInd);
+	hr = indexBuffer.Initialize(device, tris.get(), totalPoints);
 	if (FAILED(hr))
 	{
 		EngineException::Log(hr, "index buffer");

@@ -361,7 +361,7 @@ bool Renderer::SceneSetup()
 	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
 	//cylinder->initBuffers();
 
-	building->buildPolyStack(1, origin, 6, 4, 4, 3, 1, 1, 1, 1, 1.2, 0);
+	building->buildPolyStack(4, origin, 6, 4, 4, 3, 1, 1, 1, 1, 1.2, 0);
 
 	return true;
 }
