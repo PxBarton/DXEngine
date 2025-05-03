@@ -718,6 +718,10 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 	return true;
 }
 
+struct polySection
+{
+
+};
 
 bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan, float innerXSpan, float innerZSpan,
 					float height1, float height2, float height3, float height4, float out, float twist)
@@ -738,17 +742,7 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	// assigning clockwise from left
 
 	// plane 1
-	/*
-	section[0] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z + (innerZSpan / 2));
-	section[1] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z + (zSpan / 2));
-	section[2] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z + (zSpan / 2));
-	section[3] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z + (innerZSpan / 2));
-
-	section[4] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z - (innerZSpan / 2));
-	section[5] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z - (zSpan / 2));
-	section[6] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z - (zSpan / 2));
-	section[7] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z - (innerZSpan / 2));
-	*/
+	
 	section[0] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z + (innerZSpan / 2));
 	section[1] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z - (innerZSpan / 2));
 	section[2] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z - (zSpan / 2));
@@ -759,13 +753,6 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	section[6] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z + (zSpan / 2));
 	section[7] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z + (zSpan / 2));
 	
-	
-
-	
-	
-	
-	
-
 	// plane 2
 	for (int i = 0; i < 8; i++)
 	{
@@ -790,15 +777,21 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 		section[24 + i].z = section[i].z;
 	}
 
-	/*
-	for (int i = 0; i < 32; i++)
+	// spacer
+	for (int i = 0; i < 8; i++)
 	{
-		vertices[i].assign(section[i].x, section[i].y, section[i].z);
+		section[32 + i].x = section[i].x;
+		section[32 + i].y = height1 + height2 + height3 + height4;
+		section[32 + i].z = section[i].z;
 	}
-	*/
 
+	float sectionHeight = height1 + height2 + height3 + height4;
+
+
+
+	// define triangles 
 	int tInd = 0;
-	for (int i = 0; i < (stacks * 3); i++)
+	for (int i = 0; i < (stacks * 4); i++)
 	{
 
 		for (int j = 0; j < (8 - 1); j++)
@@ -841,7 +834,11 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 		tInd++;
 	}
 
+	int sectionPoints = tInd;
+
 	initMesh(tInd, tInd);
+
+	// convert to flat-shaded system and assign to buffers
 
 	for (int i = 0; i <= tInd - 1; i++)
 	{
