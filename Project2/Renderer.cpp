@@ -326,7 +326,8 @@ bool Renderer::SceneSetup()
 	building = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 
 	// cube setup
-	cube->initMesh(36, 36);
+	cube->initMesh(8, 36);
+	cube->buildCube(2.0f);
 	//cube->buildCubeFlat(2.0f);
 
 	// flat plane setup
@@ -401,9 +402,9 @@ void Renderer::RenderSetup()
 		paramSet3[1], paramSet3[2], paramSet4[0],
 		paramSet4[1], paramSet4[2], paramSet5[0], paramSet5[1], paramSet5[2], 0);
 
-	building->draw(viewProjection);
+	//building->draw(viewProjection);
 
-	//cube->draw(viewProjection);
+	cube->draw(viewProjection);
 
 	// Start the Dear ImGui frame
 	static int counter = 0;

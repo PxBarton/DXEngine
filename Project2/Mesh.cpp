@@ -231,41 +231,35 @@ const DirectX::XMMATRIX& Mesh::getTransformMatrix()
 
 bool Mesh::buildCube(float size)
 {
-	// cube
+	
 	Vertex vertList[] =
 	{
-		Vertex(-1.f, -1.f, 1.f),
 		Vertex(-1.f, -1.f, -1.f),
 		Vertex(1.f, -1.f, -1.f),
 		Vertex(1.f, -1.f, 1.f),
-		Vertex(-1.f, 1.f, 1.f),
+		Vertex(-1.f, -1.f, 1.f),
 		Vertex(-1.f, 1.f, -1.f),
 		Vertex(1.f, 1.f, -1.f),
-		Vertex(1.f, 1.f, 1.f)
+		Vertex(1.f, 1.f, 1.f),
+		Vertex(-1.f, 1.f, 1.f)
 	};
-
+	
 	DWORD triList[] =
 	{
 		// sides
-		0, 3, 4,
-		4, 3, 7,
+		0, 3, 4,   4, 3, 7,
 
-		3, 2, 7,
-		7, 2, 6,
+		3, 2, 7,   7, 2, 6,
 
-		2, 1, 6,
-		6, 1, 5,
+		2, 1, 6,   6, 1, 5,
 
-		1, 0, 5,
-		5, 0, 4,
+		1, 0, 5,   5, 0, 4,
 
 		// bottom
-		0, 1, 3,
-		3, 1, 2,
+		0, 1, 3,   3, 1, 2,
 
 		// top
-		4, 7, 5,
-		5, 7, 6
+		4, 7, 5,   5, 7, 6
 
 
 	};
@@ -897,25 +891,19 @@ bool Mesh::buildCubeFlat(float size)
 	DWORD triList[] =
 	{
 		// sides
-		0, 3, 4,
-		4, 3, 7,
+		0, 3, 4,   4, 3, 7,
 
-		3, 2, 7,
-		7, 2, 6,
+		3, 2, 7,   7, 2, 6,
 
-		2, 1, 6,
-		6, 1, 5,
+		2, 1, 6,   6, 1, 5,
 
-		1, 0, 5,
-		5, 0, 4,
+		1, 0, 5,   5, 0, 4,
 
 		// bottom
-		0, 1, 3,
-		3, 1, 2,
+		0, 1, 3,   3, 1, 2,
 
 		// top
-		4, 7, 5,
-		5, 7, 6
+		4, 7, 5,   5, 7, 6
 
 		
 	};
