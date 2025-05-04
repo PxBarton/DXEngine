@@ -133,7 +133,7 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
@@ -307,8 +307,8 @@ bool Renderer::SceneSetup()
 	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
-	camera.SetPosition(2.0f, 8.0f, -16.0f);
-	//camera.SetLookAtPos(eye);
+	camera.SetPosition(1.0f, 3.0f, -8.0f);
+	camera.SetLookAtPos(eye);
 	camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 	DirectX::XMMATRIX cameraVP = camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
@@ -380,12 +380,15 @@ void Renderer::RenderSetup()
 	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
 	static float param = 1.0f;
 	
-	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
+	//plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
 	//plane->draw(viewProjection);
 
 	//flatPlane->draw(viewProjection);
 
-	cylinder->draw(viewProjection);
+	//cylinder->draw(viewProjection);
+
+	cube->draw(viewProjection);
+
 	// Start the Dear ImGui frame
 	static int counter = 0;
 	ImGui_ImplDX11_NewFrame();
@@ -402,9 +405,12 @@ void Renderer::RenderSetup()
 	
 	ImGui::End();
 
-	ImGui::Begin("Test2");
-	if (ImGui::Button("Test"))
-		counter += 1;
+	ImGui::Begin("Info");
+	
+	XMFLOAT3 cameraPos = camera.GetPosition();
+	std::string info = "Camera Position: " + std::to_string(cameraPos.x) + "  " + std::to_string(cameraPos.y) + "  " + std::to_string(cameraPos.z);
+	ImGui::Text(info.c_str());
+
 	//std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes - 1].pos.x);
 	//ImGui::Text(clicks.c_str());
 	//std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());

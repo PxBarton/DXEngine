@@ -722,7 +722,7 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 bool Mesh::buildPolyStack(float center, float length, float width, float innerLength, float innerWidth,
 					float height1, float height2, float height3, float height4, float relief, float twist)
 {
-	
+	return true;
 }
 
 

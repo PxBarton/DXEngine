@@ -32,6 +32,11 @@ public:
 	void AdjustRotation(float x, float y, float z);
 
 	void SetLookAtPos(XMFLOAT3 lookAtPos);
+	XMFLOAT3 GetPosition()
+	{
+		return pos;
+	}
+
 	const XMVECTOR& GetForwardV();
 	const XMVECTOR& GetRightV();
 	const XMVECTOR& GetBackwardV();
