@@ -401,30 +401,32 @@ void Renderer::RenderSetup()
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	//Create ImGui Test Window
-	ImGui::Begin("Test");
+	
+	ImGui::Begin("Parameter Controls");
 
-	//ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
-	//ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
 	ImGui::SliderFloat3("Parameters", paramSet, 0.1f, 2.0f);
 	ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
-	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
+	//ImGui::SliderFloat("Param", &param, 0.001, 20.00);
 	
 	ImGui::End();
 
 	ImGui::Begin("Info");
+
 	XMFLOAT3 cameraPos = camera.GetPosition();
 	std::string info = "Camera Position: " + std::to_string(cameraPos.x) + "  " + std::to_string(cameraPos.y) + "  " + std::to_string(cameraPos.z);
-
-	//std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes - 1].pos.x);
-	//ImGui::Text(clicks.c_str());
-	//std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());
 	ImGui::Text(info.c_str());
+
 	ImGui::End();
+
 	//Assemble Together Draw Data
 	ImGui::Render();
 	//Render Draw Data
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+
+	//std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes - 1].pos.x);
+	//ImGui::Text(clicks.c_str());
+	//std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());
 }
 
 
