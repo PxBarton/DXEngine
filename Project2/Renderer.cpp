@@ -226,11 +226,11 @@ void Renderer::RenderFrame()
 
 	UINT offset = 0;
 
-	cb_light.data.ambientColor = XMFLOAT3(1.0f, 0.8f, 0.8f);
+	cb_light.data.ambientColor = XMFLOAT3(0.8f, 0.8f, 1.0f);
 	cb_light.data.ambientStrength = .5f;
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	cb_light.data.lightStrength = 1.0f;
-	cb_light.data.lightPosition = XMFLOAT3(8.0f, 12.0f, -4.0f);
+	cb_light.data.lightPosition = XMFLOAT3(8.0f, 12.0f, -6.0f);
 	if (!cb_light.ApplyChanges())
 	{
 		return;
@@ -307,8 +307,8 @@ bool Renderer::SceneSetup()
 	float fovDeg = 60.0f;
 	float fovRad = (fovDeg / 360.0f) * DirectX::XM_2PI;
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	DirectX::XMFLOAT3 eye(0.0f, 0.0f, 0.0f);
-	camera.SetPosition(2.0f, 8.0f, -16.0f);
+	DirectX::XMFLOAT3 eye(0.0f, 4.0f, 0.0f);
+	camera.SetPosition(4.0f, 8.0f, -24.0f);
 	camera.SetLookAtPos(eye);
 	camera.SetProjectionValues(fovDeg, aspectRatio, 0.1f, 1000.0f);
 	DirectX::XMMATRIX cameraVP = camera.GetViewMatrix() * camera.GetProjectionMatrix();
@@ -384,9 +384,9 @@ void Renderer::RenderSetup()
 	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
 	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
 
-	static float paramSet3[3] = { 8.0f, 8.0f, 6.0f };
+	static float paramSet3[3] = { 10.0f, 10.0f, 6.0f };
 	static float paramSet4[3] = { 6.0f, 1.0f, 1.0f };
-	static float paramSet5[3] = { 1.0f, 1.0f, 1.0f };
+	static float paramSet5[3] = { 1.0f, 1.0f, 1.5f };
 	static float param = 1.0f;
 	
 	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
@@ -397,7 +397,7 @@ void Renderer::RenderSetup()
 
 	//cylinder->draw(viewProjection);
 
-	building->buildPolyStack(12, origin, paramSet3[0],
+	building->buildPolyStack(10, origin, paramSet3[0],
 		paramSet3[1], paramSet3[2], paramSet4[0],
 		paramSet4[1], paramSet4[2], paramSet5[0], paramSet5[1], paramSet5[2], 0);
 
