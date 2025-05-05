@@ -398,7 +398,7 @@ void Renderer::RenderSetup()
 
 	//cylinder->draw(viewProjection);
 
-	building->buildPolyStack(6, origin, paramSet3[0],
+	building->buildPolyStack(8, origin, paramSet3[0],
 		paramSet3[1], paramSet3[2], paramSet4[0],
 		paramSet4[1], paramSet4[2], paramSet5[0], paramSet5[1], paramSet5[2], 0);
 
