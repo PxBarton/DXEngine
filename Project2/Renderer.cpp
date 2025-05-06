@@ -439,13 +439,13 @@ void Renderer::RenderSetup()
 
 	
 	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv, paramSet[0], paramSet[1], paramSet[2], paramSet2[0]);
-	cylinder->initBuffers();
+	//cylinder->initBuffers();
 	//cylinder->scaleMesh(0.0f, 0.001f, 0.0f);
 	//cylinder->setTransformMatrix(cylinder->getScaleMatrix());
-	//cylinder->draw(viewProjection);
+	cylinder->draw(viewProjection);
 	//cylinder->drawFast(viewProjection);
 
-
+	/*
 	for (int i = 0; i < cylinderSystem->getCount(); i++)
 	{
 		//cylinder->initPosition(instanceData[i].pos.x, instanceData[i].pos.y, instanceData[i].pos.z);
@@ -457,7 +457,7 @@ void Renderer::RenderSetup()
 
 		cylinder->drawFast(viewProjection);
 	}
-
+	*/
 	flatPlane->draw(viewProjection);
 
 
@@ -467,14 +467,14 @@ void Renderer::RenderSetup()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	//Create ImGui Test Window
-	ImGui::Begin("Test");
+	ImGui::Begin("Paramters");
 
 	//ImGui::DragFloat3("Parameters", paramSet, 0.05f, 0.0f, 2.0f);
 	//ImGui::DragFloat3("Parameters2", paramSet2, 0.05f, 0.5f, 2.0f);
 	ImGui::SliderFloat3("Parameters", paramSet, 0.0f, 2.0f);
 	ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
 	ImGui::SliderFloat("Param", &param, 0.001, 20.00);
-	ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
+	//ImGui::Text(("verts: " + std::to_string(cylinder->vertCount)).c_str());
 	/*
 	for (int i = 0; i < cylinder->vertCount; i++)
 	{
@@ -484,7 +484,7 @@ void Renderer::RenderSetup()
 		ImGui::Text("      ");
 	}
 	*/
-	ImGui::Text(("tris: " + std::to_string(cylinder->triCount)).c_str());
+	//ImGui::Text(("tris: " + std::to_string(cylinder->triCount)).c_str());
 	/*
 	for (int i = 0; i < cylinder->triCount; i+=3)
 	{
@@ -503,13 +503,12 @@ void Renderer::RenderSetup()
 	*/
 	ImGui::End();
 
-	ImGui::Begin("Test2");
-	if (ImGui::Button("Test"))
-		counter += 1;
+	ImGui::Begin("Info");
+	
 	//std::string clicks = "Instance Position 3: " + std::to_string(instData[numMeshes - 1].pos.x);
 	//ImGui::Text(clicks.c_str());
-	std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());
-	ImGui::Text(info.c_str());
+	//std::string info = "Instances: " + std::to_string(cylinderSystem->getCount());
+	//ImGui::Text(info.c_str());
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();
