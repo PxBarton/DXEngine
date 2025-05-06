@@ -133,7 +133,7 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
@@ -349,7 +349,7 @@ bool Renderer::SceneSetup()
 	float h = 10.0f;
 	float bRad = 3.0f;
 	float tRad = 3.0f;
-	int hDiv = 8;
+	int hDiv = 6;
 	int rDiv = 6;
 
 	int cylinderVertCount = (hDiv + 2) * (rDiv);
@@ -385,9 +385,9 @@ void Renderer::RenderSetup()
 
 	//flatPlane->draw(viewProjection);
 
-	//cylinder->draw(viewProjection);
+	cylinder->draw(viewProjection);
 
-	cube->draw(viewProjection);
+	//cube->draw(viewProjection);
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
