@@ -789,9 +789,55 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, XMFLOAT3 module[],
 	std::unique_ptr<DWORD[]> triList = std::make_unique<DWORD[]>(tCount);
 
 	//initMesh(vCount, tCount);
+	// assigning clockwise from left
 
+	// plane 1
 
-	float sectionHeight = module[32].y;
+	section[0] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z + (innerZSpan / 2));
+	section[1] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z - (innerZSpan / 2));
+	section[2] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z - (zSpan / 2));
+	section[3] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z - (zSpan / 2));
+
+	section[4] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z - (innerZSpan / 2));
+	section[5] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z + (innerZSpan / 2));
+	section[6] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z + (zSpan / 2));
+	section[7] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z + (zSpan / 2));
+
+	// plane 2
+	for (int i = 0; i < 8; i++)
+	{
+		section[8 + i].x = section[i].x * out;
+		section[8 + i].y = height1;
+		section[8 + i].z = section[i].z * out;
+	}
+
+	// plane 3
+	for (int i = 0; i < 8; i++)
+	{
+		section[16 + i].x = section[i].x * out;
+		section[16 + i].y = height1 + height2;
+		section[16 + i].z = section[i].z * out;
+	}
+
+	// plane 4
+	for (int i = 0; i < 8; i++)
+	{
+		section[24 + i].x = section[i].x;
+		section[24 + i].y = height1 + height2 + height3;
+		section[24 + i].z = section[i].z;
+	}
+
+	// spacer
+	for (int i = 0; i < 8; i++)
+	{
+		section[32 + i].x = section[i].x;
+		section[32 + i].y = height1 + height2 + height3 + height4;
+		section[32 + i].z = section[i].z;
+	}
+
+	float sectionHeight = height1 + height2 + height3 + height4;
+
+	//float sectionHeight = module[32].y;
 	float h = 0;
 
 
