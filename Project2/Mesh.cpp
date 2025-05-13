@@ -712,30 +712,19 @@ bool Mesh::buildCylinder(float height, float baseRadius, float topRadius, int hD
 	return true;
 }
 
-struct polySection
+XMFLOAT3* Mesh::buildModule(float xSpan, float zSpan, float innerXSpan, float innerZSpan,
+	float height1, float height2, float height3, float height4, float out)
 {
-
-};
-
-bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan, float innerXSpan, float innerZSpan,
-					float height1, float height2, float height3, float height4, float out, float twist)
-{
-	// int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-	//initMesh(8 + (32 * stacks), (4 * stacks * 8 * 2 * 3));
-
-	// 4 layers * 8 quads * 2 triangles/quad * 3 vertices  = 192 = 48 * 4
 	int vCount = 8 * 2 * 4 * 3;
 	int tCount = 48 * 4;
-	std::unique_ptr<XMFLOAT3[]> section = std::make_unique<XMFLOAT3[]>(vCount);
-	std::unique_ptr<DWORD[]> triList = std::make_unique<DWORD[]>(tCount);
 
-	//initMesh(vCount, tCount);
-
-
+	XMFLOAT3 center(0.0, 0.0, 0.0);
+	XMFLOAT3 section[8 * 2 * 4 * 3];
+	
 	// assigning clockwise from left
 
 	// plane 1
-	
+
 	section[0] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z + (innerZSpan / 2));
 	section[1] = XMFLOAT3(center.x - (xSpan / 2), 0, center.z - (innerZSpan / 2));
 	section[2] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z - (zSpan / 2));
@@ -745,7 +734,7 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	section[5] = XMFLOAT3(center.x + (xSpan / 2), 0, center.z + (innerZSpan / 2));
 	section[6] = XMFLOAT3(center.x + (innerXSpan / 2), 0, center.z + (zSpan / 2));
 	section[7] = XMFLOAT3(center.x - (innerXSpan / 2), 0, center.z + (zSpan / 2));
-	
+
 	// plane 2
 	for (int i = 0; i < 8; i++)
 	{
@@ -753,7 +742,7 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 		section[8 + i].y = height1;
 		section[8 + i].z = section[i].z * out;
 	}
-	
+
 	// plane 3
 	for (int i = 0; i < 8; i++)
 	{
@@ -779,6 +768,30 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	}
 
 	float sectionHeight = height1 + height2 + height3 + height4;
+	return section;
+}
+
+
+bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, XMFLOAT3 module[], 
+		float xSpan, float zSpan, float innerXSpan, float innerZSpan,
+		float height1, float height2, float height3, float height4, float out,
+		float taper, float twist,
+		float morph1, float morph2, float morph3, float morph4)
+{
+	// int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
+	//initMesh(8 + (32 * stacks), (4 * stacks * 8 * 2 * 3));
+
+	// 4 layers * 8 quads * 2 triangles/quad * 3 vertices  = 192 = 48 * 4
+	int vCount = 8 * 2 * 4 * 3;
+	int tCount = 48 * 4;
+
+	std::unique_ptr<XMFLOAT3[]> section = std::make_unique<XMFLOAT3[]>(vCount);
+	std::unique_ptr<DWORD[]> triList = std::make_unique<DWORD[]>(tCount);
+
+	//initMesh(vCount, tCount);
+
+
+	float sectionHeight = module[32].y;
 	float h = 0;
 
 
@@ -833,16 +846,7 @@ bool Mesh::buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan,
 	initMesh(totalPoints, totalPoints);
 
 	// convert to flat-shaded system and assign to buffers
-	/*
-	for (int i = 0; i <= tInd - 1; i++)
-	{
-		vertices[i] = Vertex(section[triList[i]].x, section[triList[i]].y, section[triList[i]].z);
-	}
-	for (int i = 0; i <= tInd - 1; i++)
-	{
-		tris[i] = i;
-	}
-	*/
+	
 	for (int i = 0; i < stacks; i++)
 	{
 		for (int j = 0; j <= sectionPoints - 1; j++)

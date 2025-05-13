@@ -376,35 +376,34 @@ void Renderer::RenderSetup()
 	DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX viewProjection = camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
-	const float xLimit1 = -16.0f;
-	const float xLimit2 = 16.0f;
-	const float zLimit1 = -16.0f;
-	const float zLimit2 = 16.0f;
-	const int numPoints = 8;
-
-	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
-	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
-
-	static float paramSet3[3] = { 10.0f, 10.0f, 6.0f };
-	static float paramSet4[3] = { 6.0f, 1.0f, 1.0f };
-	static float paramSet5[3] = { 1.0f, 1.0f, 1.5f };
-	static float param = 1.0f;
 	
-	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
+	static float param1 = 10.0f;
+	static float param2 = 10.0f;
+	static float param3 = 6.0f;
+	static float param4 = 6.0f;
+	static float param5 = 1.0f;
+	static float param6 = 1.0f;
+	static float param7 = 1.0f;
+	static float param8 = 1.0f;
+	static float param9 = 1.5f;
 
-	//plane->draw(viewProjection);
+	static float param10 = 1.0f;
+	static float param11 = 1.0f;
+	static float param12 = 1.0f;
+	static float param13 = 1.0f;
 
-	//flatPlane->draw(viewProjection);
+	XMFLOAT3* module = building->buildModule(param1,
+		param2, param3, param4,
+		param5, param6, param7, param8, param9);
 
-	//cylinder->draw(viewProjection);
-
-	building->buildPolyStack(8, origin, paramSet3[0],
-		paramSet3[1], paramSet3[2], paramSet4[0],
-		paramSet4[1], paramSet4[2], paramSet5[0], paramSet5[1], paramSet5[2], 0);
+	building->buildPolyStack(8, origin, module,
+		param1, param2, param3,
+		param4, param5, param6, param7, param8, param9, 0.0, 0.0,
+		param10, param11, param12, param13 );
 
 	building->draw(viewProjection);
 
-	//cube->draw(viewProjection);
+	
 
 	// Start the Dear ImGui frame
 	static int counter = 0;
@@ -412,15 +411,27 @@ void Renderer::RenderSetup()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	//Create ImGui Test Window
-	ImGui::Begin("Test");
+	ImGui::Begin("Parameters");
 
-	//ImGui::SliderFloat3("Parameters", paramSet, 0.1f, 2.0f);
-	//ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
-	//ImGui::SliderFloat("Param", &param, 0.001, 20.00);
 	
-	ImGui::SliderFloat3("Parameters", paramSet3, 0.5f, 12.0f);
-	ImGui::SliderFloat3("Parameters2", paramSet4, 0.25f, 12.0f);
-	ImGui::SliderFloat3("Parameters3", paramSet5, 0.25f, 3.0f);
+	ImGui::SliderFloat("Param1", &param1, 0.001, 20.00);
+	ImGui::SliderFloat("Param2", &param2, 0.001, 20.00);
+	ImGui::SliderFloat("Param3", &param3, 0.001, 10.00);
+	ImGui::SliderFloat("Param4", &param4, 0.001, 10.00);
+	ImGui::SliderFloat("Param5", &param5, 0.001, 3.00);
+	ImGui::SliderFloat("Param6", &param6, 0.001, 3.00);
+	ImGui::SliderFloat("Param7", &param7, 0.001, 3.00);
+	ImGui::SliderFloat("Param8", &param8, 0.001, 3.00);
+	ImGui::SliderFloat("Param9", &param9, 0.001, 4.00);
+	ImGui::SliderFloat("Param6", &param10, -2.00, 2.00);
+	ImGui::SliderFloat("Param7", &param11, -2.00, 2.00);
+	ImGui::SliderFloat("Param8", &param12, -2.00, 2.00);
+	ImGui::SliderFloat("Param9", &param13, -2.00, 2.00);
+	//ImGui::SliderFloat("Param10", &param1, 0.001, 20.00);
+
+	//ImGui::SliderFloat3("Parameters", paramSet3, 0.5f, 12.0f);
+	//ImGui::SliderFloat3("Parameters2", paramSet4, 0.25f, 12.0f);
+	//ImGui::SliderFloat3("Parameters3", paramSet5, 0.25f, 3.0f);
 	ImGui::End();
 
 	ImGui::Begin("Info");
@@ -435,6 +446,37 @@ void Renderer::RenderSetup()
 	//Render Draw Data
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
+
+
+/*
+
+const float xLimit1 = -16.0f;
+	const float xLimit2 = 16.0f;
+	const float zLimit1 = -16.0f;
+	const float zLimit2 = 16.0f;
+	const int numPoints = 8;
+
+	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
+	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
+
+	static float paramSet3[3] = { 10.0f, 10.0f, 6.0f };
+	static float paramSet4[3] = { 6.0f, 1.0f, 1.0f };
+	static float paramSet5[3] = { 1.0f, 1.0f, 1.5f };
+
+
+	plane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, paramSet[0], paramSet[1], paramSet[2]);
+
+	//plane->draw(viewProjection);
+
+	//flatPlane->draw(viewProjection);
+
+	//cylinder->draw(viewProjection);
+
+	//cube->draw(viewProjection);
+
+	//ImGui::SliderFloat3("Parameters", paramSet, 0.1f, 2.0f);
+	//ImGui::SliderFloat3("Parameters2", paramSet2, 0.5f, 2.0f);
+*/
 
 
 

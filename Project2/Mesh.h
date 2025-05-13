@@ -45,8 +45,14 @@ public:
 	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs);
 	bool buildCylinder(float height, float baseRadius, float topRadius, int hDivs, int rDivs, float param1, float param2, float param3, float param4);
 	bool buildWave(int xCount, int zCount, float step);
-	bool buildPolyStack(int stacks, XMFLOAT3 center, float xSpan, float zSpan, float innerXSpan, float innerZSpan,
-		float height1, float height2, float height3, float height4, float out, float twist);
+
+	XMFLOAT3* buildModule(float xSpan, float zSpan, float innerXSpan, float innerZSpan,
+		float height1, float height2, float height3, float height4, float out);
+	bool buildPolyStack(int stacks, XMFLOAT3 center, XMFLOAT3 module[], 
+		float xSpan, float zSpan, float innerXSpan, float innerZSpan,
+		float height1, float height2, float height3, float height4, float out,
+		float taper, float twist,
+		float morph1, float morph2, float morph3, float morph4);
 
 	bool buildCubeFlat(float size);
 	bool buildPyramidFlat(float side);
