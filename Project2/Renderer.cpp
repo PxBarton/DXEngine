@@ -423,11 +423,11 @@ void Renderer::RenderSetup()
 	ImGui::SliderFloat("Param7", &param7, 0.001, 3.00);
 	ImGui::SliderFloat("Param8", &param8, 0.001, 3.00);
 	ImGui::SliderFloat("Param9", &param9, 0.001, 4.00);
-	ImGui::SliderFloat("Param6", &param10, -2.00, 2.00);
-	ImGui::SliderFloat("Param7", &param11, -2.00, 2.00);
-	ImGui::SliderFloat("Param8", &param12, -2.00, 2.00);
-	ImGui::SliderFloat("Param9", &param13, -2.00, 2.00);
-	//ImGui::SliderFloat("Param10", &param1, 0.001, 20.00);
+	//ImGui::SliderFloat("Param10", &param10, -2.00, 2.00);
+	//ImGui::SliderFloat("Param11", &param11, -2.00, 2.00);
+	//ImGui::SliderFloat("Param12", &param12, -2.00, 2.00);
+	//ImGui::SliderFloat("Param13", &param13, -2.00, 2.00);
+	//ImGui::SliderFloat("Param14", &param1, 0.001, 20.00);
 
 	//ImGui::SliderFloat3("Parameters", paramSet3, 0.5f, 12.0f);
 	//ImGui::SliderFloat3("Parameters2", paramSet4, 0.25f, 12.0f);
