@@ -203,6 +203,9 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 	ImGui_ImplWin32_Init(hWnd);
 	ImGui_ImplDX11_Init(this->device.Get(), this->deviceContext.Get());
 	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_EnableDpiAwareness();
+
+	io.FontGlobalScale = 1.2f;
 
 	return true;
 }
@@ -394,7 +397,7 @@ void Renderer::RenderSetup()
 	const float xLimit2 = 16.0f;
 	const float zLimit1 = -16.0f;
 	const float zLimit2 = 16.0f;
-	const int numPoints = 12;
+	const int numPoints = 240;
 	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
 	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
 	static float param = 1.0f;
