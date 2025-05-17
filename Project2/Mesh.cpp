@@ -419,7 +419,11 @@ bool Mesh::buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int nu
 
 			//vertices[vInd].assign(xAxis[i], 8 * (1 / sd * (sqrt(2*pi))) * exp(-(pow(xAxis[i], 2)) / (2 * var) ), zAxis[j]);
 
-			vertices[vInd].assign(xAxis[i], 512 * (1 / (var * (2 * pi)) * exp(-.5 * ( pow(xAxis[i]/sd, 2) + pow(zAxis[j]/sd, 2) )) ), zAxis[j]);
+			//vertices[vInd].assign(xAxis[i], xLen * zLen * (1 / (var * (2 * pi)) * exp(-.5 * ( pow(xAxis[i]/sd, 2) + pow(zAxis[j]/sd, 2) )) ), zAxis[j]);
+
+			vertices[vInd].assign(xAxis[i], 
+									- ((param3 * 1.0) / (xLen + zLen)) * ( pow(xAxis[i], 2)  + pow(zAxis[j], 2) ) + 8, 
+									zAxis[j]);
 
 			vInd++;
 		}
