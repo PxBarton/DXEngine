@@ -138,6 +138,7 @@
     <ClInclude Include="COMException.h" />
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineWindow.h" />
+    <ClInclude Include="QuadSystem.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="InputDevices.h" />
     <ClInclude Include="MeshSystem.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="EngineException.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
+    <ClCompile Include="QuadSystem.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />

@@ -39,6 +39,7 @@ public:
 	void animateScale(float x, float y, float z);
 	const XMMATRIX getScaleMatrix();
 
+	bool buildShape(std::vector<Vertex> verts, std::unique_ptr<DWORD[]> tris);
 	bool buildCube(float size);
 	bool buildPlane(float xLim1, float xLim2, float zLim1, float zLim2, int numPoints, float param1, float param2, float param3);
 	bool buildPlane(int xCount, int zCount);
@@ -62,7 +63,14 @@ public:
 	void setTransformMatrix();
 	void setTransformMatrix(XMMATRIX newTransform);
 
+	// for creating mesh with default constructor
+	void initGPU(ID3D11Device* device,
+		ID3D11DeviceContext* deviceContext,
+		const XMMATRIX& transformMatrix,
+		ConstantBuffer<CB_vertex>& cb_vertex);
+
 	void initMesh(int vertCount, int triCount);
+
 	void initInstances(std::vector<InstancePosition> instData);
 	void initInstances(std::unique_ptr<InstancePosition[]> instanceData);
 	void initBuffers();
