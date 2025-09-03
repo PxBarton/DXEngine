@@ -8,7 +8,9 @@
 #include "Mesh.h"
 
 
-// represents a flat quad, eventually subdivided and/or triangulated, tri's inherit normal
+// represents a flat quad, eventually subdivided and/or triangulated, tri's inherit normal, if calculated
+// position data alone is sufficient for further operations, like subQuad and extrusion
+// normal plus a center point yield an axis for extrusion and cylindrical coords
 struct Quad
 {
 	XMFLOAT3 v1;
@@ -34,6 +36,7 @@ public:
 	
 	void loopSubdivide();
 	void CCsubdivide();
+	void subQuad(Quad q, float dim1, float dim2, float u, float v);
 
 	// standard indexing
 	std::unique_ptr<Mesh> convertToMesh1();

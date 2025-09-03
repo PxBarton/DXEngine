@@ -6,6 +6,8 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <cmath>
+#include <WICTextureLoader.h>
 
 #include "EngineException.h"
 #include "Shaders.h"
@@ -15,8 +17,7 @@
 #include "Mesh.h"
 #include "MeshSystem.h"
 #include "Camera.h"
-#include <cmath>
-#include <WICTextureLoader.h>
+#include "QuadSystem.h"
 //#pragma comment(lib,"d3d11.lib")
 //#pragma comment(lib,"DirectXTK.lib")
 //#pragma comment(lib,"DXGI.lib")
@@ -46,7 +47,9 @@ public:
 	std::unique_ptr<MeshSystem> cylinderSystem;
 	std::unique_ptr<Mesh> flatPlane = nullptr;
 	std::unique_ptr<Mesh> building = nullptr;
-	
+
+	std::unique_ptr<QuadSystem> qSquare = nullptr;
+	std::unique_ptr<Mesh> square = nullptr;
 
 private:
 	int width = 0;

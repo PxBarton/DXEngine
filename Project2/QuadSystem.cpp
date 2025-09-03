@@ -32,6 +32,11 @@ std::unique_ptr<Mesh> QuadSystem::convertToMesh1()
 		v.assign(quads[i].v4.x, quads[i].v4.y, quads[i].v4.z);
 		mesh->vertices[i * 4 + 3] = v;
 	}
+	for (int i = 0; i < triangles.size(); i++)
+	{
+		mesh->tris[i] = triangles[i];
+	}
+	return mesh;
 }
 
 

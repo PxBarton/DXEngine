@@ -57,6 +57,17 @@ Mesh::Mesh(const Mesh& rvMesh)
 
 }
 
+void Mesh::initGPU(ID3D11Device* device,
+	ID3D11DeviceContext* deviceContext,
+	const XMMATRIX& transformMatrix,
+	ConstantBuffer<CB_vertex>& cb_vertex)
+{
+	this->device = device;
+	this->deviceContext = deviceContext;
+	this->transformMatrix = transformMatrix;
+	this->cb_vertex = &cb_vertex;
+}
+
 void Mesh::initPosition(float x, float y, float z)
 {
 	position = XMFLOAT3(x, y, z);

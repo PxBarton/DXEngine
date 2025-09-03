@@ -325,6 +325,14 @@ bool Renderer::SceneSetup()
 	cylinder = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	building = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 
+	// QuadSystem test
+	qSquare = std::make_unique<QuadSystem>();
+	qSquare->buildFlatSquare(2.0);
+	square = qSquare->convertToMesh1();
+	square->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	square->initDraw();
+
+
 	// cube setup
 	cube->initMesh(8, 36);
 	cube->buildCube(2.0f);
@@ -401,9 +409,9 @@ void Renderer::RenderSetup()
 		param4, param5, param6, param7, param8, param9, 0.0, 0.0,
 		param10, param11, param12, param13 );
 
-	building->draw(viewProjection);
+	//building->draw(viewProjection);
 
-	
+	square->draw(viewProjection);
 
 	// Start the Dear ImGui frame
 	static int counter = 0;

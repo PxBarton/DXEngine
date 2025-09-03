@@ -78,6 +78,26 @@ public:
 	void drawFast(const XMMATRIX& viewProjectionMatrix);
 	void drawInstances(const XMMATRIX& viewProjectionMatrix);
 	
+	bool initDraw()
+	{
+		calcNormals();
+
+		HRESULT hr = vertexBuffer.Initialize(device, vertices.get(), vertCount);
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "vertex buffer");
+
+		}
+		// ARRAYSIZE(i)
+		hr = indexBuffer.Initialize(device, tris.get(), triCount);
+		if (FAILED(hr))
+		{
+			EngineException::Log(hr, "index buffer");
+
+		}
+
+		return true;
+	}
 
 	int getNumInstances()
 	{
