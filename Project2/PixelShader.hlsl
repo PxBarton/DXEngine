@@ -19,13 +19,18 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
+	float3 dx = ddx(input.inWorldPos);
+	float3 dy = ddy(input.inWorldPos);
+	float3 flatNormal = normalize(cross(dx, dy));
+
 	//float3 white = float3(1.0f, 1.0f, 1.0f);
 	float3 ambientLight = ambientColor * ambientStrength;
 	float3 pixelColor = input.inColor;
 	float3 finalLight = ambientLight;
 
 	float3 lightDirVec = normalize(lightPosition - input.inWorldPos);
-	float3 diffuseIntensity = max(dot(lightDirVec, input.inNormal), 0);
+	//float3 diffuseIntensity = max(dot(lightDirVec, input.inNormal), 0);
+	float3 diffuseIntensity = max(dot(lightDirVec, flatNormal), 0);
 	diffuseIntensity -= max(((1 - diffuseIntensity) * .2), 0);
 	float3 diffuseLight = diffuseIntensity * lightStrength * lightColor;
 	finalLight += diffuseLight;
