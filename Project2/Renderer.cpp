@@ -397,7 +397,7 @@ void Renderer::RenderSetup()
 	const float xLimit2 = 16.0f;
 	const float zLimit1 = -16.0f;
 	const float zLimit2 = 16.0f;
-	const int numPoints = 240;
+	const int numPoints = 8;
 	static float paramSet[3] = { 0.1f, 0.1f, 0.1f };
 	static float paramSet2[3] = { 0.5f, 0.5f, 0.5f };
 	static float param = 1.0f;
