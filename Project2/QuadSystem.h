@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <tuple>
 #include "Vertex.h"
 #include "Mesh.h"
 
@@ -11,7 +12,7 @@
 // represents a flat quad, eventually subdivided and/or triangulated, tri's inherit normal, if calculated
 // position data alone is sufficient for further operations, like subQuad and extrusion
 // normal plus a center point yield an axis for extrusion and cylindrical coords
-// use for redundant indexing (real flat shading) 
+// use for redundant indexing (real flat shading) (not needed)
 struct Quad
 {
 	XMFLOAT3 v1;
@@ -19,6 +20,12 @@ struct Quad
 	XMFLOAT3 v3;
 	XMFLOAT3 v4;
 
+	DirectX::XMVECTOR normalV;
+};
+
+struct Face
+{
+	std::vector<int> face;
 	DirectX::XMVECTOR normalV;
 };
 
@@ -48,7 +55,12 @@ public:
 	void buildFlatSquare(float length);
 
 private:
-	std::unique_ptr<XMFLOAT3[]> quadArray = nullptr;
+	// cant be expanded
+	std::unique_ptr<XMFLOAT3[]> pointArray = nullptr;
+
+	std::vector<XMFLOAT3> points;
+	std::vector<Face> faces;
+	std::vector<std::tuple<int, int>> lines;
 	std::vector<Quad> quads;
 	//standard indexing
 	std::array<int, 6> triIndices = { 0, 3, 1, 1, 3, 2 };
