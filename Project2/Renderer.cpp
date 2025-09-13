@@ -328,9 +328,26 @@ bool Renderer::SceneSetup()
 	// QuadSystem test
 	qSquare = std::make_unique<QuadSystem>();
 	qSquare->buildFlatSquare(2.0);
-	square = qSquare->convertToMesh1();
+	square = qSquare->convertQuadsToMesh();
 	square->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	square->initDraw();
+
+	XMFLOAT3 p1 = XMFLOAT3(-2.0, -2.0, -2.0);
+	XMFLOAT3 p2 = XMFLOAT3(2.0, -2.0, -2.0);
+	XMFLOAT3 p3 = XMFLOAT3(2.0, -2.0, 2.0);
+	XMFLOAT3 p4 = XMFLOAT3(-2.0, -2.0, 2.0);
+
+	XMFLOAT3 boxNormal = XMFLOAT3(0.0, 1.0, 0.0);
+
+	std::vector<XMFLOAT3> newPoints = { p1, p2, p3, p4 };
+	std::array<int, 4> newIndices = { 0, 1, 2, 3 };
+	qBox = std::make_unique<QuadSystem>();
+	qBox->addPoints(newPoints);
+	qBox->buildBox(newIndices, boxNormal, 10.0, 1.0);
+	box = qBox->convertFacesToMesh();
+	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	box->initDraw();
+
 
 
 	// cube setup
@@ -411,7 +428,8 @@ void Renderer::RenderSetup()
 
 	//building->draw(viewProjection);
 
-	square->draw(viewProjection);
+	//square->draw(viewProjection);
+	box->draw(viewProjection);
 
 	// Start the Dear ImGui frame
 	static int counter = 0;

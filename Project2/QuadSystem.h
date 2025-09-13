@@ -20,13 +20,27 @@ struct Quad
 	XMFLOAT3 v3;
 	XMFLOAT3 v4;
 
-	DirectX::XMVECTOR normalV;
+	XMVECTOR normalV;
+	XMFLOAT3 centroid;
 };
 
+// traditional list of indices into the array of 3d coordinates
+// polygons of any degree (everything should quads or tris eventually)
+// CC subD only works with 4-gons, Loop subD for tris
 struct Face
 {
 	std::vector<int> face;
-	DirectX::XMVECTOR normalV;
+	XMVECTOR normalV;
+	XMFLOAT3 centroid;
+};
+
+// the main structural component
+struct Box
+{
+	std::vector<int> verts;
+	std::vector<Face> faces;
+	XMFLOAT3 direction;
+	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
 };
 
 
@@ -40,19 +54,53 @@ public:
 	QuadSystem() {};
 
 	// operations may need to be outsourced to separate subdivision classes
-	std::vector<int> triangulate();
+	std::vector<int> triangulateQuads();
+	std::vector<int> triangulateFaces();
 	
 	void loopSubdivide();
 	void CCsubdivide();
 	void subQuad(Quad q, float dim1, float dim2, float u, float v);
 
+	std::tuple<float, float> XYZtoUV(XMFLOAT3);
+	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
+	XMFLOAT3 findCentroid(Face face); 
+
 	// standard indexing
-	std::unique_ptr<Mesh> convertToMesh1();
+	std::unique_ptr<Mesh> convertQuadsToMesh();
 	// redundant indexing
-	std::unique_ptr<Mesh> convertToMesh2();
+	std::unique_ptr<Mesh> convertFacesToMesh();
 
 	// functions to define 3D structural components and random/procedural systems
 	void buildFlatSquare(float length);
+
+	void addPoints(std::vector<XMFLOAT3>);
+
+	// main component of structures
+	// always four sided 
+	void buildBox(XMFLOAT3 start, XMFLOAT3 normal, float radius1, float radius2, float length);
+
+	void buildBox(std::array<int, 4> nearCorners, std::array<int, 4> farCorners);
+
+	void buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, float taper);
+
+	// connections
+	void connectBoxes(Box box1, Box box2);
+
+	// given a point in space and a normal vector, returns a list of 4 orthogonal unit vectors
+	std::array<XMFLOAT3, 4> orthoUnits(XMFLOAT3 location, XMVECTOR normal);
+
+	// deconstructs boxes to fill points, lines and faces lists
+	void fillLists();
+
+	int pointCount()
+	{
+		return points.size();
+	}
+
+	int faceCount()
+	{
+		return faces.size();
+	}
 
 private:
 	// cant be expanded
@@ -62,8 +110,14 @@ private:
 	std::vector<Face> faces;
 	std::vector<std::tuple<int, int>> lines;
 	std::vector<Quad> quads;
+	std::vector<Box> boxes;
 	//standard indexing
-	std::array<int, 6> triIndices = { 0, 3, 1, 1, 3, 2 };
+	std::array<int, 6> triIndices = { 0, 1, 3, 3, 1, 2 };
+
+	
+	int lineCount = lines.size();
+	int quadCount = quads.size();
+	int boxCount = boxes.size();
 
 	XMFLOAT3 origin = XMFLOAT3(0.0f, 0.0f, 0.0f);
 };

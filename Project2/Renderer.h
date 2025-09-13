@@ -51,6 +51,9 @@ public:
 	std::unique_ptr<QuadSystem> qSquare = nullptr;
 	std::unique_ptr<Mesh> square = nullptr;
 
+	std::unique_ptr<QuadSystem> qBox = nullptr;
+	std::unique_ptr<Mesh> box = nullptr;
+
 private:
 	int width = 0;
 	int height = 0;
