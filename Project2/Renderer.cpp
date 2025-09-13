@@ -338,12 +338,17 @@ bool Renderer::SceneSetup()
 	XMFLOAT3 p4 = XMFLOAT3(-2.0, -2.0, 2.0);
 
 	XMFLOAT3 boxNormal = XMFLOAT3(0.0, 1.0, 0.0);
+	XMFLOAT3 boxNormal2 = XMFLOAT3(0.0, 1.0, 0.3);
 
 	std::vector<XMFLOAT3> newPoints = { p1, p2, p3, p4 };
+	
 	std::array<int, 4> newIndices = { 0, 1, 2, 3 };
+	std::array<int, 4> moreIndices = { 4, 5, 6, 7 };
+
 	qBox = std::make_unique<QuadSystem>();
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 10.0, 1.0);
+	qBox->buildBox(moreIndices, boxNormal2, 10.0, 1.0);
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	box->initDraw();

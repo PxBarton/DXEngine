@@ -53,6 +53,7 @@ public:
 
 	std::unique_ptr<QuadSystem> qBox = nullptr;
 	std::unique_ptr<Mesh> box = nullptr;
+	std::unique_ptr<Mesh> boxSystem = nullptr;
 
 private:
 	int width = 0;
