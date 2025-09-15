@@ -83,6 +83,31 @@ void QuadSystem::addPoints(std::vector<XMFLOAT3> newPoints)
 	}
 }
 
+std::vector<XMFLOAT3> QuadSystem::scalePolygon(std::vector<XMFLOAT3> verts, XMFLOAT3 axisPoint, XMFLOAT3 scale) {
+	// translate, scale, translate
+	XMMATRIX toOrigin = XMMatrixTranslation(-axisPoint.x, -axisPoint.y, -axisPoint.z);
+	XMMATRIX S = XMMatrixScaling(scale.x, scale.y, scale.z);
+	XMMATRIX fromOrigin = XMMatrixTranslation(axisPoint.x, axisPoint.y, axisPoint.z);
+
+	XMMATRIX combinedTransform = XMMatrixMultiply(XMMatrixMultiply(toOrigin, S), fromOrigin);
+
+	std::vector<XMFLOAT3> transformedPoly;
+	// apply the combined transform to each point
+	for (const XMFLOAT3& v : verts) {
+		// Convert XMFLOAT3 to XMVECTOR for transform
+		XMVECTOR vertVec = XMLoadFloat3(&v);
+
+		XMVECTOR v_transformed = XMVector3Transform(vertVec, combinedTransform);
+
+		// back to XMFLOAT3
+		XMFLOAT3 transformed; 
+		XMStoreFloat3(&transformed, v_transformed);
+		transformedPoly.push_back(transformed);
+	}
+
+	return transformedPoly;
+}
+
 void QuadSystem::buildFlatSquare(float length)
 {
 	Quad square;
@@ -111,7 +136,7 @@ void QuadSystem::buildBox(XMFLOAT3 start, XMFLOAT3 normal, float radius1, float 
 
 }
 
-void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, float taper)
+void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale)
 {
 	XMFLOAT3 axisVector = XMFLOAT3(normal.x * length, normal.y * length, normal.z * length);
 
@@ -135,6 +160,23 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	float farCorner3z = points[nearCorners[3]].z + axisVector.z;
 	XMFLOAT3 farCorner3 = XMFLOAT3(farCorner3x, farCorner3y, farCorner3z);
 
+	//std::array<XMFLOAT3, 4> newCorners = { farCorner0 , farCorner1, farCorner2, farCorner3 };
+	std::vector<XMFLOAT3> newCorners = { farCorner0 , farCorner1, farCorner2, farCorner3 };
+	
+	XMFLOAT3 scaleOrigin = { 0.0f, 0.0f, 0.0f };
+	for (const XMFLOAT3 vert : newCorners) {
+		scaleOrigin.x += vert.x;
+		scaleOrigin.y += vert.y;
+		scaleOrigin.z += vert.z;
+	}
+
+	// assume quads for now
+	scaleOrigin.x /= 4;
+	scaleOrigin.y /= 4;
+	scaleOrigin.z /= 4;
+
+	std::vector<XMFLOAT3> farCorners = scalePolygon(newCorners, scaleOrigin, endScale);
+
 	Box box;
 
 	box.verts = { nearCorners[0],
@@ -147,10 +189,10 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 				pointCount() + 3};
 
 
-	points.push_back(farCorner0);
-	points.push_back(farCorner1);
-	points.push_back(farCorner2);
-	points.push_back(farCorner3);
+	points.push_back(farCorners[0]);
+	points.push_back(farCorners[1]);
+	points.push_back(farCorners[2]);
+	points.push_back(farCorners[3]);
 
 	// box.verts[face[i]] 
 	// ultimately need to reference the class points list to avoid confusion and repeated verts
@@ -179,6 +221,143 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	box.direction = normal;
 
 	boxes.push_back(box);
+}
+
+void QuadSystem::topCap(Box& box)
+{
+	std::array<int, 4> corners = box.farCorners();
+	Face cap;
+	cap.face.push_back(corners[0]);
+	cap.face.push_back(corners[1]);
+	cap.face.push_back(corners[2]);
+	cap.face.push_back(corners[3]);
+
+	faces.push_back(cap);
+}
+
+void QuadSystem::bottomCap(Box& box)
+{
+	std::array<int, 4> corners = box.nearCorners();
+	Face cap;
+	cap.face.push_back(corners[3]);
+	cap.face.push_back(corners[2]);
+	cap.face.push_back(corners[1]);
+	cap.face.push_back(corners[0]);
+
+	faces.push_back(cap);
+}
+
+void QuadSystem::findEdges()
+{
+	faceEdgePairs.clear();
+	std::set<std::pair<int, int>> uniqueEdgesSet;
+
+	// loop through each face
+	for (const Face& f : faces) {
+		// Get the number of vertices in this face
+		size_t s = f.face.size();
+		std::vector<std::pair<int, int>> faceEdges;
+
+		// loop through each edge on the face
+		for (size_t j = 0; j < s; ++j) {
+			// two point indices for the current edge
+			// modulo wrapping around
+			int v1 = f.face[j];
+			int v2 = f.face[(j + 1) % s];
+
+			// ensure first index is always smaller than the second.
+			// (5, 10) is the same as (10, 5).
+			if (v1 > v2) {
+				std::swap(v1, v2);
+			}
+			std::pair<int, int> uniqueEdge = { v1, v2 };
+			// set prevents duplicates.
+			faceEdges.push_back(uniqueEdge);
+			uniqueEdgesSet.insert(uniqueEdge);
+		}
+		faceEdgePairs.push_back(faceEdges);
+	}
+	this->edges.clear();
+
+	this->edges.assign(uniqueEdgesSet.begin(), uniqueEdgesSet.end());
+}
+
+void QuadSystem::CCsubdivide()
+{
+	// build edge list
+	findEdges();
+
+	// adjacent faces to points
+	// map setup for Face objects, vector<int> might be better
+	std::unordered_map<int, std::vector<Face>> PointsToFacesMap;
+	std::unordered_map<int, std::array<int, 2>> edgeToFacesMap;
+	std::unordered_map<int, std::vector<int>> faceToEdgesMap;
+	
+	
+	// slow
+	for (int p = 0; p < points.size(); p++)
+	{
+		std::vector<Face> adjFaces;
+		for (int f = 0; f < faces.size(); f++)
+		{
+			// check if the point index exists in the face array
+			for (int i : faces[f].face)
+			{
+				if (p == i)
+				{
+					adjFaces.push_back(faces[f]);
+					break;
+				}
+					
+			}
+		}
+	}
+
+	// faster, hash lookup, no order
+	for (const Face& face : faces) {
+		for (int p_index : face.face) {
+			PointsToFacesMap[p_index].push_back(face);
+		}
+	}
+
+	for (int e_idx = 0; e_idx < edges.size(); ++e_idx) {
+		const auto& edge = edges[e_idx];
+
+		// Replicates the Python 'adjFaces = []' logic
+		std::array<int, 2> adjFaces = { -1, -1 };
+		int faceCount = 0;
+
+		// Replicates the Python 'for i in range(len(eList))' and 'if edges[e] in eList[i]'
+		for (int f_idx = 0; f_idx < faceEdgePairs.size(); ++f_idx) {
+			// std::find is the C++ equivalent of Python's 'in' for a list
+			if (std::find(faceEdgePairs[f_idx].begin(), faceEdgePairs[f_idx].end(), edge) != faceEdgePairs[f_idx].end()) {
+				if (faceCount < 2) {
+					adjFaces[faceCount] = f_idx;
+					faceCount++;
+				}
+				// We can stop searching for this edge if we've found both faces
+				if (faceCount == 2) {
+					break;
+				}
+			}
+		}
+		edgeToFacesMap[e_idx] = adjFaces;
+	}
+
+	for (int f_idx = 0; f_idx < faceEdgePairs.size(); ++f_idx) {
+		std::vector<int> adjEdges;
+		for (const auto& faceEdge : faceEdgePairs[f_idx]) {
+			// This is the slow part: finding the index of an edge in the uniqueEdges list
+			// This is needed because the map key is an int index.
+			auto it = std::find(edges.begin(), edges.end(), faceEdge);
+			if (it != edges.end()) {
+				int edge_idx = std::distance(edges.begin(), it);
+				adjEdges.push_back(edge_idx);
+			}
+		}
+		faceToEdgesMap[f_idx] = adjEdges;
+	}
+
 }
 
 

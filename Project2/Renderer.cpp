@@ -345,10 +345,15 @@ bool Renderer::SceneSetup()
 	std::array<int, 4> newIndices = { 0, 1, 2, 3 };
 	std::array<int, 4> moreIndices = { 4, 5, 6, 7 };
 
+	XMFLOAT3 defaultScale = XMFLOAT3(1.0, 1.0, 1.0);
+	XMFLOAT3 boxScale = XMFLOAT3(0.5, 0.5, 0.5);
+
 	qBox = std::make_unique<QuadSystem>();
 	qBox->addPoints(newPoints);
-	qBox->buildBox(newIndices, boxNormal, 10.0, 1.0);
-	qBox->buildBox(moreIndices, boxNormal2, 10.0, 1.0);
+	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
+	qBox->buildBox(moreIndices, boxNormal, 2.0, boxScale);
+	qBox->topCap(qBox->getBox(1));
+	qBox->bottomCap(qBox->getBox(0));
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	box->initDraw();

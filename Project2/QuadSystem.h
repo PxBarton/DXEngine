@@ -1,10 +1,14 @@
 #pragma once
 
-#include <DirectXMath.h>
+#include <algorithm>
+#include <unordered_map>
 #include <cmath>
 #include <vector>
 #include <array>
 #include <tuple>
+#include <set>      
+#include <utility>
+#include <DirectXMath.h>
 #include "Vertex.h"
 #include "Mesh.h"
 
@@ -41,6 +45,21 @@ struct Box
 	std::vector<Face> faces;
 	XMFLOAT3 direction;
 	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
+
+	// track the corners
+	std::array<int, 4> nearCorners()
+	{
+		std::array<int, 4> corners = { verts[0], verts[1], verts[2], verts[3] };
+		return corners;
+	}
+
+	std::array<int, 4> farCorners()
+	{
+		std::array<int, 4> corners = { verts[4], verts[5], verts[6], verts[7] };
+		return corners;
+	}
+	
+	
 };
 
 
@@ -56,14 +75,11 @@ public:
 	// operations may need to be outsourced to separate subdivision classes
 	std::vector<int> triangulateQuads();
 	std::vector<int> triangulateFaces();
-	
-	void loopSubdivide();
-	void CCsubdivide();
-	void subQuad(Quad q, float dim1, float dim2, float u, float v);
 
 	std::tuple<float, float> XYZtoUV(XMFLOAT3);
 	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
 	XMFLOAT3 findCentroid(Face face); 
+	std::vector<XMFLOAT3> scalePolygon(std::vector<XMFLOAT3> points, const XMFLOAT3 scaleOrigin, XMFLOAT3 scale);
 
 	// standard indexing
 	std::unique_ptr<Mesh> convertQuadsToMesh();
@@ -81,7 +97,14 @@ public:
 
 	void buildBox(std::array<int, 4> nearCorners, std::array<int, 4> farCorners);
 
-	void buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, float taper);
+	void buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale);
+
+	// replace a face with a box
+	void replaceFace(Face face);
+
+	// caps
+	void topCap(Box& box);
+	void bottomCap(Box& box);
 
 	// connections
 	void connectBoxes(Box box1, Box box2);
@@ -91,6 +114,11 @@ public:
 
 	// deconstructs boxes to fill points, lines and faces lists
 	void fillLists();
+
+	void loopSubdivide();
+	void CCsubdivide();
+	void subQuad(Quad q, float dim1, float dim2, float u, float v);
+	void findEdges();
 
 	int pointCount()
 	{
@@ -102,22 +130,23 @@ public:
 		return faces.size();
 	}
 
+	Box& getBox(int index)
+	{
+		return boxes[index];
+	}
+
 private:
 	// cant be expanded
 	std::unique_ptr<XMFLOAT3[]> pointArray = nullptr;
 
 	std::vector<XMFLOAT3> points;
 	std::vector<Face> faces;
-	std::vector<std::tuple<int, int>> lines;
+	std::vector<std::pair<int, int>> edges;
+	std::vector<std::vector<std::pair<int, int>>> faceEdgePairs;
 	std::vector<Quad> quads;
 	std::vector<Box> boxes;
 	//standard indexing
 	std::array<int, 6> triIndices = { 0, 1, 3, 3, 1, 2 };
-
-	
-	int lineCount = lines.size();
-	int quadCount = quads.size();
-	int boxCount = boxes.size();
 
 	XMFLOAT3 origin = XMFLOAT3(0.0f, 0.0f, 0.0f);
 };
