@@ -62,6 +62,14 @@ struct Box
 	
 };
 
+// Custom Hash Function for std::pair<int, int>
+struct pair_hash {
+	template <class T1, class T2>
+	std::size_t operator() (const std::pair<T1, T2>& pair) const {
+		return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+	}
+};
+
 
 // represents a 3D mesh of quads, calculates normals and performs triangulation and/or subdivision
 // provides functionality for procedural and randomized shape generation
@@ -79,6 +87,8 @@ public:
 	std::tuple<float, float> XYZtoUV(XMFLOAT3);
 	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
 	XMFLOAT3 findCentroid(Face face); 
+	XMFLOAT3 findCentroid(const std::vector<XMFLOAT3>& points);
+	XMFLOAT3 edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2);
 	std::vector<XMFLOAT3> scalePolygon(std::vector<XMFLOAT3> points, const XMFLOAT3 scaleOrigin, XMFLOAT3 scale);
 
 	// standard indexing

@@ -344,16 +344,28 @@ bool Renderer::SceneSetup()
 	
 	std::array<int, 4> newIndices = { 0, 1, 2, 3 };
 	std::array<int, 4> moreIndices = { 4, 5, 6, 7 };
+	std::array<int, 4> moreIndices2 = { 8, 9, 10, 11 };
+	std::array<int, 4> moreIndices3 = { 12, 13, 14, 15 };
+	std::array<int, 4> moreIndices4 = { 16, 17, 18, 19 };
 
 	XMFLOAT3 defaultScale = XMFLOAT3(1.0, 1.0, 1.0);
 	XMFLOAT3 boxScale = XMFLOAT3(0.5, 0.5, 0.5);
+	XMFLOAT3 boxScale2 = XMFLOAT3(1.0, 1.0, 1.0);
+	XMFLOAT3 boxScale3 = XMFLOAT3(2.5, 2.5, 2.5);
+	XMFLOAT3 boxScale4 = XMFLOAT3(1.0, 1.0, 1.0);
 
 	qBox = std::make_unique<QuadSystem>();
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
 	qBox->buildBox(moreIndices, boxNormal, 2.0, boxScale);
-	qBox->topCap(qBox->getBox(1));
+	qBox->buildBox(moreIndices2, boxNormal, 4.0, boxScale2);
+	qBox->buildBox(moreIndices3, boxNormal, 3.0, boxScale3);
+	qBox->buildBox(moreIndices4, boxNormal, 1.0, boxScale4);
+	qBox->topCap(qBox->getBox(4));
 	qBox->bottomCap(qBox->getBox(0));
+	qBox->CCsubdivide();
+	qBox->CCsubdivide();
+	qBox->CCsubdivide();
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	box->initDraw();

@@ -101,7 +101,7 @@ std::vector<XMFLOAT3> QuadSystem::scalePolygon(std::vector<XMFLOAT3> verts, XMFL
 
 		// back to XMFLOAT3
 		XMFLOAT3 transformed; 
-		XMStoreFloat3(&transformed, v_transformed);
+		DirectX::XMStoreFloat3(&transformed, v_transformed);
 		transformedPoly.push_back(transformed);
 	}
 
@@ -247,6 +247,27 @@ void QuadSystem::bottomCap(Box& box)
 	faces.push_back(cap);
 }
 
+XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
+	XMVECTOR v1 = XMLoadFloat3(&p1);
+	XMVECTOR v2 = XMLoadFloat3(&p2);
+	XMVECTOR midpoint = XMVectorScale(XMVectorAdd(v1, v2), 0.5f);
+	XMFLOAT3 result;
+	DirectX::XMStoreFloat3(&result, midpoint);
+	return result;
+}
+
+// Returns a new XMFLOAT3 that is the centroid of a list of vertices
+XMFLOAT3 QuadSystem::findCentroid(const std::vector<XMFLOAT3>& points) {
+	XMVECTOR sum = XMVectorZero();
+	for (const auto& point : points) {
+		sum = XMVectorAdd(sum, XMLoadFloat3(&point));
+	}
+	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(points.size()));
+	XMFLOAT3 result;
+	DirectX::XMStoreFloat3(&result, centroid);
+	return result;
+}
+
 void QuadSystem::findEdges()
 {
 	faceEdgePairs.clear();
@@ -284,17 +305,20 @@ void QuadSystem::findEdges()
 
 void QuadSystem::CCsubdivide()
 {
+	// phase 1: build adjacency lists
+	
 	// build edge list
 	findEdges();
 
-	// adjacent faces to points
 	// map setup for Face objects, vector<int> might be better
-	std::unordered_map<int, std::vector<Face>> PointsToFacesMap;
+	std::unordered_map<int, std::vector<int>> pointToFacesMap;
 	std::unordered_map<int, std::array<int, 2>> edgeToFacesMap;
 	std::unordered_map<int, std::vector<int>> faceToEdgesMap;
+	std::unordered_map<int, std::vector<int>> pointToEdgesMap;
 	
-	
+	// point to faces
 	// slow
+	/*
 	for (int p = 0; p < points.size(); p++)
 	{
 		std::vector<Face> adjFaces;
@@ -312,14 +336,21 @@ void QuadSystem::CCsubdivide()
 			}
 		}
 	}
+	*/
 
+	// point to faces
 	// faster, hash lookup, no order
-	for (const Face& face : faces) {
+	//for (const Face& face : faces) {
+	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		const Face& face = faces[f_idx];
 		for (int p_index : face.face) {
-			PointsToFacesMap[p_index].push_back(face);
+			//pointToFacesMap[p_index].push_back(face);
+			pointToFacesMap[p_index].push_back(f_idx);
 		}
 	}
 
+
+	// edge to faces
 	for (int e_idx = 0; e_idx < edges.size(); ++e_idx) {
 		const auto& edge = edges[e_idx];
 
@@ -344,9 +375,10 @@ void QuadSystem::CCsubdivide()
 		edgeToFacesMap[e_idx] = adjFaces;
 	}
 
-	for (int f_idx = 0; f_idx < faceEdgePairs.size(); ++f_idx) {
+	// face to edges
+	for (int f = 0; f < faceEdgePairs.size(); ++f) {
 		std::vector<int> adjEdges;
-		for (const auto& faceEdge : faceEdgePairs[f_idx]) {
+		for (const auto& faceEdge : faceEdgePairs[f]) {
 			// This is the slow part: finding the index of an edge in the uniqueEdges list
 			// This is needed because the map key is an int index.
 			auto it = std::find(edges.begin(), edges.end(), faceEdge);
@@ -355,8 +387,151 @@ void QuadSystem::CCsubdivide()
 				adjEdges.push_back(edge_idx);
 			}
 		}
-		faceToEdgesMap[f_idx] = adjEdges;
+		faceToEdgesMap[f] = adjEdges;
 	}
+
+	// point to edges
+	// Loop through each vertex in the mesh
+	for (int v = 0; v < points.size(); ++v) {
+		std::vector<int> adjEdges;
+		// This is the slow part: a brute-force search
+		for (int e = 0; e < edges.size(); ++e) {
+			const auto& edge = edges[e];
+			// Check if the vertex index is in the edge pair
+			if (edge.first == v || edge.second == v) {
+				adjEdges.push_back(e);
+			}
+		}
+		pointToEdgesMap[v] = adjEdges;
+	}
+
+	// phase 2: calculate new geometry
+
+	std::unordered_map<int, XMFLOAT3> facePoints;
+	std::unordered_map<int, XMFLOAT3> edgePoints;
+	std::unordered_map<int, XMFLOAT3> vertPoints;
+
+	// calculate face points 
+	facePoints.clear();
+	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		std::vector<XMFLOAT3> faceVerts;
+		for (int v_idx : faces[f_idx].face) {
+			faceVerts.push_back(points[v_idx]);
+		}
+		facePoints[f_idx] = findCentroid(faceVerts);
+	}
+
+	// calculate edge points 
+	edgePoints.clear();
+	for (int e_idx = 0; e_idx < edges.size(); ++e_idx) {
+		const auto& edge = edges[e_idx];
+
+		// Edge midpoint (P in the algorithm)
+		XMFLOAT3 edgeMid = edgeMidpoint(points[edge.first], points[edge.second]);
+
+		// Average of adjacent face points (R in the algorithm)
+		XMFLOAT3 fp1 = facePoints[edgeToFacesMap[e_idx][0]];
+		XMFLOAT3 fp2 = facePoints[edgeToFacesMap[e_idx][1]];
+		XMFLOAT3 avgFP = edgeMidpoint(fp1, fp2);
+
+		// New edge point is the average of P and R
+		XMFLOAT3 newEdgePoint;
+		XMVECTOR v_new_edge = XMVectorScale(XMVectorAdd(XMLoadFloat3(&edgeMid), XMLoadFloat3(&avgFP)), 0.5f);
+		DirectX::XMStoreFloat3(&newEdgePoint, v_new_edge);
+
+		edgePoints[e_idx] = newEdgePoint;
+	}
+
+	// --- Step 4: Calculate Vertex Points ---
+	vertPoints.clear();
+	for (int v_idx = 0; v_idx < points.size(); ++v_idx) {
+		// Find average of adjacent face points (F)
+		std::vector<XMFLOAT3> adjFacePoints;
+		const auto& adjFaces = pointToFacesMap[v_idx]; // CORRECTED: Use the new map
+		for (int f_idx : adjFaces) {
+			adjFacePoints.push_back(facePoints[f_idx]);
+		}
+		XMFLOAT3 F = findCentroid(adjFacePoints);
+
+		// Find average of adjacent edge midpoints (R)
+		std::vector<XMFLOAT3> adjEdgeMids;
+		for (int e_idx : pointToEdgesMap[v_idx]) {
+			const auto& edge = edges[e_idx];
+			adjEdgeMids.push_back(edgeMidpoint(points[edge.first], points[edge.second]));
+		}
+		XMFLOAT3 R = findCentroid(adjEdgeMids);
+
+		// Original vertex point (P)
+		XMFLOAT3 P = points[v_idx];
+
+		// n is the number of faces/edges adjacent to the vertex. This number is dynamic.
+		int n = adjFaces.size(); // CORRECTED: Get n from the new map's size
+
+		// Catmull-Clark formula for the new vertex point
+		float m1 = (static_cast<float>(n) - 3.0f) / static_cast<float>(n);
+		float m2 = 1.0f / static_cast<float>(n);
+		float m3 = 2.0f / static_cast<float>(n);
+
+		XMVECTOR v_new_vert = XMVectorAdd(
+			XMVectorScale(XMLoadFloat3(&P), m1),
+			XMVectorAdd(
+				XMVectorScale(XMLoadFloat3(&F), m2),
+				XMVectorScale(XMLoadFloat3(&R), m3)
+			)
+		);
+
+		XMFLOAT3 newVertPoint;
+		DirectX::XMStoreFloat3(&newVertPoint, v_new_vert);
+		vertPoints[v_idx] = newVertPoint;
+	}
+
+	// --- Step 5: Construct the new mesh ---
+	std::vector<XMFLOAT3> newPoints;
+	std::vector<Face> newFaces;
+
+	// Add new vertex points
+	for (int i = 0; i < points.size(); ++i) {
+		newPoints.push_back(vertPoints[i]);
+	}
+	// Add new edge points
+	for (int i = 0; i < edges.size(); ++i) {
+		newPoints.push_back(edgePoints[i]);
+	}
+	// Add new face points
+	for (int i = 0; i < faces.size(); ++i) {
+		newPoints.push_back(facePoints[i]);
+	}
+
+	// Construct new faces (Quads)
+	size_t n1 = points.size();
+	size_t n2 = edges.size();
+
+	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		const auto& oldFace = faces[f_idx];
+		const auto& oldEdges = faceToEdgesMap[f_idx];
+
+		// A temporary vector to hold the new faces for this old face
+		std::vector<Face> subFaces;
+
+		for (int i = 0; i < oldFace.face.size(); ++i) {
+			Face newFace;
+			// Original vertex point (V')
+			newFace.face.push_back(oldFace.face[i]);
+			// Edge point of the next edge (E')
+			newFace.face.push_back(n1 + faceToEdgesMap[f_idx][i]);
+			// Face point (F')
+			newFace.face.push_back(n1 + n2 + f_idx);
+			// Edge point of the previous edge (E'')
+			newFace.face.push_back(n1 + faceToEdgesMap[f_idx][(i + 3) % 4]);
+
+			subFaces.push_back(newFace);
+		}
+		newFaces.insert(newFaces.end(), subFaces.begin(), subFaces.end());
+	}
+
+	// Replace the old mesh with the new one
+	points = newPoints;
+	faces = newFaces;
 
 }
 
