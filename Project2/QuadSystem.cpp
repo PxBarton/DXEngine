@@ -19,15 +19,49 @@ std::vector<int> QuadSystem::triangulateFaces()
 	std::vector<int> triIndexList;
 	for (int f = 0; f < faces.size(); f++)
 	{
-		for (int t = 0; t < triIndices.size(); t++)
+		if (faceExists(f))
 		{
-			int vertIndex = triIndices[t];
-			triIndexList.push_back(faces[f].face[vertIndex]);
+			for (int t = 0; t < triIndices.size(); t++)
+			{
+				int vertIndex = triIndices[t];
+				triIndexList.push_back(faces[f].face[vertIndex]);
+			}
 		}
+		
 	}	
 	
 	return triIndexList;
 }
+
+XMVECTOR QuadSystem::calcNormal(int p1, int p2, int p3)
+{
+	XMVECTOR vA = DirectX::XMLoadFloat3(&points[p1]);
+	XMVECTOR vB = DirectX::XMLoadFloat3(&points[p2]);
+	XMVECTOR vC = DirectX::XMLoadFloat3(&points[p3]);
+
+	XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
+	XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
+
+	DirectX::XMVECTOR normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
+	return (normalV);
+}
+
+XMVECTOR QuadSystem::calcNormal(int faceIndex)
+{
+	int p1 = faces[faceIndex].face[0];
+	int p2 = faces[faceIndex].face[1];
+	int p3 = faces[faceIndex].face[2];
+	XMVECTOR vA = DirectX::XMLoadFloat3(&points[p1]);
+	XMVECTOR vB = DirectX::XMLoadFloat3(&points[p2]);
+	XMVECTOR vC = DirectX::XMLoadFloat3(&points[p3]);
+
+	XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
+	XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
+
+	DirectX::XMVECTOR normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
+	return (normalV);
+}
+
 
 // here we populate verts and tris from Quads, all other initialization happens in Renderer class
 std::unique_ptr<Mesh> QuadSystem::convertQuadsToMesh()
@@ -212,10 +246,17 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	//side3.face = { 3, 7, 4, 0 };
 	side3.face = { box.verts[3], box.verts[7], box.verts[4], box.verts[0] };
 
+	
+
 	box.faces = { side0, side1, side2, side3 };
+
+	box.faceIndices.push_back(faceCount());
 	faces.push_back(side0);
+	box.faceIndices.push_back(faceCount());
 	faces.push_back(side1);
+	box.faceIndices.push_back(faceCount());
 	faces.push_back(side2);
+	box.faceIndices.push_back(faceCount());
 	faces.push_back(side3);
 
 	box.direction = normal;
@@ -247,6 +288,34 @@ void QuadSystem::bottomCap(Box& box)
 	faces.push_back(cap);
 }
 
+void QuadSystem::replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap)
+{
+	std::vector<int> faceToReplace = faces[faceIndex].face;
+	std::array<int, 4> oldFace;
+	oldFace[0] = faceToReplace[0];
+	oldFace[1] = faceToReplace[1];
+	oldFace[2] = faceToReplace[2];
+	oldFace[3] = faceToReplace[3];
+
+	buildBox(oldFace, normal, length, endScale);
+	if (cap)
+	{
+		topCap(boxes[boxes.size() - 1]);
+	}
+
+	//faces.erase(faces.begin() + faceIndex-1);
+	//faceDeletionList.push_back(faceIndex);
+	//faces[faceIndex].face[0] = -1;
+}
+
+void QuadSystem::deleteFaces()
+{
+	for (int index : faceDeletionList)
+	{
+		faces[index].face[0] = -99;
+	}
+}
+
 XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
 	XMVECTOR v1 = XMLoadFloat3(&p1);
 	XMVECTOR v2 = XMLoadFloat3(&p2);
@@ -275,28 +344,32 @@ void QuadSystem::findEdges()
 
 	// loop through each face
 	for (const Face& f : faces) {
-		// Get the number of vertices in this face
-		size_t s = f.face.size();
-		std::vector<std::pair<int, int>> faceEdges;
+		if (faceExists(f))
+		{
+			// Get the number of vertices in this face
+			size_t s = f.face.size();
+			std::vector<std::pair<int, int>> faceEdges;
 
-		// loop through each edge on the face
-		for (size_t j = 0; j < s; ++j) {
-			// two point indices for the current edge
-			// modulo wrapping around
-			int v1 = f.face[j];
-			int v2 = f.face[(j + 1) % s];
+			// loop through each edge on the face
+			for (size_t j = 0; j < s; ++j) {
+				// two point indices for the current edge
+				// modulo wrapping around
+				int v1 = f.face[j];
+				int v2 = f.face[(j + 1) % s];
 
-			// ensure first index is always smaller than the second.
-			// (5, 10) is the same as (10, 5).
-			if (v1 > v2) {
-				std::swap(v1, v2);
+				// ensure first index is always smaller than the second.
+				// (5, 10) is the same as (10, 5).
+				if (v1 > v2) {
+					std::swap(v1, v2);
+				}
+				std::pair<int, int> uniqueEdge = { v1, v2 };
+				// set prevents duplicates.
+				faceEdges.push_back(uniqueEdge);
+				uniqueEdgesSet.insert(uniqueEdge);
 			}
-			std::pair<int, int> uniqueEdge = { v1, v2 };
-			// set prevents duplicates.
-			faceEdges.push_back(uniqueEdge);
-			uniqueEdgesSet.insert(uniqueEdge);
+			faceEdgePairs.push_back(faceEdges);
 		}
-		faceEdgePairs.push_back(faceEdges);
+		
 	}
 	this->edges.clear();
 
@@ -342,11 +415,15 @@ void QuadSystem::CCsubdivide()
 	// faster, hash lookup, no order
 	//for (const Face& face : faces) {
 	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		const Face& face = faces[f_idx];
-		for (int p_index : face.face) {
-			//pointToFacesMap[p_index].push_back(face);
-			pointToFacesMap[p_index].push_back(f_idx);
+		if (faceExists(f_idx))
+		{
+			const Face& face = faces[f_idx];
+			for (int p_index : face.face) {
+				//pointToFacesMap[p_index].push_back(face);
+				pointToFacesMap[p_index].push_back(f_idx);
+			}
 		}
+		
 	}
 
 
@@ -414,11 +491,15 @@ void QuadSystem::CCsubdivide()
 	// calculate face points 
 	facePoints.clear();
 	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		std::vector<XMFLOAT3> faceVerts;
-		for (int v_idx : faces[f_idx].face) {
-			faceVerts.push_back(points[v_idx]);
+		if (faceExists(f_idx))
+		{
+			std::vector<XMFLOAT3> faceVerts;
+			for (int v_idx : faces[f_idx].face) {
+				faceVerts.push_back(points[v_idx]);
+			}
+			facePoints[f_idx] = findCentroid(faceVerts);
 		}
-		facePoints[f_idx] = findCentroid(faceVerts);
+		
 	}
 
 	// calculate edge points 
@@ -442,12 +523,12 @@ void QuadSystem::CCsubdivide()
 		edgePoints[e_idx] = newEdgePoint;
 	}
 
-	// --- Step 4: Calculate Vertex Points ---
+	// calculate vertex points
 	vertPoints.clear();
 	for (int v_idx = 0; v_idx < points.size(); ++v_idx) {
 		// Find average of adjacent face points (F)
 		std::vector<XMFLOAT3> adjFacePoints;
-		const auto& adjFaces = pointToFacesMap[v_idx]; // CORRECTED: Use the new map
+		const auto& adjFaces = pointToFacesMap[v_idx];
 		for (int f_idx : adjFaces) {
 			adjFacePoints.push_back(facePoints[f_idx]);
 		}
@@ -507,26 +588,30 @@ void QuadSystem::CCsubdivide()
 	size_t n2 = edges.size();
 
 	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		const auto& oldFace = faces[f_idx];
-		const auto& oldEdges = faceToEdgesMap[f_idx];
+		if (faceExists(f_idx))
+		{
+			const auto& oldFace = faces[f_idx];
+			const auto& oldEdges = faceToEdgesMap[f_idx];
 
-		// A temporary vector to hold the new faces for this old face
-		std::vector<Face> subFaces;
+			// A temporary vector to hold the new faces for this old face
+			std::vector<Face> subFaces;
 
-		for (int i = 0; i < oldFace.face.size(); ++i) {
-			Face newFace;
-			// Original vertex point (V')
-			newFace.face.push_back(oldFace.face[i]);
-			// Edge point of the next edge (E')
-			newFace.face.push_back(n1 + faceToEdgesMap[f_idx][i]);
-			// Face point (F')
-			newFace.face.push_back(n1 + n2 + f_idx);
-			// Edge point of the previous edge (E'')
-			newFace.face.push_back(n1 + faceToEdgesMap[f_idx][(i + 3) % 4]);
+			for (int i = 0; i < oldFace.face.size(); ++i) {
+				Face newFace;
+				// Original vertex point (V')
+				newFace.face.push_back(oldFace.face[i]);
+				// Edge point of the next edge (E')
+				newFace.face.push_back(n1 + faceToEdgesMap[f_idx][i]);
+				// Face point (F')
+				newFace.face.push_back(n1 + n2 + f_idx);
+				// Edge point of the previous edge (E'')
+				newFace.face.push_back(n1 + faceToEdgesMap[f_idx][(i + 3) % 4]);
 
-			subFaces.push_back(newFace);
+				subFaces.push_back(newFace);
+			}
+			newFaces.insert(newFaces.end(), subFaces.begin(), subFaces.end());
 		}
-		newFaces.insert(newFaces.end(), subFaces.begin(), subFaces.end());
+		
 	}
 
 	// Replace the old mesh with the new one

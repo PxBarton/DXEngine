@@ -6,7 +6,8 @@
 #include <vector>
 #include <array>
 #include <tuple>
-#include <set>      
+#include <set>    
+#include <optional>
 #include <utility>
 #include <DirectXMath.h>
 #include "Vertex.h"
@@ -24,6 +25,7 @@ struct Quad
 	XMFLOAT3 v3;
 	XMFLOAT3 v4;
 
+	XMFLOAT3 normal;
 	XMVECTOR normalV;
 	XMFLOAT3 centroid;
 };
@@ -34,7 +36,9 @@ struct Quad
 struct Face
 {
 	std::vector<int> face;
+
 	XMVECTOR normalV;
+	XMFLOAT3 normal;
 	XMFLOAT3 centroid;
 };
 
@@ -43,6 +47,7 @@ struct Box
 {
 	std::vector<int> verts;
 	std::vector<Face> faces;
+	std::vector<int> faceIndices;
 	XMFLOAT3 direction;
 	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
 
@@ -83,7 +88,8 @@ public:
 	// operations may need to be outsourced to separate subdivision classes
 	std::vector<int> triangulateQuads();
 	std::vector<int> triangulateFaces();
-
+	XMVECTOR calcNormal(int p1, int p2, int p3);
+	XMVECTOR calcNormal(int faceIndex);
 	std::tuple<float, float> XYZtoUV(XMFLOAT3);
 	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
 	XMFLOAT3 findCentroid(Face face); 
@@ -110,7 +116,9 @@ public:
 	void buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale);
 
 	// replace a face with a box
-	void replaceFace(Face face);
+	void replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
+
+	void deleteFaces();
 
 	// caps
 	void topCap(Box& box);
@@ -143,6 +151,30 @@ public:
 	Box& getBox(int index)
 	{
 		return boxes[index];
+	}
+
+	std::vector<int> faceDeletionList;
+
+	bool faceExists(int index)
+	{
+		//return faces[index].face[0] != -1;
+		return true;
+	}
+
+	bool faceExists(const Face f)
+	{
+		//return f.face[0] != -1;
+		return true;
+	}
+
+	std::vector<Face>& getFaces()
+	{
+		return faces;
+	}
+
+	void deleteFace(int index)
+	{
+		faces.erase(faces.begin() + index);
 	}
 
 private:
