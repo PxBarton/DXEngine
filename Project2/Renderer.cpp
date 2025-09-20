@@ -367,68 +367,69 @@ bool Renderer::SceneSetup()
 	//Box test = qBox->getBox(0);
 	//std::vector<Face> faceTest = qBox->getFaces();
 
-	int face1 = qBox->getBox(2).faceIndices[0];
-	qBox->getBox(2).faces[0].normalV = qBox->calcNormal(face1);
-	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[0].normal, qBox->getBox(2).faces[0].normalV);
-	XMFLOAT3 newNormal1 = qBox->getBox(2).faces[0].normal;
-	qBox->replaceFace(face1, newNormal1, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-
-	int face2 = qBox->getBox(2).faceIndices[1];
-	qBox->getBox(2).faces[1].normalV = qBox->calcNormal(face2);
-	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[1].normal, qBox->getBox(2).faces[1].normalV);
-	XMFLOAT3 newNormal2 = qBox->getBox(2).faces[1].normal;
-	qBox->replaceFace(face2, newNormal2, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-
-	int face3 = qBox->getBox(2).faceIndices[2];
-	qBox->getBox(2).faces[2].normalV = qBox->calcNormal(face3);
-	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[2].normal, qBox->getBox(2).faces[2].normalV);
-	XMFLOAT3 newNormal3 = qBox->getBox(2).faces[2].normal;
-	qBox->replaceFace(face3, newNormal3, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-
-	int face4 = qBox->getBox(2).faceIndices[3];
-	qBox->getBox(2).faces[3].normalV = qBox->calcNormal(face4);
-	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[3].normal, qBox->getBox(2).faces[3].normalV);
-	XMFLOAT3 newNormal4 = qBox->getBox(2).faces[3].normal;
-	qBox->replaceFace(face4, newNormal4, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-
-
-	int face5 = qBox->getBox(0).faceIndices[0];
-	qBox->getBox(0).faces[0].normalV = qBox->calcNormal(face5);
+	int face1 = qBox->getBox(0).faceIndices[0];
+	qBox->getBox(0).faces[0].normalV = qBox->calcNormal(face1);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[0].normal, qBox->getBox(0).faces[0].normalV);
-	XMFLOAT3 newNormal5 = qBox->getBox(0).faces[0].normal;
-	qBox->replaceFace(face5, newNormal5, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+	XMFLOAT3 newNormal1 = qBox->getBox(0).faces[0].normal;
+	qBox->replaceFace(face1, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face6 = qBox->getBox(0).faceIndices[1];
-	qBox->getBox(0).faces[1].normalV = qBox->calcNormal(face6);
+	int face2 = qBox->getBox(0).faceIndices[1];
+	qBox->getBox(0).faces[1].normalV = qBox->calcNormal(face2);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[1].normal, qBox->getBox(0).faces[1].normalV);
-	XMFLOAT3 newNormal6 = qBox->getBox(0).faces[1].normal;
-	qBox->replaceFace(face6, newNormal6, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+	XMFLOAT3 newNormal2 = qBox->getBox(0).faces[1].normal;
+	qBox->replaceFace(face2, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face7 = qBox->getBox(0).faceIndices[2];
-	qBox->getBox(0).faces[2].normalV = qBox->calcNormal(face7);
+	int face3 = qBox->getBox(0).faceIndices[2];
+	qBox->getBox(0).faces[2].normalV = qBox->calcNormal(face3);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[2].normal, qBox->getBox(0).faces[2].normalV);
-	XMFLOAT3 newNormal7 = qBox->getBox(0).faces[2].normal;
-	qBox->replaceFace(face7, newNormal7, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+	XMFLOAT3 newNormal3 = qBox->getBox(0).faces[2].normal;
+	qBox->replaceFace(face3, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face8 = qBox->getBox(0).faceIndices[3];
-	qBox->getBox(0).faces[3].normalV = qBox->calcNormal(face8);
+	int face4 = qBox->getBox(0).faceIndices[3];
+	qBox->getBox(0).faces[3].normalV = qBox->calcNormal(face4);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[3].normal, qBox->getBox(0).faces[3].normalV);
-	XMFLOAT3 newNormal8 = qBox->getBox(0).faces[3].normal;
-	qBox->replaceFace(face8, newNormal8, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+	XMFLOAT3 newNormal4 = qBox->getBox(0).faces[3].normal;
+	qBox->replaceFace(face4, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+
+	int face5 = qBox->getBox(2).faceIndices[0];
+	qBox->getBox(2).faces[0].normalV = qBox->calcNormal(face5);
+	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[0].normal, qBox->getBox(2).faces[0].normalV);
+	XMFLOAT3 newNormal5 = qBox->getBox(2).faces[0].normal;
+	qBox->replaceFace(face5, newNormal5, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+
+	int face6 = qBox->getBox(2).faceIndices[1];
+	qBox->getBox(2).faces[1].normalV = qBox->calcNormal(face6);
+	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[1].normal, qBox->getBox(2).faces[1].normalV);
+	XMFLOAT3 newNormal6 = qBox->getBox(2).faces[1].normal;
+	qBox->replaceFace(face6, newNormal6, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+
+	int face7 = qBox->getBox(2).faceIndices[2];
+	qBox->getBox(2).faces[2].normalV = qBox->calcNormal(face7);
+	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[2].normal, qBox->getBox(2).faces[2].normalV);
+	XMFLOAT3 newNormal7 = qBox->getBox(2).faces[2].normal;
+	qBox->replaceFace(face7, newNormal7, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+
+	int face8 = qBox->getBox(2).faceIndices[3];
+	qBox->getBox(2).faces[3].normalV = qBox->calcNormal(face8);
+	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[3].normal, qBox->getBox(2).faces[3].normalV);
+	XMFLOAT3 newNormal8 = qBox->getBox(2).faces[3].normal;
+	qBox->replaceFace(face8, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
+
 
 	qBox->deleteFace(face1);
-	qBox->deleteFace(face2);
-	qBox->deleteFace(face3);
-	qBox->deleteFace(face4);
-	qBox->deleteFace(face5);
-	qBox->deleteFace(face6);
-	qBox->deleteFace(face7);
-	qBox->deleteFace(face8);
+	qBox->deleteFace(face2 - 1);
+	qBox->deleteFace(face3 - 2);
+	qBox->deleteFace(face4 - 3);
+	qBox->deleteFace(face5 - 4);
+	qBox->deleteFace(face6 - 5);
+	qBox->deleteFace(face7 - 6);
+	qBox->deleteFace(face8 - 7);
+
 	//qBox->deleteFaces();
 
-	//qBox->CCsubdivide();
-	//qBox->CCsubdivide();
-	//qBox->CCsubdivide();
+	qBox->CCsubdivide();
+	qBox->CCsubdivide();
+	qBox->CCsubdivide();
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
