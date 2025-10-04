@@ -67,6 +67,13 @@ struct Box
 	
 };
 
+struct Branch
+{
+	std::vector<Branch> branches;
+	int capIndex;
+	int boxIndex;
+};
+
 // Custom Hash Function for std::pair<int, int>
 struct pair_hash {
 	template <class T1, class T2>
@@ -148,11 +155,11 @@ public:
 
 	void branchSystem();
 
-	// A and B are the two original XMVECTORs
-// delta_angle_rad is the amount to rotate A by (e.g., XM_PIDIV12 for 15 degrees)
+	// A and B two  XMVECTORs
 	XMFLOAT3 rotateVector(XMVECTOR A, XMVECTOR B, float angle)
 	{
-		// 1. Calculate the Plane Normal (Rotation Axis)
+		angle = XMConvertToRadians(angle);
+		// Calculate the Plane Normal (Rotation Axis)
 		XMVECTOR N = XMVector3Cross(A, B);
 
 		/*
@@ -163,13 +170,13 @@ public:
 		}
 		*/
 
-		XMVECTOR N_unit = XMVector3Normalize(N);
+		XMVECTOR unitNormal = XMVector3Normalize(N);
 
-		// 3. Create the Rotation Matrix (Quaternion for smooth rotation)
+		// Create the Rotation Matrix (Quaternion for smooth rotation)
 		// Create a rotation quaternion for the delta_angle around the N_unit axis.
-		XMVECTOR rotationQuat = XMQuaternionRotationAxis(N_unit, angle);
+		XMVECTOR rotationQuat = XMQuaternionRotationAxis(unitNormal, angle);
 
-		// 4. Rotate Vector A
+		// Rotate Vector A
 		// Use XMVector3Rotate to apply the quaternion rotation to vector A.
 		XMVECTOR rotatedB = XMVector3Rotate(B, rotationQuat);
 		XMFLOAT3 rotatedBfloat3;
