@@ -376,7 +376,7 @@ void QuadSystem::findEdges()
 	this->edges.assign(uniqueEdgesSet.begin(), uniqueEdgesSet.end());
 }
 
-void QuadSystem::CCsubdivide()
+void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float paramC = 1.0)
 {
 	// phase 1: build adjacency lists
 	
@@ -549,9 +549,9 @@ void QuadSystem::CCsubdivide()
 		int n = adjFaces.size(); // CORRECTED: Get n from the new map's size
 
 		// Catmull-Clark formula for the new vertex point
-		float m1 = (static_cast<float>(n) - 3.0f) / static_cast<float>(n);
-		float m2 = 1.0f / static_cast<float>(n);
-		float m3 = 2.0f / static_cast<float>(n);
+		float m1 = (static_cast<float>(n) - paramA) / static_cast<float>(n);
+		float m2 = paramB / static_cast<float>(n);
+		float m3 = paramC / static_cast<float>(n);
 
 		XMVECTOR v_new_vert = XMVectorAdd(
 			XMVectorScale(XMLoadFloat3(&P), m1),
@@ -648,15 +648,16 @@ void QuadSystem::branch(int faceIndex, std::vector<int> sides, float split, std:
 	float newBoxHeight = approxWidth(faces[faceIndex])* 0.8 * boxHeightRatio;
 	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
 	XMFLOAT3 boxNormal;
-	XMVECTOR boxNormalV = calcNormal(faceIndex);
+	// not sure why calcNormal gets the sign wrong 
+	XMVECTOR boxNormalV = -calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
 	replaceFace(faceIndex, boxNormal, newBoxHeight, scale, true);
 	Box newBox = getBox(boxCount() - 1);
-	for (int s; s < sides.size(); s++)
+	for (int s = 0; s < sides.size(); s++)
 	{
 		int face = newBox.faceIndices[sides[s]];
 		XMFLOAT3 newNormal = rotateVector(boxNormalV, calcNormal(face), angles[s]);
-		replaceFace(face, newNormal, newBoxHeight * 2, scale, true);
+		replaceFace(face, newNormal, newBoxHeight * 4, scale, true);
 	}
 	// dont forget to store indices of caps to make more branches
 

@@ -36,7 +36,7 @@ struct Quad
 struct Face
 {
 	std::vector<int> face;
-
+	uint64_t id;
 	XMVECTOR normalV;
 	XMFLOAT3 normal;
 	XMFLOAT3 centroid;
@@ -45,6 +45,7 @@ struct Face
 // the main structural component
 struct Box
 {
+	uint64_t id;
 	std::vector<int> verts;
 	std::vector<Face> faces;
 	std::vector<int> faceIndices;
@@ -144,7 +145,7 @@ public:
 
 	// subdivision alorithms
 	void loopSubdivide();
-	void CCsubdivide();
+	void CCsubdivide(float paramA, float paramB, float paramC);
 
 	// two perpendicular cuts, one face becomes 4
 	void divideFace(int faceIndex, float dim1, float dim2, float u, float v);

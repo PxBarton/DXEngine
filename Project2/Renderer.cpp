@@ -328,8 +328,8 @@ bool Renderer::SceneSetup()
 	// QuadSystem test
 	qSquare = std::make_unique<QuadSystem>();
 	qSquare->buildFlatSquare(8.0);
-	qSquare->CCsubdivide();
-	qSquare->CCsubdivide();
+	//qSquare->CCsubdivide(3.0, 2.0, 1.0);
+	//qSquare->CCsubdivide(3.0, 2.0, 1.0);
 
 	square = qSquare->convertQuadsToMesh();
 	square->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
@@ -350,6 +350,8 @@ bool Renderer::SceneSetup()
 	std::array<int, 4> moreIndices2 = { 8, 9, 10, 11 };
 	std::array<int, 4> moreIndices3 = { 12, 13, 14, 15 };
 	std::array<int, 4> moreIndices4 = { 16, 17, 18, 19 };
+	std::array<int, 4> moreIndices5 = { 20, 21, 22, 23 };
+	std::array<int, 4> moreIndices6 = { 24, 25, 26, 27 };
 
 	XMFLOAT3 defaultScale = XMFLOAT3(1.0, 1.0, 1.0);
 	XMFLOAT3 boxScale = XMFLOAT3(0.5, 0.5, 0.5);
@@ -364,8 +366,16 @@ bool Renderer::SceneSetup()
 	qBox->buildBox(moreIndices2, boxNormal, 4.0, boxScale2);
 	qBox->buildBox(moreIndices3, boxNormal, 3.0, boxScale3);
 	qBox->buildBox(moreIndices4, boxNormal, 1.0, boxScale4);
-	qBox->topCap(qBox->getBox(4));
+	qBox->buildBox(moreIndices5, boxNormal, 3.0, boxScale);
+	qBox->buildBox(moreIndices6, boxNormal, 2.0, boxScale4);
+	int topCapIndex = qBox->faceCount();
+	qBox->topCap(qBox->getBox(6));
 	qBox->bottomCap(qBox->getBox(0));
+
+	std::vector<int> sides = { 0, 1, 2, 3 };
+	std::vector<float> angles = { -30.0, -30.0, -30.0, -30.0 };
+	
+	//qBox->branch(topCapIndex, sides, 1.0, angles, 1.2, 0.6);
 
 	//Box test = qBox->getBox(0);
 	//std::vector<Face> faceTest = qBox->getFaces();
@@ -418,6 +428,9 @@ bool Renderer::SceneSetup()
 	XMFLOAT3 newNormal8 = qBox->getBox(2).faces[3].normal;
 	qBox->replaceFace(face8, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
+	// this is insufficient for branching
+	// requires a robust face-tracking and deletion mechanism
+	//qBox->deleteFace(topCapIndex);
 
 	qBox->deleteFace(face1);
 	qBox->deleteFace(face2 - 1);
@@ -429,9 +442,11 @@ bool Renderer::SceneSetup()
 	qBox->deleteFace(face8 - 7);
 	
 
-	qBox->CCsubdivide();
-	qBox->CCsubdivide();
-	qBox->CCsubdivide();
+	//qBox->CCsubdivide(4.5, 3.5, 2.95);
+	//qBox->CCsubdivide(0.5, 1.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
