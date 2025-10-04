@@ -286,6 +286,7 @@ void QuadSystem::topCap(Box& box)
 
 	faces.push_back(cap);
 	trackNewFace(faces.back(), faceCount() - 1);
+	topCapId = faces.back().id;
 	//box.faceIds.push_back(faces.back().id);
 }
 

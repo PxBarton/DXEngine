@@ -276,7 +276,7 @@ public:
 
 		faceDeletionIdList.clear();
 	}
-
+	uint64_t topCapId;
 private:
 	uint64_t nextFaceID = 0;
 	std::vector<XMFLOAT3> points;
@@ -288,6 +288,7 @@ private:
 	std::unordered_map<uint64_t, int> faceIdToIndexMap;
 	std::vector<uint64_t> faceDeletionIdList;
 	std::vector<int> branchCaps;
+	
 
 	// standard indexing for quad->triangle conversion
 	std::array<int, 6> triIndices = { 0, 1, 3, 3, 1, 2 };

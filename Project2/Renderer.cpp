@@ -368,14 +368,13 @@ bool Renderer::SceneSetup()
 	qBox->buildBox(moreIndices4, boxNormal, 1.0, boxScale4);
 	qBox->buildBox(moreIndices5, boxNormal, 3.0, boxScale);
 	qBox->buildBox(moreIndices6, boxNormal, 2.0, boxScale4);
-	int topCapIndex = qBox->faceCount();
 	qBox->topCap(qBox->getBox(6));
 	qBox->bottomCap(qBox->getBox(0));
 
 	std::vector<int> sides = { 0, 1, 2, 3 };
 	std::vector<float> angles = { -30.0, -30.0, -30.0, -30.0 };
 	
-	//qBox->branch(topCapIndex, sides, 1.0, angles, 1.2, 0.6);
+	qBox->branch(qBox->topCapId, sides, 1.0, angles, 1.2, 0.6);
 
 	//Box test = qBox->getBox(0);
 	//std::vector<Face> faceTest = qBox->getFaces();
@@ -403,52 +402,40 @@ bool Renderer::SceneSetup()
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[3].normal, qBox->getBox(0).faces[3].normalV);
 	XMFLOAT3 newNormal4 = qBox->getBox(0).faces[3].normal;
 	qBox->replaceFace(face4, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-	/*
-	int face5 = qBox->getBox(2).faceIndices[0];
+	
+	int face5 = qBox->getBox(2).faceIds[0];
 	qBox->getBox(2).faces[0].normalV = qBox->calcNormal(face5);
 	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[0].normal, qBox->getBox(2).faces[0].normalV);
 	XMFLOAT3 newNormal5 = qBox->getBox(2).faces[0].normal;
 	qBox->replaceFace(face5, newNormal5, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face6 = qBox->getBox(2).faceIndices[1];
+	int face6 = qBox->getBox(2).faceIds[1];
 	qBox->getBox(2).faces[1].normalV = qBox->calcNormal(face6);
 	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[1].normal, qBox->getBox(2).faces[1].normalV);
 	XMFLOAT3 newNormal6 = qBox->getBox(2).faces[1].normal;
 	qBox->replaceFace(face6, newNormal6, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face7 = qBox->getBox(2).faceIndices[2];
+	int face7 = qBox->getBox(2).faceIds[2];
 	qBox->getBox(2).faces[2].normalV = qBox->calcNormal(face7);
 	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[2].normal, qBox->getBox(2).faces[2].normalV);
 	XMFLOAT3 newNormal7 = qBox->getBox(2).faces[2].normal;
 	qBox->replaceFace(face7, newNormal7, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face8 = qBox->getBox(2).faceIndices[3];
+	int face8 = qBox->getBox(2).faceIds[3];
 	qBox->getBox(2).faces[3].normalV = qBox->calcNormal(face8);
 	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[3].normal, qBox->getBox(2).faces[3].normalV);
 	XMFLOAT3 newNormal8 = qBox->getBox(2).faces[3].normal;
 	qBox->replaceFace(face8, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	// this is insufficient for branching
-	// requires a robust face-tracking and deletion mechanism
-	//qBox->deleteFace(topCapIndex);
-
-	qBox->deleteFace(face1);
-	qBox->deleteFace(face2 - 1);
-	qBox->deleteFace(face3 - 2);
-	qBox->deleteFace(face4 - 3);
-	qBox->deleteFace(face5 - 4);
-	qBox->deleteFace(face6 - 5);
-	qBox->deleteFace(face7 - 6);
-	qBox->deleteFace(face8 - 7);
-	*/
+	
 
 	qBox->deleteStagedFaces();
 
-	//qBox->CCsubdivide(4.5, 3.5, 2.95);
-	//qBox->CCsubdivide(0.5, 1.0, 1.0);
+	qBox->CCsubdivide(4.5, 3.5, 2.95);
+	qBox->CCsubdivide(0.5, 1.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
