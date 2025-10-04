@@ -48,7 +48,7 @@ struct Box
 	uint64_t id;
 	std::vector<int> verts;
 	std::vector<Face> faces;
-	std::vector<uint64_t> faceIDs;
+	std::vector<uint64_t> faceIds;
 	std::vector<int> faceIndices;
 	XMFLOAT3 direction;
 	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
@@ -109,10 +109,19 @@ public:
 	std::vector<XMFLOAT3> scalePolygon(std::vector<XMFLOAT3> points, const XMFLOAT3 scaleOrigin, XMFLOAT3 scale);
 
 	// tracking faces with unique ID's for deletions and looking up branch caps
-	int getFaceIndexByID(uint64_t faceId) const {
-		// Use .at() for safety; it throws an exception if the ID doesn't exist.
-		return FaceIdToIndexMap.at(faceId);
+	void trackNewFace(Face& f, int currentIndex) {
+		// Assign unique ID and increment the counter
+		f.id = nextFaceID++; 
+		// Map the ID to its current location
+		faceIdToIndexMap[f.id] = currentIndex; 
 	}
+
+	int getFaceIndexByID(uint64_t faceId) const {
+		// Use .at() throws an exception if the ID doesn't exist.
+		return faceIdToIndexMap.at(faceId);
+	}
+
+	
 
 	// standard indexing
 	std::unique_ptr<Mesh> convertQuadsToMesh();
@@ -133,9 +142,8 @@ public:
 	void buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale);
 
 	// replace a face with a box
-	void replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
-
-	void deleteFaces();
+	//void replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
+	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
 
 	// caps
 	void topCap(Box& box);
@@ -215,8 +223,6 @@ public:
 		return boxes[index];
 	}
 
-	std::vector<int> faceDeletionList;
-
 	bool faceExists(int index)
 	{
 		//return faces[index].face[0] != -1;
@@ -239,21 +245,51 @@ public:
 		faces.erase(faces.begin() + index);
 	}
 
-private:
-	// cant be expanded
-	std::unique_ptr<XMFLOAT3[]> pointArray = nullptr;
+	
+	void deleteStagedFaces()
+	{
+		std::vector<int> indicesToDelete;
+		for (uint64_t id : faceDeletionIdList) 
+		{
+			// in case a face was already deleted or replaced multiple times.
+			try {
+				indicesToDelete.push_back(faceIdToIndexMap.at(id));
+			}
+			catch (...) {
+				continue;
+			}
+		}
 
+		// sort indices
+		std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
+
+		for (int index : indicesToDelete) 
+		{
+			faces.erase(faces.begin() + index);
+		}
+
+		faceIdToIndexMap.clear();
+		for (int i = 0; i < faces.size(); ++i) {
+			// The face's ID has not changed, but its index has
+			faceIdToIndexMap[faces[i].id] = i;
+		}
+
+		faceDeletionIdList.clear();
+	}
+
+private:
+	uint64_t nextFaceID = 0;
 	std::vector<XMFLOAT3> points;
 	std::vector<Face> faces;
 	std::vector<std::pair<int, int>> edges;
 	std::vector<std::vector<std::pair<int, int>>> faceEdgePairs;
 	std::vector<Quad> quads;
 	std::vector<Box> boxes;
-	std::unordered_map<uint64_t, int> FaceIdToIndexMap;
-	// A list to track IDs of faces that need to be deleted (used for batch deletion)
-	std::vector<uint64_t> FaceDeletionIdList;
+	std::unordered_map<uint64_t, int> faceIdToIndexMap;
+	std::vector<uint64_t> faceDeletionIdList;
 	std::vector<int> branchCaps;
-	//standard indexing
+
+	// standard indexing for quad->triangle conversion
 	std::array<int, 6> triIndices = { 0, 1, 3, 3, 1, 2 };
 
 	XMFLOAT3 origin = XMFLOAT3(0.0f, 0.0f, 0.0f);

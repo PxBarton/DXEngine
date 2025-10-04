@@ -380,30 +380,30 @@ bool Renderer::SceneSetup()
 	//Box test = qBox->getBox(0);
 	//std::vector<Face> faceTest = qBox->getFaces();
 	
-	int face1 = qBox->getBox(0).faceIndices[0];
+	int face1 = qBox->getBox(0).faceIds[0];
 	qBox->getBox(0).faces[0].normalV = qBox->calcNormal(face1);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[0].normal, qBox->getBox(0).faces[0].normalV);
 	XMFLOAT3 newNormal1 = qBox->getBox(0).faces[0].normal;
 	qBox->replaceFace(face1, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-
-	int face2 = qBox->getBox(0).faceIndices[1];
+	
+	int face2 = qBox->getBox(0).faceIds[1];
 	qBox->getBox(0).faces[1].normalV = qBox->calcNormal(face2);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[1].normal, qBox->getBox(0).faces[1].normalV);
 	XMFLOAT3 newNormal2 = qBox->getBox(0).faces[1].normal;
 	qBox->replaceFace(face2, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face3 = qBox->getBox(0).faceIndices[2];
+	int face3 = qBox->getBox(0).faceIds[2];
 	qBox->getBox(0).faces[2].normalV = qBox->calcNormal(face3);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[2].normal, qBox->getBox(0).faces[2].normalV);
 	XMFLOAT3 newNormal3 = qBox->getBox(0).faces[2].normal;
 	qBox->replaceFace(face3, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
 
-	int face4 = qBox->getBox(0).faceIndices[3];
+	int face4 = qBox->getBox(0).faceIds[3];
 	qBox->getBox(0).faces[3].normalV = qBox->calcNormal(face4);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[3].normal, qBox->getBox(0).faces[3].normalV);
 	XMFLOAT3 newNormal4 = qBox->getBox(0).faces[3].normal;
 	qBox->replaceFace(face4, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true);
-
+	/*
 	int face5 = qBox->getBox(2).faceIndices[0];
 	qBox->getBox(2).faces[0].normalV = qBox->calcNormal(face5);
 	DirectX::XMStoreFloat3(&qBox->getBox(2).faces[0].normal, qBox->getBox(2).faces[0].normalV);
@@ -440,7 +440,9 @@ bool Renderer::SceneSetup()
 	qBox->deleteFace(face6 - 5);
 	qBox->deleteFace(face7 - 6);
 	qBox->deleteFace(face8 - 7);
-	
+	*/
+
+	qBox->deleteStagedFaces();
 
 	//qBox->CCsubdivide(4.5, 3.5, 2.95);
 	//qBox->CCsubdivide(0.5, 1.0, 1.0);

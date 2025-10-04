@@ -252,12 +252,23 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side0);
+	trackNewFace(faces.back(), faceCount() - 1);
+	box.faceIds.push_back(faces.back().id);
+
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side1);
+	trackNewFace(faces.back(), faceCount() - 1);
+	box.faceIds.push_back(faces.back().id); 
+
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side2);
+	trackNewFace(faces.back(), faceCount() - 1);
+	box.faceIds.push_back(faces.back().id);
+
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side3);
+	trackNewFace(faces.back(), faceCount() - 1);
+	box.faceIds.push_back(faces.back().id);
 
 	box.direction = normal;
 
@@ -274,6 +285,8 @@ void QuadSystem::topCap(Box& box)
 	cap.face.push_back(corners[3]);
 
 	faces.push_back(cap);
+	trackNewFace(faces.back(), faceCount() - 1);
+	//box.faceIds.push_back(faces.back().id);
 }
 
 void QuadSystem::bottomCap(Box& box)
@@ -286,8 +299,10 @@ void QuadSystem::bottomCap(Box& box)
 	cap.face.push_back(corners[0]);
 
 	faces.push_back(cap);
+	trackNewFace(faces.back(), faceCount() - 1);
+	//box.faceIds.push_back(faces.back().id);
 }
-
+/*
 void QuadSystem::replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap)
 {
 	std::vector<int> faceToReplace = faces[faceIndex].face;
@@ -302,19 +317,28 @@ void QuadSystem::replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLO
 	{
 		topCap(boxes[boxes.size() - 1]);
 	}
-
-	//faces.erase(faces.begin() + faceIndex-1);
-	//faceDeletionList.push_back(faceIndex);
-	//faces[faceIndex].face[0] = -1;
 }
-
-void QuadSystem::deleteFaces()
+*/
+// prioritize unique id's over indices that may change with deletions
+void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap)
 {
-	for (int index : faceDeletionList)
+	int faceIndex = getFaceIndexByID(faceId);
+	std::vector<int> faceToReplace = faces[faceIndex].face;
+	std::array<int, 4> oldFace;
+	oldFace[0] = faceToReplace[0];
+	oldFace[1] = faceToReplace[1];
+	oldFace[2] = faceToReplace[2];
+	oldFace[3] = faceToReplace[3];
+
+	buildBox(oldFace, normal, length, endScale);
+	if (cap)
 	{
-		faces[index].face[0] = -99;
+		topCap(boxes[boxes.size() - 1]);
 	}
+
+	faceDeletionIdList.push_back(faceId);
 }
+
 
 XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
 	XMVECTOR v1 = XMLoadFloat3(&p1);
@@ -642,8 +666,9 @@ float QuadSystem::approxWidth(Face f)
 }
 
 // angle away from initial face normal
-void QuadSystem::branch(int faceIndex, std::vector<int> sides, float split, std::vector<float> angles, float widthPercent, float boxHeightRatio)
+void QuadSystem::branch(int faceId, std::vector<int> sides, float split, std::vector<float> angles, float widthPercent, float boxHeightRatio)
 {
+	int faceIndex = getFaceIndexByID(faceId);
 	Face& f = faces[faceIndex];
 	float newBoxHeight = approxWidth(faces[faceIndex])* 0.8 * boxHeightRatio;
 	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
@@ -651,11 +676,11 @@ void QuadSystem::branch(int faceIndex, std::vector<int> sides, float split, std:
 	// not sure why calcNormal gets the sign wrong 
 	XMVECTOR boxNormalV = -calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
-	replaceFace(faceIndex, boxNormal, newBoxHeight, scale, true);
+	replaceFace(faceId, boxNormal, newBoxHeight, scale, true);
 	Box newBox = getBox(boxCount() - 1);
 	for (int s = 0; s < sides.size(); s++)
 	{
-		int face = newBox.faceIndices[sides[s]];
+		int face = newBox.faceIds[sides[s]];
 		XMFLOAT3 newNormal = rotateVector(boxNormalV, calcNormal(face), angles[s]);
 		replaceFace(face, newNormal, newBoxHeight * 4, scale, true);
 	}
