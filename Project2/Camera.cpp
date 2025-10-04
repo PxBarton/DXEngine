@@ -168,7 +168,8 @@ void Camera::UpdateViewMatrix() //Updates view matrix and direction vectors
 	camTarget += this->posVector;
 	// Calculate up direction based on current rotation
 	XMVECTOR upDir = XMVector3TransformCoord(this->defaultUpV, camRotationMatrix);
-	// Rebuild view matrix
+	// Builds the view matrix as the inverse of the camera's world matrix
+	// and the rotation information implicit in camTarget and upDir
 	this->viewMatrix = XMMatrixLookAtLH(this->posVector, camTarget, upDir);
 
 	XMMATRIX vecRotationMatrix = XMMatrixRotationRollPitchYaw(0.0f, this->rot.y, 0.0f);

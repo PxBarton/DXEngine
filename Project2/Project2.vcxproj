@@ -138,6 +138,7 @@
     <ClInclude Include="COMException.h" />
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineWindow.h" />
+    <ClInclude Include="PerlinNoise.h" />
     <ClInclude Include="QuadSystem.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="InputDevices.h" />

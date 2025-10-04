@@ -620,5 +620,47 @@ void QuadSystem::CCsubdivide()
 
 }
 
+// euclidean distance
+float QuadSystem::distance(XMFLOAT3 pt1, XMFLOAT3 pt2)
+{
+	float X = abs(pt1.x - pt2.x);
+	float Y = abs(pt1.y - pt2.y);
+	float Z = abs(pt1.z - pt2.z);
+	return sqrt(X * X + Y * Y + Z * Z);
+}
+
+float QuadSystem::approxWidth(Face f)
+{
+	XMFLOAT3 v0 = points[f.face[0]];
+	XMFLOAT3 v1 = points[f.face[1]];
+	XMFLOAT3 v2 = points[f.face[2]];
+	XMFLOAT3 v3 = points[f.face[3]];
+	float diagonal1 = distance(v0, v2);
+	float diagonal2 = distance(v1, v3);
+	
+	return (diagonal1 + diagonal2) / 2.0;
+}
+
+// angle away from initial face normal
+void QuadSystem::branch(int faceIndex, std::vector<int> sides, float split, std::vector<float> angles, float widthPercent, float boxHeightRatio)
+{
+	Face& f = faces[faceIndex];
+	float newBoxHeight = approxWidth(faces[faceIndex])* 0.8 * boxHeightRatio;
+	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
+	XMFLOAT3 boxNormal;
+	XMVECTOR boxNormalV = calcNormal(faceIndex);
+	XMStoreFloat3(&boxNormal, boxNormalV);
+	replaceFace(faceIndex, boxNormal, newBoxHeight, scale, true);
+	Box newBox = getBox(boxCount() - 1);
+	for (int s; s < sides.size(); s++)
+	{
+		int face = newBox.faceIndices[sides[s]];
+		XMFLOAT3 newNormal = rotateVector(boxNormalV, calcNormal(face), angles[s]);
+		replaceFace(face, newNormal, newBoxHeight * 2, scale, true);
+	}
+	// dont forget to store indices of caps to make more branches
+
+}
+
 
 

@@ -327,11 +327,14 @@ bool Renderer::SceneSetup()
 
 	// QuadSystem test
 	qSquare = std::make_unique<QuadSystem>();
-	qSquare->buildFlatSquare(2.0);
+	qSquare->buildFlatSquare(8.0);
+	qSquare->CCsubdivide();
+	qSquare->CCsubdivide();
+
 	square = qSquare->convertQuadsToMesh();
 	square->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	square->initDraw();
-
+	
 	XMFLOAT3 p1 = XMFLOAT3(-2.0, -2.0, -2.0);
 	XMFLOAT3 p2 = XMFLOAT3(2.0, -2.0, -2.0);
 	XMFLOAT3 p3 = XMFLOAT3(2.0, -2.0, 2.0);
@@ -366,7 +369,7 @@ bool Renderer::SceneSetup()
 
 	//Box test = qBox->getBox(0);
 	//std::vector<Face> faceTest = qBox->getFaces();
-
+	
 	int face1 = qBox->getBox(0).faceIndices[0];
 	qBox->getBox(0).faces[0].normalV = qBox->calcNormal(face1);
 	DirectX::XMStoreFloat3(&qBox->getBox(0).faces[0].normal, qBox->getBox(0).faces[0].normalV);
@@ -424,8 +427,7 @@ bool Renderer::SceneSetup()
 	qBox->deleteFace(face6 - 5);
 	qBox->deleteFace(face7 - 6);
 	qBox->deleteFace(face8 - 7);
-
-	//qBox->deleteFaces();
+	
 
 	qBox->CCsubdivide();
 	qBox->CCsubdivide();
@@ -434,7 +436,7 @@ bool Renderer::SceneSetup()
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	box->initDraw();
-
+	
 
 
 	// cube setup

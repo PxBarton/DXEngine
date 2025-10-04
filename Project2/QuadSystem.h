@@ -95,6 +95,8 @@ public:
 	XMFLOAT3 findCentroid(Face face); 
 	XMFLOAT3 findCentroid(const std::vector<XMFLOAT3>& points);
 	XMFLOAT3 edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2);
+	float distance(XMFLOAT3 pt1, XMFLOAT3 pt2);
+	float approxWidth(Face f);
 	std::vector<XMFLOAT3> scalePolygon(std::vector<XMFLOAT3> points, const XMFLOAT3 scaleOrigin, XMFLOAT3 scale);
 
 	// standard indexing
@@ -133,9 +135,49 @@ public:
 	// deconstructs boxes to fill points, lines and faces lists
 	void fillLists();
 
+	// subdivision alorithms
 	void loopSubdivide();
 	void CCsubdivide();
-	void subQuad(Quad q, float dim1, float dim2, float u, float v);
+
+	// two perpendicular cuts, one face becomes 4
+	void divideFace(int faceIndex, float dim1, float dim2, float u, float v);
+	// parallel cuts
+	void sliceFace(int faceIndex, float edge1, int numSections);
+
+	void branch(int faceIndex, std::vector<int> sides, float split, std::vector<float> angles, float widthPercent, float boxHeightRatio);
+
+	void branchSystem();
+
+	// A and B are the two original XMVECTORs
+// delta_angle_rad is the amount to rotate A by (e.g., XM_PIDIV12 for 15 degrees)
+	XMFLOAT3 rotateVector(XMVECTOR A, XMVECTOR B, float angle)
+	{
+		// 1. Calculate the Plane Normal (Rotation Axis)
+		XMVECTOR N = XMVector3Cross(A, B);
+
+		/*
+		// Check if the vectors are parallel/anti-parallel (Cross product is near zero)
+		if (XMVector3NearEqual(N, XMVectorZero(), XMVectorReplicate(1e-6f)))
+		{
+			return A;
+		}
+		*/
+
+		XMVECTOR N_unit = XMVector3Normalize(N);
+
+		// 3. Create the Rotation Matrix (Quaternion for smooth rotation)
+		// Create a rotation quaternion for the delta_angle around the N_unit axis.
+		XMVECTOR rotationQuat = XMQuaternionRotationAxis(N_unit, angle);
+
+		// 4. Rotate Vector A
+		// Use XMVector3Rotate to apply the quaternion rotation to vector A.
+		XMVECTOR rotatedB = XMVector3Rotate(B, rotationQuat);
+		XMFLOAT3 rotatedBfloat3;
+		XMStoreFloat3(&rotatedBfloat3, rotatedB); // Stores the XMVECTOR into the XMFLOAT3
+
+		return rotatedBfloat3;
+	}
+
 	void findEdges();
 
 	int pointCount()
@@ -146,6 +188,11 @@ public:
 	int faceCount()
 	{
 		return faces.size();
+	}
+
+	int boxCount()
+	{
+		return boxes.size();
 	}
 
 	Box& getBox(int index)
@@ -187,6 +234,7 @@ private:
 	std::vector<std::vector<std::pair<int, int>>> faceEdgePairs;
 	std::vector<Quad> quads;
 	std::vector<Box> boxes;
+	std::vector<int> branchCaps;
 	//standard indexing
 	std::array<int, 6> triIndices = { 0, 1, 3, 3, 1, 2 };
 
