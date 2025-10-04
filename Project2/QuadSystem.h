@@ -48,6 +48,7 @@ struct Box
 	uint64_t id;
 	std::vector<int> verts;
 	std::vector<Face> faces;
+	std::vector<uint64_t> faceIDs;
 	std::vector<int> faceIndices;
 	XMFLOAT3 direction;
 	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
@@ -71,7 +72,7 @@ struct Box
 struct Branch
 {
 	std::vector<Branch> branches;
-	int capIndex;
+	uint64_t capId;
 	int boxIndex;
 };
 
@@ -106,6 +107,12 @@ public:
 	float distance(XMFLOAT3 pt1, XMFLOAT3 pt2);
 	float approxWidth(Face f);
 	std::vector<XMFLOAT3> scalePolygon(std::vector<XMFLOAT3> points, const XMFLOAT3 scaleOrigin, XMFLOAT3 scale);
+
+	// tracking faces with unique ID's for deletions and looking up branch caps
+	int getFaceIndexByID(uint64_t faceId) const {
+		// Use .at() for safety; it throws an exception if the ID doesn't exist.
+		return FaceIdToIndexMap.at(faceId);
+	}
 
 	// standard indexing
 	std::unique_ptr<Mesh> convertQuadsToMesh();
@@ -242,6 +249,9 @@ private:
 	std::vector<std::vector<std::pair<int, int>>> faceEdgePairs;
 	std::vector<Quad> quads;
 	std::vector<Box> boxes;
+	std::unordered_map<uint64_t, int> FaceIdToIndexMap;
+	// A list to track IDs of faces that need to be deleted (used for batch deletion)
+	std::vector<uint64_t> FaceDeletionIdList;
 	std::vector<int> branchCaps;
 	//standard indexing
 	std::array<int, 6> triIndices = { 0, 1, 3, 3, 1, 2 };
