@@ -173,6 +173,7 @@ void QuadSystem::buildBox(XMFLOAT3 start, XMFLOAT3 normal, float radius1, float 
 void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale)
 {
 	XMFLOAT3 axisVector = XMFLOAT3(normal.x * length, normal.y * length, normal.z * length);
+	XMFLOAT3 center = findCentroid(nearCorners);
 
 	float farCorner0x = points[nearCorners[0]].x + axisVector.x;
 	float farCorner0y = points[nearCorners[0]].y + axisVector.y;
@@ -275,7 +276,7 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	boxes.push_back(box);
 }
 
-void QuadSystem::topCap(Box& box)
+uint64_t QuadSystem::topCap(Box& box)
 {
 	std::array<int, 4> corners = box.farCorners();
 	Face cap;
@@ -286,8 +287,11 @@ void QuadSystem::topCap(Box& box)
 
 	faces.push_back(cap);
 	trackNewFace(faces.back(), faceCount() - 1);
-	topCapId = faces.back().id;
+	uint64_t capId = faces.back().id;
+	topCapId = capId;
 	//box.faceIds.push_back(faces.back().id);
+
+	return capId;
 }
 
 void QuadSystem::bottomCap(Box& box)
@@ -321,7 +325,7 @@ void QuadSystem::replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLO
 }
 */
 // prioritize unique id's over indices that may change with deletions
-void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap)
+void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch)
 {
 	int faceIndex = getFaceIndexByID(faceId);
 	std::vector<int> faceToReplace = faces[faceIndex].face;
@@ -332,12 +336,18 @@ void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMF
 	oldFace[3] = faceToReplace[3];
 
 	buildBox(oldFace, normal, length, endScale);
+	uint64_t capId;
 	if (cap)
 	{
-		topCap(boxes[boxes.size() - 1]);
+		capId = topCap(boxes[boxes.size() - 1]);
 	}
 
 	faceDeletionIdList.push_back(faceId);
+
+	if (isBranch)
+	{
+		branchCaps.push_back(capId);
+	}
 }
 
 
@@ -351,9 +361,21 @@ XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
 }
 
 // Returns a new XMFLOAT3 that is the centroid of a list of vertices
-XMFLOAT3 QuadSystem::findCentroid(const std::vector<XMFLOAT3>& points) {
+XMFLOAT3 QuadSystem::findCentroid(const std::vector<XMFLOAT3>& vertices) {
 	XMVECTOR sum = XMVectorZero();
-	for (const auto& point : points) {
+	for (const auto& point : vertices) {
+		sum = XMVectorAdd(sum, XMLoadFloat3(&point));
+	}
+	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(vertices.size()));
+	XMFLOAT3 result;
+	DirectX::XMStoreFloat3(&result, centroid);
+	return result;
+}
+
+XMFLOAT3 QuadSystem::findCentroid(const std::array<int, 4>& vertices) {
+	std::array<XMFLOAT3, 4> facePoints = { points[vertices[0]], points[vertices[1]], points[vertices[2]], points[vertices[3]] };
+	XMVECTOR sum = XMVectorZero();
+	for (const auto& point : facePoints) {
 		sum = XMVectorAdd(sum, XMLoadFloat3(&point));
 	}
 	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(points.size()));
@@ -496,7 +518,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 	// Loop through each vertex in the mesh
 	for (int v = 0; v < points.size(); ++v) {
 		std::vector<int> adjEdges;
-		// This is the slow part: a brute-force search
+		// brute-force search
 		for (int e = 0; e < edges.size(); ++e) {
 			const auto& edge = edges[e];
 			// Check if the vertex index is in the edge pair
@@ -529,15 +551,15 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 
 	// calculate edge points 
 	edgePoints.clear();
-	for (int e_idx = 0; e_idx < edges.size(); ++e_idx) {
-		const auto& edge = edges[e_idx];
+	for (int e = 0; e < edges.size(); ++e) {
+		const auto& edge = edges[e];
 
 		// Edge midpoint (P in the algorithm)
 		XMFLOAT3 edgeMid = edgeMidpoint(points[edge.first], points[edge.second]);
 
 		// Average of adjacent face points (R in the algorithm)
-		XMFLOAT3 fp1 = facePoints[edgeToFacesMap[e_idx][0]];
-		XMFLOAT3 fp2 = facePoints[edgeToFacesMap[e_idx][1]];
+		XMFLOAT3 fp1 = facePoints[edgeToFacesMap[e][0]];
+		XMFLOAT3 fp2 = facePoints[edgeToFacesMap[e][1]];
 		XMFLOAT3 avgFP = edgeMidpoint(fp1, fp2);
 
 		// New edge point is the average of P and R
@@ -545,15 +567,15 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 		XMVECTOR v_new_edge = XMVectorScale(XMVectorAdd(XMLoadFloat3(&edgeMid), XMLoadFloat3(&avgFP)), 0.5f);
 		DirectX::XMStoreFloat3(&newEdgePoint, v_new_edge);
 
-		edgePoints[e_idx] = newEdgePoint;
+		edgePoints[e] = newEdgePoint;
 	}
 
 	// calculate vertex points
 	vertPoints.clear();
-	for (int v_idx = 0; v_idx < points.size(); ++v_idx) {
+	for (int v = 0; v < points.size(); ++v) {
 		// Find average of adjacent face points (F)
 		std::vector<XMFLOAT3> adjFacePoints;
-		const auto& adjFaces = pointToFacesMap[v_idx];
+		const auto& adjFaces = pointToFacesMap[v];
 		for (int f_idx : adjFaces) {
 			adjFacePoints.push_back(facePoints[f_idx]);
 		}
@@ -561,14 +583,14 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 
 		// Find average of adjacent edge midpoints (R)
 		std::vector<XMFLOAT3> adjEdgeMids;
-		for (int e_idx : pointToEdgesMap[v_idx]) {
+		for (int e_idx : pointToEdgesMap[v]) {
 			const auto& edge = edges[e_idx];
 			adjEdgeMids.push_back(edgeMidpoint(points[edge.first], points[edge.second]));
 		}
 		XMFLOAT3 R = findCentroid(adjEdgeMids);
 
 		// Original vertex point (P)
-		XMFLOAT3 P = points[v_idx];
+		XMFLOAT3 P = points[v];
 
 		// n is the number of faces/edges adjacent to the vertex. This number is dynamic.
 		int n = adjFaces.size(); // CORRECTED: Get n from the new map's size
@@ -588,7 +610,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 
 		XMFLOAT3 newVertPoint;
 		DirectX::XMStoreFloat3(&newVertPoint, v_new_vert);
-		vertPoints[v_idx] = newVertPoint;
+		vertPoints[v] = newVertPoint;
 	}
 
 	// --- Step 5: Construct the new mesh ---
@@ -612,11 +634,11 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 	size_t n1 = points.size();
 	size_t n2 = edges.size();
 
-	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		if (faceExists(f_idx))
+	for (int f = 0; f < faces.size(); ++f) {
+		if (faceExists(f))
 		{
-			const auto& oldFace = faces[f_idx];
-			const auto& oldEdges = faceToEdgesMap[f_idx];
+			const auto& oldFace = faces[f];
+			const auto& oldEdges = faceToEdgesMap[f];
 
 			// A temporary vector to hold the new faces for this old face
 			std::vector<Face> subFaces;
@@ -626,11 +648,11 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 				// Original vertex point (V')
 				newFace.face.push_back(oldFace.face[i]);
 				// Edge point of the next edge (E')
-				newFace.face.push_back(n1 + faceToEdgesMap[f_idx][i]);
+				newFace.face.push_back(n1 + faceToEdgesMap[f][i]);
 				// Face point (F')
-				newFace.face.push_back(n1 + n2 + f_idx);
+				newFace.face.push_back(n1 + n2 + f);
 				// Edge point of the previous edge (E'')
-				newFace.face.push_back(n1 + faceToEdgesMap[f_idx][(i + 3) % 4]);
+				newFace.face.push_back(n1 + faceToEdgesMap[f][(i + 3) % 4]);
 
 				subFaces.push_back(newFace);
 			}
@@ -677,13 +699,14 @@ void QuadSystem::branch(int faceId, std::vector<int> sides, float split, std::ve
 	// not sure why calcNormal gets the sign wrong 
 	XMVECTOR boxNormalV = -calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
-	replaceFace(faceId, boxNormal, newBoxHeight, scale, true);
+	replaceFace(faceId, boxNormal, newBoxHeight, scale, true, false);
 	Box newBox = getBox(boxCount() - 1);
 	for (int s = 0; s < sides.size(); s++)
 	{
-		int face = newBox.faceIds[sides[s]];
+		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
+		
 		XMFLOAT3 newNormal = rotateVector(boxNormalV, calcNormal(face), angles[s]);
-		replaceFace(face, newNormal, newBoxHeight * 4, scale, true);
+		replaceFace(face, newNormal, newBoxHeight * 6, scale, true, true);
 	}
 	// dont forget to store indices of caps to make more branches
 

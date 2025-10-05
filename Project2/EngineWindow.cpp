@@ -150,7 +150,7 @@ void EngineWindow::Update()
     }
 
     const float cameraSpeed = 0.006f;
-    float dt = 3.0;
+    float dt = 6.0;
     // move forward, back, left, right
     if (keyboard.KeyIsPressed('Y'))
     {
@@ -205,22 +205,24 @@ void EngineWindow::Update()
     // rotation about origin
     if (keyboard.KeyIsPressed(VK_UP))
     {
-        this->rndr->camera.AdjustPosition(this->rndr->camera.GetForwardV() * cameraSpeed * 5 * time);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetForwardV() * cameraSpeed * 3 * time);
     }
     if (keyboard.KeyIsPressed(VK_DOWN))
     {
-        this->rndr->camera.AdjustPosition(this->rndr->camera.GetBackwardV() * cameraSpeed * 5 * time);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetBackwardV() * cameraSpeed * 3 * time);
     }
     if (keyboard.KeyIsPressed(VK_LEFT))
     {
-        this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
-        this->rndr->camera.AdjustPosition(this->rndr->camera.GetLeftV() * cameraSpeed * time);
+        this->rndr->camera.SetLookAtPos(this->rndr->camera.camOrigin);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetLeftV() * cameraSpeed * 3 * time);
+        //this->rndr->camera.SetPosition(0.0f, 10.0f, 0.0f);
         //this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
     }
     if (keyboard.KeyIsPressed(VK_RIGHT))
     {
-        this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
-        this->rndr->camera.AdjustPosition(this->rndr->camera.GetRightV() * cameraSpeed * time);
+        this->rndr->camera.SetLookAtPos(this->rndr->camera.camOrigin);
+        this->rndr->camera.AdjustPosition(this->rndr->camera.GetRightV() * cameraSpeed * 3 * time);
+        //this->rndr->camera.SetPosition(0.0f, 10.0f, 0.0f);
         //this->rndr->camera.SetLookAtPos(this->rndr->camera.origin);
     }
     

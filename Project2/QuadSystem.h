@@ -103,6 +103,7 @@ public:
 	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
 	XMFLOAT3 findCentroid(Face face); 
 	XMFLOAT3 findCentroid(const std::vector<XMFLOAT3>& points);
+	XMFLOAT3 findCentroid(const std::array<int, 4>& points);
 	XMFLOAT3 edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2);
 	float distance(XMFLOAT3 pt1, XMFLOAT3 pt2);
 	float approxWidth(Face f);
@@ -143,10 +144,10 @@ public:
 
 	// replace a face with a box
 	//void replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
-	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
+	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch);
 
 	// caps
-	void topCap(Box& box);
+	uint64_t topCap(Box& box);
 	void bottomCap(Box& box);
 
 	// connections
@@ -276,7 +277,10 @@ public:
 
 		faceDeletionIdList.clear();
 	}
+
 	uint64_t topCapId;
+	std::vector<uint64_t> branchCaps;
+
 private:
 	uint64_t nextFaceID = 0;
 	std::vector<XMFLOAT3> points;
@@ -287,7 +291,7 @@ private:
 	std::vector<Box> boxes;
 	std::unordered_map<uint64_t, int> faceIdToIndexMap;
 	std::vector<uint64_t> faceDeletionIdList;
-	std::vector<int> branchCaps;
+	
 	
 
 	// standard indexing for quad->triangle conversion

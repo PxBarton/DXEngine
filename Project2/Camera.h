@@ -9,6 +9,7 @@ class Camera
 public:
 	Camera();
 	XMFLOAT3 origin = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	XMFLOAT3 camOrigin = XMFLOAT3(0.0f, 10.0f, 0.0f);
 	void SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ);
 
 	const XMMATRIX& GetViewMatrix() const;
