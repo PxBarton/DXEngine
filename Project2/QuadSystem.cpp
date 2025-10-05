@@ -281,9 +281,9 @@ uint64_t QuadSystem::topCap(Box& box)
 	std::array<int, 4> corners = box.farCorners();
 	Face cap;
 	cap.face.push_back(corners[0]);
-	cap.face.push_back(corners[1]);
-	cap.face.push_back(corners[2]);
 	cap.face.push_back(corners[3]);
+	cap.face.push_back(corners[2]);
+	cap.face.push_back(corners[1]);
 
 	faces.push_back(cap);
 	trackNewFace(faces.back(), faceCount() - 1);
@@ -697,7 +697,7 @@ void QuadSystem::branch(int faceId, std::vector<int> sides, float split, std::ve
 	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
 	XMFLOAT3 boxNormal;
 	// not sure why calcNormal gets the sign wrong 
-	XMVECTOR boxNormalV = -calcNormal(faceIndex);
+	XMVECTOR boxNormalV = calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
 	replaceFace(faceId, boxNormal, newBoxHeight, scale, true, false);
 	Box newBox = getBox(boxCount() - 1);
@@ -705,7 +705,7 @@ void QuadSystem::branch(int faceId, std::vector<int> sides, float split, std::ve
 	{
 		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
 		
-		XMFLOAT3 newNormal = rotateVector(boxNormalV, calcNormal(face), angles[s]);
+		XMFLOAT3 newNormal = rotateVector(boxNormalV, -calcNormal(face), angles[s]);
 		replaceFace(face, newNormal, newBoxHeight * 6, scale, true, true);
 	}
 	// dont forget to store indices of caps to make more branches

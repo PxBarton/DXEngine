@@ -439,12 +439,12 @@ bool Renderer::SceneSetup()
 
 	qBox->deleteStagedFaces();
 
-	qBox->CCsubdivide(2.5, 2.5, .08);
-	qBox->CCsubdivide(2.0, 1.8, 1.0);
+	//qBox->CCsubdivide(2.5, 2.5, .08);
+	//qBox->CCsubdivide(2.0, 1.8, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 
 	box = qBox->convertFacesToMesh();
