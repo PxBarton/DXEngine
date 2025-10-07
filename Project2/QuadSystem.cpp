@@ -19,7 +19,7 @@ std::vector<int> QuadSystem::triangulateFaces()
 	std::vector<int> triIndexList;
 	for (int f = 0; f < faces.size(); f++)
 	{
-		if (faceExists(f))
+		if (true)
 		{
 			for (int t = 0; t < triIndices.size(); t++)
 			{
@@ -249,7 +249,7 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 
 	
 
-	box.faces = { side0, side1, side2, side3 };
+	//box.faces = { side0, side1, side2, side3 };
 
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side0);
@@ -391,7 +391,7 @@ void QuadSystem::findEdges()
 
 	// loop through each face
 	for (const Face& f : faces) {
-		if (faceExists(f))
+		if (true)
 		{
 			// Get the number of vertices in this face
 			size_t s = f.face.size();
@@ -462,7 +462,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 	// faster, hash lookup, no order
 	//for (const Face& face : faces) {
 	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		if (faceExists(f_idx))
+		if (true)
 		{
 			const Face& face = faces[f_idx];
 			for (int p_index : face.face) {
@@ -538,7 +538,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 	// calculate face points 
 	facePoints.clear();
 	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		if (faceExists(f_idx))
+		if (true)
 		{
 			std::vector<XMFLOAT3> faceVerts;
 			for (int v_idx : faces[f_idx].face) {
@@ -635,7 +635,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 	size_t n2 = edges.size();
 
 	for (int f = 0; f < faces.size(); ++f) {
-		if (faceExists(f))
+		if (true)
 		{
 			const auto& oldFace = faces[f];
 			const auto& oldEdges = faceToEdgesMap[f];
@@ -689,7 +689,7 @@ float QuadSystem::approxWidth(Face f)
 }
 
 // angle away from initial face normal
-void QuadSystem::branch(int faceId, std::vector<int> sides, float split, std::vector<float> angles, float widthPercent, float boxHeightRatio)
+void QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::vector<float> angles, float boxHeightRatio)
 {
 	int faceIndex = getFaceIndexByID(faceId);
 	Face& f = faces[faceIndex];
@@ -699,14 +699,22 @@ void QuadSystem::branch(int faceId, std::vector<int> sides, float split, std::ve
 	// not sure why calcNormal gets the sign wrong 
 	XMVECTOR boxNormalV = calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
-	replaceFace(faceId, boxNormal, newBoxHeight, scale, true, false);
+	replaceFace(faceId, parent.axis, newBoxHeight, scale, false, false);
+	uint64_t capId = topCap(boxes[boxes.size() - 1]);
+	parent.capId = capId;
 	Box newBox = getBox(boxCount() - 1);
 	for (int s = 0; s < sides.size(); s++)
 	{
+		Branch newBranch;
 		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
-		
 		XMFLOAT3 newNormal = rotateVector(boxNormalV, -calcNormal(face), angles[s]);
-		replaceFace(face, newNormal, newBoxHeight * 6, scale, true, true);
+		replaceFace(face, newNormal, newBoxHeight * 6, scale, false, false);
+		uint64_t newCapId = topCap(boxes[boxes.size() - 1]);
+		newBranch.axis = newNormal;
+		newBranch.parentAxis = parent.axis;
+		newBranch.capId = newCapId;
+		branchCaps.push_back(newCapId);
+		parent.branches.push_back(newBranch);
 	}
 	// dont forget to store indices of caps to make more branches
 

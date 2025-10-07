@@ -47,7 +47,7 @@ struct Box
 {
 	uint64_t id;
 	std::vector<int> verts;
-	std::vector<Face> faces;
+	//std::vector<Face> faces;
 	std::vector<uint64_t> faceIds;
 	std::vector<int> faceIndices;
 	XMFLOAT3 direction;
@@ -71,9 +71,11 @@ struct Box
 
 struct Branch
 {
+	std::vector<int> boxes;
 	std::vector<Branch> branches;
 	uint64_t capId;
-	int boxIndex;
+	XMFLOAT3 axis;
+	XMFLOAT3 parentAxis;
 };
 
 // Custom Hash Function for std::pair<int, int>
@@ -168,7 +170,7 @@ public:
 	// parallel cuts
 	void sliceFace(int faceIndex, float edge1, int numSections);
 
-	void branch(int faceIndex, std::vector<int> sides, float split, std::vector<float> angles, float widthPercent, float boxHeightRatio);
+	void branch(Branch& parent, int faceId, std::vector<int> sides,  std::vector<float> angles, float boxHeightRatio);
 
 	void branchSystem();
 
@@ -224,21 +226,15 @@ public:
 		return boxes[index];
 	}
 
-	bool faceExists(int index)
+	Face& getFace(int index)
 	{
-		//return faces[index].face[0] != -1;
-		return true;
+		return faces[index];
 	}
 
-	bool faceExists(const Face f)
+	Face& getFaceById(uint64_t faceId)
 	{
-		//return f.face[0] != -1;
-		return true;
-	}
-
-	std::vector<Face>& getFaces()
-	{
-		return faces;
+		int index = getFaceIndexByID(faceId);
+		return faces[index];
 	}
 
 	void deleteFace(int index)
