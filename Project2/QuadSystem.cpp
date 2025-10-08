@@ -172,8 +172,16 @@ void QuadSystem::buildBox(XMFLOAT3 start, XMFLOAT3 normal, float radius1, float 
 
 void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale)
 {
+	XMVECTOR normalV = DirectX::XMLoadFloat3(&normal);
+	normalV = DirectX::XMVector3Normalize(normalV);
 	XMFLOAT3 axisVector = XMFLOAT3(normal.x * length, normal.y * length, normal.z * length);
 	XMFLOAT3 center = findCentroid(nearCorners);
+
+	XMVECTOR axisVectorV = DirectX::XMVectorScale(normalV, length);
+	XMVECTOR centerV = DirectX::XMLoadFloat3(&center);
+	XMVECTOR endPointV = DirectX::XMVectorAdd(centerV, axisVectorV);
+	XMFLOAT3 endPoint;
+	DirectX::XMStoreFloat3(&endPoint, endPointV);
 
 	float farCorner0x = points[nearCorners[0]].x + axisVector.x;
 	float farCorner0y = points[nearCorners[0]].y + axisVector.y;
@@ -198,6 +206,16 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	//std::array<XMFLOAT3, 4> newCorners = { farCorner0 , farCorner1, farCorner2, farCorner3 };
 	std::vector<XMFLOAT3> newCorners = { farCorner0 , farCorner1, farCorner2, farCorner3 };
 	
+	
+
+	XMVECTOR P1 = XMLoadFloat3(&points[nearCorners[0]]);
+	XMVECTOR P2 = XMLoadFloat3(&points[nearCorners[1]]);
+	XMVECTOR P3 = XMLoadFloat3(&points[nearCorners[2]]);
+	XMVECTOR P4 = XMLoadFloat3(&points[nearCorners[3]]);
+
+	std::array<XMVECTOR, 4> projectedPointsV = projectQuad(P1, P2, P3, P4, DirectX::XMLoadFloat3(&normal), length);
+	std::vector<XMFLOAT3> projectedPoints;
+
 	XMFLOAT3 scaleOrigin = { 0.0f, 0.0f, 0.0f };
 	for (const XMFLOAT3 vert : newCorners) {
 		scaleOrigin.x += vert.x;
@@ -210,7 +228,16 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	scaleOrigin.y /= 4;
 	scaleOrigin.z /= 4;
 
-	std::vector<XMFLOAT3> farCorners = scalePolygon(newCorners, scaleOrigin, endScale);
+	for (size_t i = 0; i < projectedPointsV.size(); ++i) {
+		XMFLOAT3 point;
+		DirectX::XMStoreFloat3(&point, projectedPointsV[i]);
+		projectedPoints.push_back(point);
+	}
+
+	XMFLOAT3 farCenter = findCentroid(projectedPoints);
+
+	//std::vector<XMFLOAT3> farCorners = scalePolygon(newCorners, scaleOrigin, endScale);
+	std::vector<XMFLOAT3> farCorners = scalePolygon(projectedPoints, farCenter, endScale);
 
 	Box box;
 

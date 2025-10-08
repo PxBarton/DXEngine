@@ -381,13 +381,13 @@ bool Renderer::SceneSetup()
 	//qBox->deleteStagedFaces();
 	std::vector<uint64_t> currentCaps = qBox->branchCaps; // Get the list of new cap IDs
 	qBox->branchCaps.clear();
-
+	/*
 	for (uint64_t capId : currentCaps)
 	{
 		qBox->branch(startingBranch, capId, sides, angles, 0.8);
 		qBox->branchCaps.clear();
 	}
-	
+	*/
 	//Box test = qBox->getBox(0)
 	//std::vector<Face> faceTest = qBox->getFaces();
 	
@@ -443,9 +443,9 @@ bool Renderer::SceneSetup()
 
 	//qBox->CCsubdivide(2.5, 2.5, .08);
 	//qBox->CCsubdivide(2.0, 1.8, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 
