@@ -182,51 +182,17 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	XMVECTOR endPointV = DirectX::XMVectorAdd(centerV, axisVectorV);
 	XMFLOAT3 endPoint;
 	DirectX::XMStoreFloat3(&endPoint, endPointV);
-
-	float farCorner0x = points[nearCorners[0]].x + axisVector.x;
-	float farCorner0y = points[nearCorners[0]].y + axisVector.y;
-	float farCorner0z = points[nearCorners[0]].z + axisVector.z;
-	XMFLOAT3 farCorner0 = XMFLOAT3(farCorner0x, farCorner0y, farCorner0z);
-
-	float farCorner1x = points[nearCorners[1]].x + axisVector.x;
-	float farCorner1y = points[nearCorners[1]].y + axisVector.y;
-	float farCorner1z = points[nearCorners[1]].z + axisVector.z;
-	XMFLOAT3 farCorner1 = XMFLOAT3(farCorner1x, farCorner1y, farCorner1z);
-
-	float farCorner2x = points[nearCorners[2]].x + axisVector.x;
-	float farCorner2y = points[nearCorners[2]].y + axisVector.y;
-	float farCorner2z = points[nearCorners[2]].z + axisVector.z;
-	XMFLOAT3 farCorner2 = XMFLOAT3(farCorner2x, farCorner2y, farCorner2z);
-
-	float farCorner3x = points[nearCorners[3]].x + axisVector.x;
-	float farCorner3y = points[nearCorners[3]].y + axisVector.y;
-	float farCorner3z = points[nearCorners[3]].z + axisVector.z;
-	XMFLOAT3 farCorner3 = XMFLOAT3(farCorner3x, farCorner3y, farCorner3z);
-
-	//std::array<XMFLOAT3, 4> newCorners = { farCorner0 , farCorner1, farCorner2, farCorner3 };
-	std::vector<XMFLOAT3> newCorners = { farCorner0 , farCorner1, farCorner2, farCorner3 };
 	
-	
-
 	XMVECTOR P1 = XMLoadFloat3(&points[nearCorners[0]]);
 	XMVECTOR P2 = XMLoadFloat3(&points[nearCorners[1]]);
 	XMVECTOR P3 = XMLoadFloat3(&points[nearCorners[2]]);
 	XMVECTOR P4 = XMLoadFloat3(&points[nearCorners[3]]);
 
+	std::array<XMVECTOR, 4> nearCornersV = { P1, P2, P3, P4 };
+
 	std::array<XMVECTOR, 4> projectedPointsV = projectQuad(P1, P2, P3, P4, DirectX::XMLoadFloat3(&normal), length);
+	//std::vector<XMVECTOR> projectedPointsV = projectQuad(nearCornersV, normalV, length);
 	std::vector<XMFLOAT3> projectedPoints;
-
-	XMFLOAT3 scaleOrigin = { 0.0f, 0.0f, 0.0f };
-	for (const XMFLOAT3 vert : newCorners) {
-		scaleOrigin.x += vert.x;
-		scaleOrigin.y += vert.y;
-		scaleOrigin.z += vert.z;
-	}
-
-	// assume quads for now
-	scaleOrigin.x /= 4;
-	scaleOrigin.y /= 4;
-	scaleOrigin.z /= 4;
 
 	for (size_t i = 0; i < projectedPointsV.size(); ++i) {
 		XMFLOAT3 point;
@@ -234,7 +200,7 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 		projectedPoints.push_back(point);
 	}
 
-	XMFLOAT3 farCenter = findCentroid(projectedPoints);
+	XMFLOAT3 farCenter = findNgonCentroid(projectedPoints);
 
 	//std::vector<XMFLOAT3> farCorners = scalePolygon(newCorners, scaleOrigin, endScale);
 	std::vector<XMFLOAT3> farCorners = scalePolygon(projectedPoints, farCenter, endScale);
@@ -388,7 +354,7 @@ XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
 }
 
 // Returns a new XMFLOAT3 that is the centroid of a list of vertices
-XMFLOAT3 QuadSystem::findCentroid(const std::vector<XMFLOAT3>& vertices) {
+XMFLOAT3 QuadSystem::findNgonCentroid(const std::vector<XMFLOAT3>& vertices) {
 	XMVECTOR sum = XMVectorZero();
 	for (const auto& point : vertices) {
 		sum = XMVectorAdd(sum, XMLoadFloat3(&point));
@@ -409,6 +375,24 @@ XMFLOAT3 QuadSystem::findCentroid(const std::array<int, 4>& vertices) {
 	XMFLOAT3 result;
 	DirectX::XMStoreFloat3(&result, centroid);
 	return result;
+}
+
+XMVECTOR QuadSystem::findCentroidV(const std::array<XMVECTOR, 4>& vertices) {
+	XMVECTOR sum = XMVectorZero();
+	for (const auto& point : vertices) {
+		sum = XMVectorAdd(sum, point);
+	}
+	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(vertices.size()));
+	return centroid;
+}
+
+XMVECTOR QuadSystem::findNgonCentroidV(const std::vector<XMVECTOR>& vertices) {
+	XMVECTOR sum = XMVectorZero();
+	for (const auto& point : vertices) {
+		sum = XMVectorAdd(sum, point);
+	}
+	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(vertices.size()));
+	return centroid;
 }
 
 void QuadSystem::findEdges()
@@ -571,7 +555,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 			for (int v_idx : faces[f_idx].face) {
 				faceVerts.push_back(points[v_idx]);
 			}
-			facePoints[f_idx] = findCentroid(faceVerts);
+			facePoints[f_idx] = findNgonCentroid(faceVerts);
 		}
 		
 	}
@@ -606,7 +590,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 		for (int f_idx : adjFaces) {
 			adjFacePoints.push_back(facePoints[f_idx]);
 		}
-		XMFLOAT3 F = findCentroid(adjFacePoints);
+		XMFLOAT3 F = findNgonCentroid(adjFacePoints);
 
 		// Find average of adjacent edge midpoints (R)
 		std::vector<XMFLOAT3> adjEdgeMids;
@@ -614,7 +598,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 			const auto& edge = edges[e_idx];
 			adjEdgeMids.push_back(edgeMidpoint(points[edge.first], points[edge.second]));
 		}
-		XMFLOAT3 R = findCentroid(adjEdgeMids);
+		XMFLOAT3 R = findNgonCentroid(adjEdgeMids);
 
 		// Original vertex point (P)
 		XMFLOAT3 P = points[v];
@@ -745,6 +729,73 @@ void QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std:
 	}
 	// dont forget to store indices of caps to make more branches
 
+}
+
+std::array<XMVECTOR, 4> QuadSystem::projectQuad(
+	FXMVECTOR P1, FXMVECTOR P2, FXMVECTOR P3, FXMVECTOR P4,
+	FXMVECTOR V, float L)
+{
+	XMVECTOR C = XMVectorScale(XMVectorAdd(XMVectorAdd(P1, P2), XMVectorAdd(P3, P4)), 0.25f);
+
+	XMVECTOR N = XMVector3Normalize(V);
+
+	// C2 = C + (L * N)
+	XMVECTOR lenV = XMVectorReplicate(L);
+	XMVECTOR V_offset = XMVectorMultiply(lenV, N); // V_offset = L * N
+	XMVECTOR C2 = XMVectorAdd(C, V_offset);
+
+	std::array<XMVECTOR, 4> originalPoints = { P1, P2, P3, P4 };
+	std::array<XMVECTOR, 4> projectedPoints;
+
+	for (int i = 0; i < originalPoints.size(); ++i)
+	{
+		XMVECTOR P = originalPoints[i];
+
+		
+		XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
+
+		
+		XMVECTOR dotProductVec = XMVector3Dot(vec_PC2, N);
+		XMVECTOR displacement = XMVectorMultiply(dotProductVec, N);
+
+		XMVECTOR P_new = XMVectorSubtract(P, displacement);
+
+		projectedPoints[i] = P_new;
+	}
+
+	return projectedPoints;
+}
+
+std::array<XMVECTOR, 4> QuadSystem::projectQuad(std::array<XMVECTOR, 4> originalPoints, FXMVECTOR V, float L)
+{
+	XMVECTOR C = findCentroidV(originalPoints);
+
+	XMVECTOR N = XMVector3Normalize(V);
+
+	// C2 = C + (L * N)
+	XMVECTOR lenV = XMVectorReplicate(L);
+	XMVECTOR V_offset = XMVectorMultiply(lenV, N); // V_offset = L * N
+	XMVECTOR C2 = XMVectorAdd(C, V_offset);
+
+	std::array<XMVECTOR, 4> projectedPoints;
+
+	for (int i = 0; i < originalPoints.size(); ++i)
+	{
+		XMVECTOR P = originalPoints[i];
+
+
+		XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
+
+
+		XMVECTOR dotProductVec = XMVector3Dot(vec_PC2, N);
+		XMVECTOR displacement = XMVectorMultiply(dotProductVec, N);
+
+		XMVECTOR P_new = XMVectorSubtract(P, displacement);
+
+		projectedPoints[i] = P_new;
+	}
+
+	return projectedPoints;
 }
 
 

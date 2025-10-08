@@ -103,9 +103,13 @@ public:
 	XMVECTOR calcNormal(int faceIndex);
 	std::tuple<float, float> XYZtoUV(XMFLOAT3);
 	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
-	XMFLOAT3 findCentroid(Face face); 
-	XMFLOAT3 findCentroid(const std::vector<XMFLOAT3>& points);
+
+	XMFLOAT3 findCentroid(Face face);
+	XMFLOAT3 findNgonCentroid(const std::vector<XMFLOAT3>& points);
 	XMFLOAT3 findCentroid(const std::array<int, 4>& points);
+	XMVECTOR findCentroidV(const std::array<XMVECTOR, 4>& points);
+	XMVECTOR findNgonCentroidV(const std::vector<XMVECTOR>& points);
+
 	XMFLOAT3 edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2);
 	float distance(XMFLOAT3 pt1, XMFLOAT3 pt2);
 	float approxWidth(Face f);
@@ -154,6 +158,12 @@ public:
 
 	// connections
 	void connectBoxes(Box box1, Box box2);
+
+	// premade shapes
+	void buildBall(uint64_t faceId, float scale);
+	void bend(uint64_t faceId, int numSections, XMFLOAT3 angle, float sectionScale);
+	void buildFin(uint64_t faceId);
+
 
 	// given a point in space and a normal vector, returns a list of 4 orthogonal unit vectors
 	std::array<XMFLOAT3, 4> orthoUnits(XMFLOAT3 location, XMVECTOR normal);
@@ -277,50 +287,8 @@ public:
 	uint64_t topCapId;
 	std::vector<uint64_t> branchCaps;
 
-	std::array<XMVECTOR, 4> projectQuad(
-		FXMVECTOR P1, FXMVECTOR P2, FXMVECTOR P3, FXMVECTOR P4,
-		FXMVECTOR V, float L)
-	{
-		// 1. Calculate the Centroid (C) of the original face.
-		XMVECTOR C = XMVectorScale(XMVectorAdd(XMVectorAdd(P1, P2), XMVectorAdd(P3, P4)), 0.25f);
-
-		// 2. Calculate the Normalized Direction (N)
-		XMVECTOR N = XMVector3Normalize(V);
-
-		// 3. Calculate the New Center (C2) - Defines the new flat plane's location
-		// C2 = C + (L * N)
-		XMVECTOR L_vec = XMVectorReplicate(L);
-		XMVECTOR V_offset = XMVectorMultiply(L_vec, N); // V_offset = L * N
-		XMVECTOR C2 = XMVectorAdd(C, V_offset);
-
-		std::array<XMVECTOR, 4> originalPoints = { P1, P2, P3, P4 };
-		std::array<XMVECTOR, 4> projectedPoints;
-
-		// 4. Loop through each point and project it onto the new plane.
-		for (size_t i = 0; i < originalPoints.size(); ++i)
-		{
-			XMVECTOR P = originalPoints[i];
-
-			// a. Find the vector from the NEW plane's center to the point: (P - C2)
-			XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
-
-			// b. Calculate the scalar projection: (P - C2) · N
-			// This gives the perpendicular distance from P to the plane.
-			XMVECTOR dotProductVec = XMVector3Dot(vec_PC2, N);
-
-			// c. Calculate the displacement vector: ((P - C2) · N) * N
-			// This is the vector component of (P - C2) that is perpendicular to the plane.
-			XMVECTOR displacement = XMVectorMultiply(dotProductVec, N);
-
-			// d. Subtract the displacement from the point P to land it on the new plane.
-			// P_new = P - displacement (This is the projection formula)
-			XMVECTOR P_new = XMVectorSubtract(P, displacement);
-
-			projectedPoints[i] = P_new;
-		}
-
-		return projectedPoints;
-	}
+	std::array<XMVECTOR, 4> projectQuad(FXMVECTOR P1, FXMVECTOR P2, FXMVECTOR P3, FXMVECTOR P4, FXMVECTOR V, float L);
+	std::array<XMVECTOR, 4> projectQuad(std::array<XMVECTOR, 4> originalPoints, FXMVECTOR V, float L);
 
 private:
 	uint64_t nextFaceID = 0;
