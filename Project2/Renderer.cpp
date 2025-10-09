@@ -346,12 +346,6 @@ bool Renderer::SceneSetup()
 	std::vector<XMFLOAT3> newPoints = { p1, p2, p3, p4 };
 	
 	std::array<int, 4> newIndices = { 0, 1, 2, 3 };
-	std::array<int, 4> moreIndices = { 4, 5, 6, 7 };
-	std::array<int, 4> moreIndices2 = { 8, 9, 10, 11 };
-	std::array<int, 4> moreIndices3 = { 12, 13, 14, 15 };
-	std::array<int, 4> moreIndices4 = { 16, 17, 18, 19 };
-	std::array<int, 4> moreIndices5 = { 20, 21, 22, 23 };
-	std::array<int, 4> moreIndices6 = { 24, 25, 26, 27 };
 
 	XMFLOAT3 defaultScale = XMFLOAT3(1.0, 1.0, 1.0);
 	XMFLOAT3 boxScale = XMFLOAT3(0.5, 0.5, 0.5);
@@ -380,14 +374,17 @@ bool Renderer::SceneSetup()
 	qBox->branch(startingBranch, qBox->topCapId, sides, angles, 0.6);
 	//qBox->deleteStagedFaces();
 	std::vector<uint64_t> currentCaps = qBox->branchCaps; // Get the list of new cap IDs
+	//auto& testCap = currentCaps.back();
 	qBox->branchCaps.clear();
-	/*
+	//qBox->buildBall(testCap, 1.5, true, true);
+	
 	for (uint64_t capId : currentCaps)
 	{
-		qBox->branch(startingBranch, capId, sides, angles, 0.8);
-		qBox->branchCaps.clear();
+		//qBox->branch(startingBranch, capId, sides, angles, 0.8);
+		//qBox->branchCaps.clear();
+		qBox->buildBall(capId, 1.75, true, true);
 	}
-	*/
+	
 	//Box test = qBox->getBox(0)
 	//std::vector<Face> faceTest = qBox->getFaces();
 	
@@ -396,6 +393,8 @@ bool Renderer::SceneSetup()
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face1Id).normal, qBox->getFaceById(face1Id).normalV);
 	XMFLOAT3 newNormal1 = qBox->getFaceById(face1Id).normal;
 	qBox->replaceFace(face1Id, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+
+	// how do I get the new endcap id for the box? 
 
 	int face2Id = qBox->getBox(0).faceIds[1];
 	qBox->getFaceById(face2Id).normalV = qBox->calcNormal(face2Id);
@@ -443,9 +442,9 @@ bool Renderer::SceneSetup()
 
 	//qBox->CCsubdivide(2.5, 2.5, .08);
 	//qBox->CCsubdivide(2.0, 1.8, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 

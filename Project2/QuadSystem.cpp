@@ -798,5 +798,32 @@ std::array<XMVECTOR, 4> QuadSystem::projectQuad(std::array<XMVECTOR, 4> original
 	return projectedPoints;
 }
 
+void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch)
+{
+	// Get the face index
+	int faceIndex = getFaceIndexByID(faceId);
+	Face& f = faces[faceIndex];
+	float faceWidth = approxWidth(f);
+	//XMFLOAT3 centroid = findCentroid(f);
+	std::array<int, 4> nearCorners = { f.face[0], f.face[1], f.face[2], f.face[3] };
+	faceDeletionIdList.push_back(faceId);
 
+	XMVECTOR dirVec = calcNormal(faceIndex);
+	XMFLOAT3 direction;
+	XMStoreFloat3(&direction, dirVec);
 
+	buildBox(nearCorners, direction, faceWidth * scale * 0.33f, XMFLOAT3(scale, scale, scale));
+	Box newBox = getBox(boxCount() - 1);
+	std::array<int, 4> newCorners = newBox.farCorners();
+	buildBox(newCorners, direction, faceWidth * scale * 0.33f, XMFLOAT3(1.0, 1.0f, 1.0));
+	Box newBox2 = getBox(boxCount() - 1);
+	std::array<int, 4> newCorners2 = newBox2.farCorners();
+	buildBox(newCorners2, direction, faceWidth * scale * 0.33f, XMFLOAT3(1.0f / scale, 1.0f/scale, 1.0f / scale));
+	Box newBox3 = getBox(boxCount() - 1);
+	if (cap)
+	{
+		uint64_t capId = topCap(newBox3);
+	}
+	// Add the new box to the list of boxes
+	//boxes.push_back(newBox);
+}

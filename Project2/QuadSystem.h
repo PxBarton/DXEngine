@@ -160,9 +160,13 @@ public:
 	void connectBoxes(Box box1, Box box2);
 
 	// premade shapes
-	void buildBall(uint64_t faceId, float scale);
+	void buildBall(uint64_t faceId, float scale, bool cap, bool isBranch);
 	void bend(uint64_t faceId, int numSections, XMFLOAT3 angle, float sectionScale);
-	void buildFin(uint64_t faceId);
+	void buildFin(uint64_t faceId, int numSections, bool pointDown);
+
+	void buildBall(std::array<int, 4> nearCorners, float scale);
+	void bend(std::array<int, 4> nearCorners, int numSections, XMFLOAT3 angle, float sectionScale);
+	void buildFin(std::array<int, 4> nearCorners, float scale, int numSections, bool pointDown);
 
 
 	// given a point in space and a normal vector, returns a list of 4 orthogonal unit vectors
