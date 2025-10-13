@@ -71,6 +71,8 @@ struct Box
 
 struct Branch
 {
+	uint16_t level = 0;
+	int id = 0;
 	std::vector<int> boxes;
 	std::vector<Branch> branches;
 	uint64_t capId;
@@ -101,6 +103,8 @@ public:
 	std::vector<int> triangulateFaces();
 	XMVECTOR calcNormal(int p1, int p2, int p3);
 	XMVECTOR calcNormal(int faceIndex);
+	//XMVECTOR calcNormal(uint64_t faceId);
+	void assignNormal(Face& f);
 	std::tuple<float, float> XYZtoUV(XMFLOAT3);
 	XMFLOAT3 UVtoXYZ(Face face, std::tuple<float, float> uvCoord);
 
@@ -128,6 +132,18 @@ public:
 		return faceIdToIndexMap.at(faceId);
 	}
 
+	void trackNewBranch(Branch& b, int currentIndex) {
+		// Assign unique ID and increment the counter
+		b.id = nextBranchID++;
+		// Map the ID to its current location
+		branchIdToIndexMap[b.id] = currentIndex;
+	}	
+
+	int getBranchIndexByID(int branchId) const {
+		// Use .at() throws an exception if the ID doesn't exist.
+		return branchIdToIndexMap.at(branchId);
+	}	
+
 	
 
 	// standard indexing
@@ -154,6 +170,7 @@ public:
 
 	// caps
 	uint64_t topCap(Box& box);
+	uint64_t addCap(Box& box);
 	void bottomCap(Box& box);
 
 	// connections
@@ -184,7 +201,7 @@ public:
 	// parallel cuts
 	void sliceFace(int faceIndex, float edge1, int numSections);
 
-	void branch(Branch& parent, int faceId, std::vector<int> sides,  std::vector<float> angles, float boxHeightRatio);
+	int branch(Branch& parent, int faceId, std::vector<int> sides,  std::vector<float> angles, float boxHeightRatio);
 
 	void branchSystem();
 
@@ -289,19 +306,24 @@ public:
 	}
 
 	uint64_t topCapId;
+	uint64_t bottomCapId;
 	std::vector<uint64_t> branchCaps;
+	std::vector<uint64_t> capIds;
 
 	std::array<XMVECTOR, 4> projectQuad(FXMVECTOR P1, FXMVECTOR P2, FXMVECTOR P3, FXMVECTOR P4, FXMVECTOR V, float L);
 	std::array<XMVECTOR, 4> projectQuad(std::array<XMVECTOR, 4> originalPoints, FXMVECTOR V, float L);
 
 private:
 	uint64_t nextFaceID = 0;
+	int nextBranchID = 0;
 	std::vector<XMFLOAT3> points;
 	std::vector<Face> faces;
 	std::vector<std::pair<int, int>> edges;
 	std::vector<std::vector<std::pair<int, int>>> faceEdgePairs;
 	std::vector<Quad> quads;
 	std::vector<Box> boxes;
+	std::vector<Branch> branches;
+	std::unordered_map<int, int> branchIdToIndexMap;
 	std::unordered_map<uint64_t, int> faceIdToIndexMap;
 	std::vector<uint64_t> faceDeletionIdList;
 	

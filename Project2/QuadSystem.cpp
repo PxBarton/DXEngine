@@ -62,6 +62,22 @@ XMVECTOR QuadSystem::calcNormal(int faceIndex)
 	return (normalV);
 }
 
+void QuadSystem::assignNormal(Face& f)
+{
+	int p1 = f.face[0];
+	int p2 = f.face[1];
+	int p3 = f.face[2];
+	XMVECTOR vA = DirectX::XMLoadFloat3(&points[p1]);
+	XMVECTOR vB = DirectX::XMLoadFloat3(&points[p2]);
+	XMVECTOR vC = DirectX::XMLoadFloat3(&points[p3]);
+
+	XMVECTOR s = DirectX::XMVectorSubtract(vB, vA);
+	XMVECTOR t = DirectX::XMVectorSubtract(vC, vA);
+
+	f.normalV = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(s, t));
+	XMStoreFloat3(&f.normal, f.normalV);
+}
+
 
 // here we populate verts and tris from Quads, all other initialization happens in Renderer class
 std::unique_ptr<Mesh> QuadSystem::convertQuadsToMesh()
@@ -235,7 +251,7 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	Face side2;
 	//side2.face = { 2, 6, 7, 3 };
 	side2.face = { box.verts[2], box.verts[6], box.verts[7], box.verts[3] };
-
+		
 	Face side3;
 	//side3.face = { 3, 7, 4, 0 };
 	side3.face = { box.verts[3], box.verts[7], box.verts[4], box.verts[0] };
@@ -248,21 +264,25 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	faces.push_back(side0);
 	trackNewFace(faces.back(), faceCount() - 1);
 	box.faceIds.push_back(faces.back().id);
+	assignNormal(side0);
 
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side1);
 	trackNewFace(faces.back(), faceCount() - 1);
 	box.faceIds.push_back(faces.back().id); 
+	assignNormal(side1);
 
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side2);
 	trackNewFace(faces.back(), faceCount() - 1);
 	box.faceIds.push_back(faces.back().id);
+	assignNormal(side2);
 
 	box.faceIndices.push_back(faceCount());
 	faces.push_back(side3);
 	trackNewFace(faces.back(), faceCount() - 1);
 	box.faceIds.push_back(faces.back().id);
+	assignNormal(side3);
 
 	box.direction = normal;
 
@@ -277,6 +297,7 @@ uint64_t QuadSystem::topCap(Box& box)
 	cap.face.push_back(corners[3]);
 	cap.face.push_back(corners[2]);
 	cap.face.push_back(corners[1]);
+	assignNormal(cap);
 
 	faces.push_back(cap);
 	trackNewFace(faces.back(), faceCount() - 1);
@@ -287,17 +308,35 @@ uint64_t QuadSystem::topCap(Box& box)
 	return capId;
 }
 
+uint64_t QuadSystem::addCap(Box& box)
+{
+	std::array<int, 4> corners = box.farCorners();
+	Face cap;
+	cap.face.push_back(corners[0]);
+	cap.face.push_back(corners[3]);
+	cap.face.push_back(corners[2]);
+	cap.face.push_back(corners[1]);
+	assignNormal(cap);
+
+	faces.push_back(cap);
+	trackNewFace(faces.back(), faceCount() - 1);
+	uint64_t capId = faces.back().id;
+
+	return capId;
+}
+
 void QuadSystem::bottomCap(Box& box)
 {
 	std::array<int, 4> corners = box.nearCorners();
 	Face cap;
-	cap.face.push_back(corners[3]);
-	cap.face.push_back(corners[2]);
 	cap.face.push_back(corners[1]);
+	cap.face.push_back(corners[2]);
+	cap.face.push_back(corners[3]);
 	cap.face.push_back(corners[0]);
 
 	faces.push_back(cap);
 	trackNewFace(faces.back(), faceCount() - 1);
+	bottomCapId = faces.back().id;
 	//box.faceIds.push_back(faces.back().id);
 }
 /*
@@ -332,12 +371,13 @@ void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMF
 	uint64_t capId;
 	if (cap)
 	{
-		capId = topCap(boxes[boxes.size() - 1]);
+		capId = addCap(boxes[boxes.size() - 1]);
+		capIds.push_back(capId);
 	}
 
 	faceDeletionIdList.push_back(faceId);
 
-	if (isBranch)
+	if (isBranch && cap)
 	{
 		branchCaps.push_back(capId);
 	}
@@ -700,7 +740,7 @@ float QuadSystem::approxWidth(Face f)
 }
 
 // angle away from initial face normal
-void QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::vector<float> angles, float boxHeightRatio)
+int QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::vector<float> angles, float boxHeightRatio)
 {
 	int faceIndex = getFaceIndexByID(faceId);
 	Face& f = faces[faceIndex];
@@ -710,17 +750,21 @@ void QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std:
 	// not sure why calcNormal gets the sign wrong 
 	XMVECTOR boxNormalV = calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
-	replaceFace(faceId, parent.axis, newBoxHeight, scale, false, false);
-	uint64_t capId = topCap(boxes[boxes.size() - 1]);
+	//
+	XMVECTOR nv = f.normalV;
+	//XMStoreFloat3(&boxNormal, nv);
+	replaceFace(faceId, boxNormal, newBoxHeight, scale, false, false);
+	uint64_t capId = addCap(boxes[boxes.size() - 1]);
 	parent.capId = capId;
-	Box newBox = getBox(boxCount() - 1);
+	Box newBox = boxes[boxes.size() - 1];
+	std::vector<int> newBranchIds;
 	for (int s = 0; s < sides.size(); s++)
 	{
 		Branch newBranch;
 		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
 		XMFLOAT3 newNormal = rotateVector(boxNormalV, -calcNormal(face), angles[s]);
 		replaceFace(face, newNormal, newBoxHeight * 6, scale, false, false);
-		uint64_t newCapId = topCap(boxes[boxes.size() - 1]);
+		uint64_t newCapId = addCap(boxes[boxes.size() - 1]);
 		newBranch.axis = newNormal;
 		newBranch.parentAxis = parent.axis;
 		newBranch.capId = newCapId;
@@ -728,7 +772,7 @@ void QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std:
 		parent.branches.push_back(newBranch);
 	}
 	// dont forget to store indices of caps to make more branches
-
+	return parent.id;
 }
 
 std::array<XMVECTOR, 4> QuadSystem::projectQuad(
@@ -809,6 +853,7 @@ void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch
 	faceDeletionIdList.push_back(faceId);
 
 	XMVECTOR dirVec = calcNormal(faceIndex);
+	//XMFLOAT3 direction = f.normal;
 	XMFLOAT3 direction;
 	XMStoreFloat3(&direction, dirVec);
 
@@ -822,7 +867,8 @@ void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch
 	Box newBox3 = getBox(boxCount() - 1);
 	if (cap)
 	{
-		uint64_t capId = topCap(newBox3);
+		uint64_t capId = addCap(newBox3);
+		capIds.push_back(capId);
 	}
 	// Add the new box to the list of boxes
 	//boxes.push_back(newBox);

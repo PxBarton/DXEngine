@@ -230,7 +230,7 @@ void Renderer::RenderFrame()
 	cb_light.data.ambientStrength = .5f;
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	cb_light.data.lightStrength = 1.0f;
-	cb_light.data.lightPosition = XMFLOAT3(8.0f, 12.0f, -6.0f);
+	cb_light.data.lightPosition = XMFLOAT3(10.0f, 12.0f, -10.0f);
 	if (!cb_light.ApplyChanges())
 	{
 		return;
@@ -365,25 +365,57 @@ bool Renderer::SceneSetup()
 	qBox->topCap(qBox->getBox(6));
 	qBox->bottomCap(qBox->getBox(0));
 
+	
+
 	std::vector<int> sides = { 0, 1, 2, 3 };
 	std::vector<float> angles = { -40.0, -40.0, -40.0, -40.0 };
 
 	Branch startingBranch;
 	startingBranch.axis = qBox->getBox(6).direction;
-	
+	qBox->branch(startingBranch, qBox->bottomCapId, sides, angles, 0.4);
+	for (uint64_t capId : qBox->branchCaps)
+	{
+		qBox->buildBall(capId, 2.5, true, true);
+	}
+	qBox->branchCaps.clear();
 	qBox->branch(startingBranch, qBox->topCapId, sides, angles, 0.6);
 	//qBox->deleteStagedFaces();
 	std::vector<uint64_t> currentCaps = qBox->branchCaps; // Get the list of new cap IDs
-	//auto& testCap = currentCaps.back();
+    //auto& testCap = currentCaps.back();
 	qBox->branchCaps.clear();
 	//qBox->buildBall(testCap, 1.5, true, true);
+	/*
+	qBox->branch(startingBranch, currentCaps[0], sides, angles, 0.8);
+	qBox->branch(startingBranch, currentCaps[1], sides, angles, 0.8);
+	qBox->branch(startingBranch, currentCaps[2], sides, angles, 0.8);
+	qBox->branch(startingBranch, currentCaps[3], sides, angles, 0.8);
 	
+	for (uint64_t& cap : qBox->branchCaps)
+	{
+		qBox->buildBall(cap, 2.0, true, true);
+	}
+	*/
 	for (uint64_t capId : currentCaps)
 	{
-		//qBox->branch(startingBranch, capId, sides, angles, 0.8);
-		//qBox->branchCaps.clear();
-		qBox->buildBall(capId, 1.75, true, true);
+		//qBox->buildBall(capId, 2.0, true, true);
+		//qBox->branch(startingBranch, qBox->capIds.back(), sides, angles, 0.8);
+		qBox->branch(startingBranch, capId, sides, angles, 0.8);
+		std::vector<uint64_t> moreCaps = qBox->branchCaps;
+		qBox->branchCaps.clear();
+		for (int i = 0; i < moreCaps.size(); i++)
+		{
+			qBox->branch(startingBranch, moreCaps[i], sides, angles, 1.5);
+			for (uint64_t capId : qBox->branchCaps)
+			{
+				qBox->buildBall(capId, 1.75, true, true);
+			}
+			qBox->branchCaps.clear();
+		}
+		moreCaps.clear();
+		//qBox->buildBall(capId, 1.75, true, true);
 	}
+	
+	//qBox->deleteStagedFaces();
 	
 	//Box test = qBox->getBox(0)
 	//std::vector<Face> faceTest = qBox->getFaces();
@@ -392,7 +424,11 @@ bool Renderer::SceneSetup()
 	qBox->getFaceById(face1Id).normalV = qBox->calcNormal(face1Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face1Id).normal, qBox->getFaceById(face1Id).normalV);
 	XMFLOAT3 newNormal1 = qBox->getFaceById(face1Id).normal;
-	qBox->replaceFace(face1Id, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->replaceFace(face1Id, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	XMFLOAT3 testNormal1 = XMFLOAT3(newNormal1.x, newNormal1.y - 0.5, newNormal1.z);
+	qBox->replaceFace(face1Id, testNormal1, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
+	//qBox->branch(startingBranch, qBox->capIds.back(), sides, angles, 0.6);
 
 	// how do I get the new endcap id for the box? 
 
@@ -400,19 +436,28 @@ bool Renderer::SceneSetup()
 	qBox->getFaceById(face2Id).normalV = qBox->calcNormal(face2Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face2Id).normal, qBox->getFaceById(face2Id).normalV);
 	XMFLOAT3 newNormal2 = qBox->getFaceById(face2Id).normal;
-	qBox->replaceFace(face2Id, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->replaceFace(face2Id, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	XMFLOAT3 testNormal2 = XMFLOAT3(newNormal2.x, newNormal2.y - 0.5, newNormal2.z);
+	qBox->replaceFace(face2Id, testNormal2, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face3Id = qBox->getBox(0).faceIds[2];
 	qBox->getFaceById(face3Id).normalV = qBox->calcNormal(face3Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face3Id).normal, qBox->getFaceById(face3Id).normalV);
 	XMFLOAT3 newNormal3 = qBox->getFaceById(face3Id).normal;
-	qBox->replaceFace(face3Id, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->replaceFace(face3Id, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	XMFLOAT3 testNormal3 = XMFLOAT3(newNormal3.x, newNormal3.y - 0.5, newNormal3.z);
+	qBox->replaceFace(face3Id, testNormal3, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face4Id = qBox->getBox(0).faceIds[3];
 	qBox->getFaceById(face4Id).normalV = qBox->calcNormal(face4Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face4Id).normal, qBox->getFaceById(face4Id).normalV);
 	XMFLOAT3 newNormal4 = qBox->getFaceById(face4Id).normal;
-	qBox->replaceFace(face4Id, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->replaceFace(face4Id, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	XMFLOAT3 testNormal4 = XMFLOAT3(newNormal4.x, newNormal4.y - 0.5, newNormal4.z);
+	qBox->replaceFace(face4Id, testNormal4, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face5Id = qBox->getBox(2).faceIds[0];
 	qBox->getFaceById(face5Id).normalV = qBox->calcNormal(face5Id);
@@ -437,10 +482,10 @@ bool Renderer::SceneSetup()
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face8Id).normal, qBox->getFaceById(face8Id).normalV);
 	XMFLOAT3 newNormal8 = qBox->getFaceById(face8Id).normal;
 	qBox->replaceFace(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
-
+	
 	qBox->deleteStagedFaces();
 
-	//qBox->CCsubdivide(2.5, 2.5, .08);
+	//qBox->CCsubdivide(0.2, 0.5, 1.08);
 	//qBox->CCsubdivide(2.0, 1.8, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
