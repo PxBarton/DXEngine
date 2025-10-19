@@ -1,12 +1,13 @@
 
-cbuffer lightBuffer: register(b0)
+
+cbuffer lightBuffer : register(b0)
 {
 	float3 ambientColor;
 	float ambientStrength;
 	float3 lightColor;
 	float lightStrength;
 	float3 lightPosition;
-}
+};
 
 struct PS_INPUT
 {
@@ -32,6 +33,7 @@ float4 main(PS_INPUT input) : SV_TARGET
 	//float3 diffuseIntensity = max(dot(lightDirVec, input.inNormal), 0);
 	float3 diffuseIntensity = max(dot(lightDirVec, flatNormal), 0);
 	diffuseIntensity -= max(((1 - diffuseIntensity) * .2), 0);
+	//diffuseIntensity -= abs((1 - diffuseIntensity) * .2);
 	float3 diffuseLight = diffuseIntensity * lightStrength * lightColor;
 	finalLight += diffuseLight;
 

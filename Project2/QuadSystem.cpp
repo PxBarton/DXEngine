@@ -19,7 +19,7 @@ std::vector<int> QuadSystem::triangulateFaces()
 	std::vector<int> triIndexList;
 	for (int f = 0; f < faces.size(); f++)
 	{
-		if (true)
+		if (faces[f].face.size() == 4)
 		{
 			for (int t = 0; t < triIndices.size(); t++)
 			{
@@ -27,10 +27,45 @@ std::vector<int> QuadSystem::triangulateFaces()
 				triIndexList.push_back(faces[f].face[vertIndex]);
 			}
 		}
+		if (faces[f].face.size() == 3)
+		{
+			for (int v = 0; v < 3; v++)
+			{
+				triIndexList.push_back(faces[f].face[v]);
+			}
+		}
 		
 	}	
 	
 	return triIndexList;
+}
+
+void QuadSystem::triangulateNgon(uint64_t faceId)
+{
+	Face f = getFaceById(faceId);
+	// fan triangulation
+	int numVerts = f.face.size();
+	std::vector<XMFLOAT3> faceVerts;
+	for (const auto& vert : f.face)
+	{
+		faceVerts.push_back(points[vert]);
+	}
+	XMFLOAT3 centroid = findNgonCentroid(faceVerts);
+	points.push_back(centroid);
+	int centroidIndex = points.size() - 1;
+	for (int i = 0; i < numVerts; i++)
+	{
+		Face f = getFaceById(faceId);
+		Face triFace;
+		triFace.face.push_back(centroidIndex);
+		triFace.face.push_back(f.face[(i + 1) % numVerts]);
+		triFace.face.push_back(f.face[i]);
+		
+		
+		faces.push_back(triFace);
+		trackNewFace(faces.back(), faceCount() - 1);
+	}
+	faceDeletionIdList.push_back(faceId);
 }
 
 XMVECTOR QuadSystem::calcNormal(int p1, int p2, int p3)
@@ -502,17 +537,6 @@ XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
 	return result;
 }
 
-// Returns a new XMFLOAT3 that is the centroid of a list of vertices
-XMFLOAT3 QuadSystem::findNgonCentroid(const std::vector<XMFLOAT3>& vertices) {
-	XMVECTOR sum = XMVectorZero();
-	for (const auto& point : vertices) {
-		sum = XMVectorAdd(sum, XMLoadFloat3(&point));
-	}
-	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(vertices.size()));
-	XMFLOAT3 result;
-	DirectX::XMStoreFloat3(&result, centroid);
-	return result;
-}
 
 XMFLOAT3 QuadSystem::findCentroid(const std::array<int, 4>& vertices) {
 	std::array<XMFLOAT3, 4> facePoints = { points[vertices[0]], points[vertices[1]], points[vertices[2]], points[vertices[3]] };
@@ -534,6 +558,19 @@ XMVECTOR QuadSystem::findCentroidV(const std::array<XMVECTOR, 4>& vertices) {
 	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(vertices.size()));
 	return centroid;
 }
+
+// Returns a new XMFLOAT3 that is the centroid of a list of vertices
+XMFLOAT3 QuadSystem::findNgonCentroid(const std::vector<XMFLOAT3>& vertices) {
+	XMVECTOR sum = XMVectorZero();
+	for (const auto& point : vertices) {
+		sum = XMVectorAdd(sum, XMLoadFloat3(&point));
+	}
+	XMVECTOR centroid = XMVectorScale(sum, 1.0f / static_cast<float>(vertices.size()));
+	XMFLOAT3 result;
+	DirectX::XMStoreFloat3(&result, centroid);
+	return result;
+}
+
 
 XMVECTOR QuadSystem::findNgonCentroidV(const std::vector<XMVECTOR>& vertices) {
 	XMVECTOR sum = XMVectorZero();
@@ -812,7 +849,7 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 				// Face point (F')
 				newFace.face.push_back(n1 + n2 + f);
 				// Edge point of the previous edge (E'')
-				newFace.face.push_back(n1 + faceToEdgesMap[f][(i + 3) % 4]);
+				newFace.face.push_back(n1 + faceToEdgesMap[f][(i + 3) % oldFace.face.size()]);
 
 				subFaces.push_back(newFace);
 			}
@@ -1019,6 +1056,7 @@ void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch
 void QuadSystem::buildCylinder(XMFLOAT3 centerBase, XMFLOAT3 normal, float length, float baseRadius, float taper, int hDivs, int rDivs)
 {
 	Cylinder cyl;
+	cyl.sideCount = rDivs;
 	std::vector<XMFLOAT3> nearCorners;
 	std::vector<XMFLOAT3> farCorners;
 	float hSlice = length / (hDivs + 1);    // 0 divs: divide by 1, not zero
@@ -1029,7 +1067,7 @@ void QuadSystem::buildCylinder(XMFLOAT3 centerBase, XMFLOAT3 normal, float lengt
 	for (int i = 0; i < ringCount; i++)
 	{
 		float y = i * hSlice;
-		float r = baseRadius + taper / (hDivs + 1);
+		float r = baseRadius - (i * dRadius);
 		float dTheta = 2.0 * XM_PI / rDivs;
 		std::vector<XMFLOAT3> slicePoints = {};
 		for (int j = 1; j <= rDivs; j++)
@@ -1039,9 +1077,18 @@ void QuadSystem::buildCylinder(XMFLOAT3 centerBase, XMFLOAT3 normal, float lengt
 			float s = sin(j * dTheta);
 
 			XMFLOAT3 point = XMFLOAT3(r * c, y, r * s);
-			slicePoints.push_back(point);
+			//slicePoints.push_back(point);
 			points.push_back(point);
 			cyl.verts.push_back(pointCount() - 1);
+
+			if (i == 0)
+			{
+				cyl.baseVerts.push_back(pointCount() - 1);
+			}
+			if (i == ringCount - 1)
+			{
+				cyl.topVerts.push_back(pointCount() - 1);
+			}
 		}
 	}
 	int tInd = 0;
@@ -1099,8 +1146,25 @@ void QuadSystem::buildCylinder(XMFLOAT3 centerBase, XMFLOAT3 normal, float lengt
 	}
 
 	cyl.direction = normal;
-
+	cylinders.push_back(cyl);
 	//boxes.push_back(box);
+}
+
+uint64_t QuadSystem::topCylinderCap(Cylinder& cyl)
+{
+	int numVerts = cyl.sideCount;
+	// Create a new face for the cap
+	Face capFace;
+	for (int i = 0; i < numVerts; i++)
+	{
+		capFace.face.push_back(cyl.topVerts[i]);
+	}
+	// Add the cap face to the list of faces
+	faces.push_back(capFace);
+	trackNewFace(faces.back(), faceCount() - 1);
+	uint64_t capId = faces.back().id;
+	cyl.topFaceId = capId;	
+	return capId;
 }
 
 
@@ -1154,3 +1218,204 @@ void QuadSystem::buildPlane(int xCount, int zCount)
 
 	*/
 }
+
+void QuadSystem::CCsubdivideNgon(float paramA = 3.0, float paramB = 2.0, float paramC = 1.0)
+{
+	// --- Phase 1: Build Adjacency Lists (Mostly unchanged, robust for N-gons) ---
+	findEdges();
+
+	std::unordered_map<int, std::vector<int>> pointToFacesMap;
+	std::unordered_map<int, std::array<int, 2>> edgeToFacesMap;
+	std::unordered_map<int, std::vector<int>> faceToEdgesMap;
+	std::unordered_map<int, std::vector<int>> pointToEdgesMap;
+
+	// point to faces
+	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		const Face& face = faces[f_idx];
+		for (int p_index : face.face) {
+			pointToFacesMap[p_index].push_back(f_idx);
+		}
+	}
+
+	// edge to faces
+	for (int e_idx = 0; e_idx < edges.size(); ++e_idx) {
+		const auto& edge = edges[e_idx];
+		std::array<int, 2> adjFaces = { -1, -1 };
+		int faceCount = 0;
+
+		for (int f_idx = 0; f_idx < faceEdgePairs.size(); ++f_idx) {
+			if (std::find(faceEdgePairs[f_idx].begin(), faceEdgePairs[f_idx].end(), edge) != faceEdgePairs[f_idx].end()) {
+				if (faceCount < 2) {
+					adjFaces[faceCount] = f_idx;
+					faceCount++;
+				}
+				if (faceCount == 2) {
+					break;
+				}
+			}
+		}
+		edgeToFacesMap[e_idx] = adjFaces;
+	}
+
+	// face to edges
+	for (int f = 0; f < faceEdgePairs.size(); ++f) {
+		std::vector<int> adjEdges;
+		for (const auto& faceEdge : faceEdgePairs[f]) {
+			auto it = std::find(edges.begin(), edges.end(), faceEdge);
+			if (it != edges.end()) {
+				int edge_idx = std::distance(edges.begin(), it);
+				adjEdges.push_back(edge_idx);
+			}
+		}
+		faceToEdgesMap[f] = adjEdges;
+	}
+
+	// point to edges
+	for (int v = 0; v < points.size(); ++v) {
+		std::vector<int> adjEdges;
+		for (int e = 0; e < edges.size(); ++e) {
+			const auto& edge = edges[e];
+			if (edge.first == v || edge.second == v) {
+				adjEdges.push_back(e);
+			}
+		}
+		pointToEdgesMap[v] = adjEdges;
+	}
+
+	// --- Phase 2: Calculate New Geometry (Robust for N-gons) ---
+
+	std::unordered_map<int, XMFLOAT3> facePoints;
+	std::unordered_map<int, XMFLOAT3> edgePoints;
+	std::unordered_map<int, XMFLOAT3> vertPoints;
+
+	// 1. calculate face points (Centroid of N-gon)
+	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		std::vector<XMFLOAT3> faceVerts;
+		for (int v_idx : faces[f_idx].face) {
+			faceVerts.push_back(points[v_idx]);
+		}
+		facePoints[f_idx] = findNgonCentroid(faceVerts);
+	}
+
+	// 2. calculate edge points (Average of Midpoint and Face Averages)
+	for (int e = 0; e < edges.size(); ++e) {
+		const auto& edge = edges[e];
+
+		// Handle boundary edges (only 1 adjacent face) by using the face point twice 
+		// or by using 0.0 for the missing face (simplest implementation)
+
+		// Edge midpoint (P in the algorithm)
+		XMFLOAT3 edgeMid = edgeMidpoint(points[edge.first], points[edge.second]);
+
+		// Average of adjacent face points (R in the algorithm)
+		XMFLOAT3 fp1 = facePoints[edgeToFacesMap[e][0]];
+		XMFLOAT3 fp2 = facePoints[edgeToFacesMap[e][1]];
+		XMFLOAT3 avgFP = edgeMidpoint(fp1, fp2); // Simple average of 2 points
+
+		// New edge point is the average of P and R
+		XMFLOAT3 newEdgePoint;
+		XMVECTOR v_new_edge = XMVectorScale(XMVectorAdd(XMLoadFloat3(&edgeMid), XMLoadFloat3(&avgFP)), 0.5f);
+		DirectX::XMStoreFloat3(&newEdgePoint, v_new_edge);
+
+		edgePoints[e] = newEdgePoint;
+	}
+
+	// 3. calculate vertex points (Smoothing Formula)
+	for (int v = 0; v < points.size(); ++v) {
+		// Find average of adjacent face points (F)
+		std::vector<XMFLOAT3> adjFacePoints;
+		const auto& adjFaces = pointToFacesMap[v];
+		for (int f_idx : adjFaces) {
+			adjFacePoints.push_back(facePoints[f_idx]);
+		}
+		XMFLOAT3 F = findNgonCentroid(adjFacePoints); // R in the paper
+
+		// Find average of adjacent edge midpoints (R)
+		std::vector<XMFLOAT3> adjEdgeMids;
+		for (int e_idx : pointToEdgesMap[v]) {
+			const auto& edge = edges[e_idx];
+			adjEdgeMids.push_back(edgeMidpoint(points[edge.first], points[edge.second]));
+		}
+		XMFLOAT3 R = findNgonCentroid(adjEdgeMids); // Q in the paper
+
+		// Original vertex point (P)
+		XMFLOAT3 P = points[v];
+
+		int n = adjFaces.size(); // number of adjacent faces/edges
+
+		// Catmull-Clark formula for the new vertex point
+		float m1 = (static_cast<float>(n) - paramA) / static_cast<float>(n);
+		float m2 = paramB / static_cast<float>(n);
+		float m3 = paramC / static_cast<float>(n);
+
+		XMVECTOR v_new_vert = XMVectorAdd(
+			XMVectorScale(XMLoadFloat3(&P), m1),
+			XMVectorAdd(
+				XMVectorScale(XMLoadFloat3(&F), m2),
+				XMVectorScale(XMLoadFloat3(&R), m3)
+			)
+		);
+
+		XMFLOAT3 newVertPoint;
+		DirectX::XMStoreFloat3(&newVertPoint, v_new_vert);
+		vertPoints[v] = newVertPoint;
+	}
+
+	// --- Phase 3: Construct the new mesh ---
+	std::vector<XMFLOAT3> newPoints;
+	std::vector<Face> newFaces;
+
+	// Add new vertex points (n1 total)
+	for (int i = 0; i < points.size(); ++i) {
+		newPoints.push_back(vertPoints[i]);
+	}
+	// Add new edge points (n2 total)
+	for (int i = 0; i < edges.size(); ++i) {
+		newPoints.push_back(edgePoints[i]);
+	}
+	// Add new face points (n3 total)
+	for (int i = 0; i < faces.size(); ++i) {
+		newPoints.push_back(facePoints[i]);
+	}
+
+	// Index offsets for the new points
+	size_t n1 = points.size(); // Start index for Edge Points
+	size_t n2 = edges.size();  // Total Edge Points
+	size_t n3_start = n1 + n2; // Start index for Face Points (n1 + n2)
+
+	// Construct new faces (Quads) - Splits an N-gon into N Quads
+	for (int f = 0; f < faces.size(); ++f) {
+		const auto& oldFace = faces[f];
+		int N = oldFace.face.size(); // Number of vertices in the old face
+
+		// The Face Point index is constant for all N quads derived from this face
+		int FP_idx = n3_start + f;
+
+		for (int i = 0; i < N; ++i) {
+			Face newQuad;
+
+			// 1. V': New Vertex Point (Original index)
+			newQuad.face.push_back(oldFace.face[i]);
+
+			// 2. E'_{i}: Edge Point of the current/next edge (index i in the faceToEdgesMap)
+			// Edge index in the edges list is: faceToEdgesMap[f][i]
+			newQuad.face.push_back(n1 + faceToEdgesMap[f][i]);
+
+			// 3. F': Face Point (Constant for all quads in this face)
+			newQuad.face.push_back(FP_idx);
+
+			// 4. E'_{i-1}: Edge Point of the previous edge (index i-1 in the faceToEdgesMap)
+			// THIS IS THE CRITICAL FIX for N-gons:
+			int prev_i = (i == 0) ? N - 1 : i - 1; // Correct way to get the previous index
+			// Using the robust modulo: int prev_i = (i - 1 + N) % N; // Also works
+			newQuad.face.push_back(n1 + faceToEdgesMap[f][prev_i]);
+
+			newFaces.push_back(newQuad);
+		}
+	}
+
+	// Replace the old mesh with the new one
+	points = newPoints;
+	faces = newFaces;
+}
+

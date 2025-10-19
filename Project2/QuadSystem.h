@@ -72,6 +72,8 @@ struct Box
 struct Cylinder
 {
 	uint64_t id;
+	uint64_t baseFaceId;
+	uint64_t topFaceId;
 	int sliceCount;
 	int sideCount;
 	std::vector<int> verts;
@@ -80,9 +82,9 @@ struct Cylinder
 	XMFLOAT3 direction;
 	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
 
-	// track the corners
-	std::vector<int> nearCorners;
-	std::vector<int> farCorners;
+	// track the top and bottom vertices
+	std::vector<int> baseVerts;
+	std::vector<int> topVerts;
 	
 	// track the slices by face ids
 	std::vector<std::vector<uint64_t>> slices;
@@ -122,6 +124,7 @@ public:
 	// operations may need to be outsourced to separate subdivision classes
 	std::vector<int> triangulateQuads();
 	std::vector<int> triangulateFaces();
+	void triangulateNgon(uint64_t faceId);
 	XMVECTOR calcNormal(int p1, int p2, int p3);
 	XMVECTOR calcNormal(int faceIndex);
 	//XMVECTOR calcNormal(uint64_t faceId);
@@ -204,6 +207,9 @@ public:
 	void bottomCap(Box& box);
 	void bottomCap(Box& box, bool polarity);
 
+	uint64_t topCylinderCap(Cylinder& cyl);
+	uint64_t bottomCylinderCap(Cylinder& cyl);
+
 	// connections
 	void connectBoxes(Box box1, Box box2);
 
@@ -226,6 +232,7 @@ public:
 	// subdivision alorithms
 	void loopSubdivide();
 	void CCsubdivide(float paramA, float paramB, float paramC);
+	void CCsubdivideNgon(float paramA, float paramB, float paramC);
 
 	// two perpendicular cuts, one face becomes 4
 	void divideFace(int faceIndex, float dim1, float dim2, float u, float v);
@@ -296,9 +303,19 @@ public:
 		return boxes[index];
 	}
 
+	Cylinder& getCylinder(int index)
+	{
+		return cylinders[index];
+	}
+
 	Face& getFace(int index)
 	{
 		return faces[index];
+	}
+
+	Face& getNewestFace()
+	{
+		return faces.back();
 	}
 
 	Face& getFaceById(uint64_t faceId)
@@ -363,6 +380,7 @@ private:
 	std::vector<Quad> quads;
 	std::vector<Box> boxes;
 	std::vector<Branch> branches;
+	std::vector<Cylinder> cylinders;
 	std::unordered_map<int, int> branchIdToIndexMap;
 	std::unordered_map<uint64_t, int> faceIdToIndexMap;
 	std::vector<uint64_t> faceDeletionIdList;

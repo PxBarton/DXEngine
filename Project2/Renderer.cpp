@@ -230,8 +230,8 @@ void Renderer::RenderFrame()
 	cb_light.data.ambientStrength = .5f;
 
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	cb_light.data.lightStrength = 1.0f;
-	cb_light.data.lightPosition = XMFLOAT3(10.0f, 12.0f, -10.0f);
+	cb_light.data.lightStrength = 0.8f;
+	cb_light.data.lightPosition = XMFLOAT3(15.0f, 15.0f, -10.0f);
 
 	if (!cb_light.ApplyChanges())
 	{
@@ -357,7 +357,7 @@ bool Renderer::SceneSetup()
 	XMFLOAT3 boxScale5 = XMFLOAT3(0.4, 0.4, 0.4);
 
 	qBox = std::make_unique<QuadSystem>();
-	qBox->buildCylinder(qBox->basePoint, boxNormal, 15.0, 3.0, 1.0, 4, 32);
+	
 	/*
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
@@ -493,13 +493,23 @@ bool Renderer::SceneSetup()
 	qBox->deleteStagedFaces();
 	*/
 
+	qBox->buildCylinder(qBox->basePoint, boxNormal, 8.0, 4.0, .4, 4, 5);
+	uint64_t cylCapId = qBox->topCylinderCap(qBox->getCylinder(0));
+	//qBox->triangulateNgon(cylCapId);
+
+	qBox->deleteStagedFaces();
+
 	//qBox->CCsubdivide(2.8, 2.0, 1.2);
+	//qBox->CCsubdivide(5.0, 2.0, 4.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+
+	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
