@@ -69,6 +69,27 @@ struct Box
 	
 };
 
+struct Cylinder
+{
+	uint64_t id;
+	int sliceCount;
+	int sideCount;
+	std::vector<int> verts;
+	std::vector<uint64_t> faceIds;
+	std::vector<int> faceIndices;
+	XMFLOAT3 direction;
+	XMFLOAT3 scale = XMFLOAT3(1.0, 1.0, 1.0);
+
+	// track the corners
+	std::vector<int> nearCorners;
+	std::vector<int> farCorners;
+	
+	// track the slices by face ids
+	std::vector<std::vector<uint64_t>> slices;
+
+
+};
+
 struct Branch
 {
 	uint16_t level = 0;
@@ -164,14 +185,24 @@ public:
 
 	void buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale);
 
+	void buildCylinder(XMFLOAT3 centerBase, XMFLOAT3 normal, float length, float baseRadius, float taper, int hDivs, int rDivs);
+
+	void buildPlane(int xCount, int zCount);
+	
+
 	// replace a face with a box
 	//void replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
 	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch);
 
+	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool polarity, bool cap, bool isBranch);
+
 	// caps
 	uint64_t topCap(Box& box);
+	uint64_t topCap(Box& box, bool polarity);
 	uint64_t addCap(Box& box);
+	uint64_t addCap(Box& box, bool polarity);
 	void bottomCap(Box& box);
+	void bottomCap(Box& box, bool polarity);
 
 	// connections
 	void connectBoxes(Box box1, Box box2);
@@ -202,6 +233,14 @@ public:
 	void sliceFace(int faceIndex, float edge1, int numSections);
 
 	int branch(Branch& parent, int faceId, std::vector<int> sides,  std::vector<float> angles, float boxHeightRatio);
+
+	std::vector<uint64_t> branch(Branch& parent, 
+				int faceId, 
+				std::vector<int> sides, 
+				std::vector<float> angles, 
+				float boxHeightRatio, 
+				float branchLengthRatio, 
+				bool polarity);
 
 	void branchSystem();
 
@@ -305,6 +344,7 @@ public:
 		faceDeletionIdList.clear();
 	}
 
+	XMFLOAT3 basePoint = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	uint64_t topCapId;
 	uint64_t bottomCapId;
 	std::vector<uint64_t> branchCaps;

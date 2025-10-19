@@ -228,9 +228,11 @@ void Renderer::RenderFrame()
 
 	cb_light.data.ambientColor = XMFLOAT3(0.8f, 0.8f, 1.0f);
 	cb_light.data.ambientStrength = .5f;
+
 	cb_light.data.lightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	cb_light.data.lightStrength = 1.0f;
 	cb_light.data.lightPosition = XMFLOAT3(10.0f, 12.0f, -10.0f);
+
 	if (!cb_light.ApplyChanges())
 	{
 		return;
@@ -350,10 +352,13 @@ bool Renderer::SceneSetup()
 	XMFLOAT3 defaultScale = XMFLOAT3(1.0, 1.0, 1.0);
 	XMFLOAT3 boxScale = XMFLOAT3(0.5, 0.5, 0.5);
 	XMFLOAT3 boxScale2 = XMFLOAT3(1.0, 1.0, 1.0);
-	XMFLOAT3 boxScale3 = XMFLOAT3(2.5, 2.5, 2.5);
+	XMFLOAT3 boxScale3 = XMFLOAT3(6.0, 6.0, 6.0);
 	XMFLOAT3 boxScale4 = XMFLOAT3(1.0, 1.0, 1.0);
+	XMFLOAT3 boxScale5 = XMFLOAT3(0.4, 0.4, 0.4);
 
 	qBox = std::make_unique<QuadSystem>();
+	qBox->buildCylinder(qBox->basePoint, boxNormal, 15.0, 3.0, 1.0, 4, 32);
+	/*
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
 	qBox->buildBox(qBox->getBox(0).farCorners(), boxNormal, 2.0, boxScale);
@@ -361,18 +366,20 @@ bool Renderer::SceneSetup()
 	qBox->buildBox(qBox->getBox(2).farCorners(), boxNormal, 3.0, boxScale3);
 	qBox->buildBox(qBox->getBox(3).farCorners(), boxNormal, 1.0, boxScale4);
 	qBox->buildBox(qBox->getBox(4).farCorners(), boxNormal, 3.0, boxScale);
-	qBox->buildBox(qBox->getBox(5).farCorners(), boxNormal, 2.0, boxScale4);
+	qBox->buildBox(qBox->getBox(5).farCorners(), boxNormal, 2.0, boxScale5);
 	qBox->topCap(qBox->getBox(6));
 	qBox->bottomCap(qBox->getBox(0));
 
 	
 
 	std::vector<int> sides = { 0, 1, 2, 3 };
-	std::vector<float> angles = { -40.0, -40.0, -40.0, -40.0 };
+	std::vector<float> angles = { -50.0, -50.0, -50.0, -50.0 };
+	std::vector<float> angles2 = { -30.0, -30.0, -30.0, -30.0 };
+
 
 	Branch startingBranch;
 	startingBranch.axis = qBox->getBox(6).direction;
-	qBox->branch(startingBranch, qBox->bottomCapId, sides, angles, 0.4);
+	qBox->branch(startingBranch, qBox->bottomCapId, sides, angles2, 0.4);
 	for (uint64_t capId : qBox->branchCaps)
 	{
 		qBox->buildBall(capId, 2.5, true, true);
@@ -384,17 +391,17 @@ bool Renderer::SceneSetup()
     //auto& testCap = currentCaps.back();
 	qBox->branchCaps.clear();
 	//qBox->buildBall(testCap, 1.5, true, true);
-	/*
-	qBox->branch(startingBranch, currentCaps[0], sides, angles, 0.8);
-	qBox->branch(startingBranch, currentCaps[1], sides, angles, 0.8);
-	qBox->branch(startingBranch, currentCaps[2], sides, angles, 0.8);
-	qBox->branch(startingBranch, currentCaps[3], sides, angles, 0.8);
 	
-	for (uint64_t& cap : qBox->branchCaps)
-	{
-		qBox->buildBall(cap, 2.0, true, true);
-	}
-	*/
+	//qBox->branch(startingBranch, currentCaps[0], sides, angles, 0.8);
+	//qBox->branch(startingBranch, currentCaps[1], sides, angles, 0.8);
+	//qBox->branch(startingBranch, currentCaps[2], sides, angles, 0.8);
+	//qBox->branch(startingBranch, currentCaps[3], sides, angles, 0.8);
+	
+	//for (uint64_t& cap : qBox->branchCaps)
+	//{
+	//	qBox->buildBall(cap, 2.0, true, true);
+	//}
+	
 	for (uint64_t capId : currentCaps)
 	{
 		//qBox->buildBall(capId, 2.0, true, true);
@@ -484,12 +491,13 @@ bool Renderer::SceneSetup()
 	qBox->replaceFace(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	
 	qBox->deleteStagedFaces();
+	*/
 
-	//qBox->CCsubdivide(0.2, 0.5, 1.08);
-	//qBox->CCsubdivide(2.0, 1.8, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(2.8, 2.0, 1.2);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 

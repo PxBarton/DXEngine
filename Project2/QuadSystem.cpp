@@ -308,6 +308,36 @@ uint64_t QuadSystem::topCap(Box& box)
 	return capId;
 }
 
+uint64_t QuadSystem::topCap(Box& box, bool polarity)
+{
+	std::array<int, 4> corners = box.farCorners();
+	Face cap;
+
+	if (polarity)
+	{
+		cap.face.push_back(corners[0]);
+		cap.face.push_back(corners[1]);
+		cap.face.push_back(corners[2]);
+		cap.face.push_back(corners[3]);
+	}
+	else
+	{
+		cap.face.push_back(corners[0]);
+		cap.face.push_back(corners[3]);
+		cap.face.push_back(corners[2]);
+		cap.face.push_back(corners[1]);
+	}
+	assignNormal(cap);
+
+	faces.push_back(cap);
+	trackNewFace(faces.back(), faceCount() - 1);
+	uint64_t capId = faces.back().id;
+	topCapId = capId;
+	//box.faceIds.push_back(faces.back().id);
+
+	return capId;
+}
+
 uint64_t QuadSystem::addCap(Box& box)
 {
 	std::array<int, 4> corners = box.farCorners();
@@ -325,6 +355,34 @@ uint64_t QuadSystem::addCap(Box& box)
 	return capId;
 }
 
+uint64_t QuadSystem::addCap(Box& box, bool polarity)
+{
+	std::array<int, 4> corners = box.farCorners();
+	Face cap;
+
+	if (polarity)
+	{
+		cap.face.push_back(corners[0]);
+		cap.face.push_back(corners[1]);
+		cap.face.push_back(corners[2]);
+		cap.face.push_back(corners[3]);
+	}
+	else
+	{
+		cap.face.push_back(corners[0]);
+		cap.face.push_back(corners[3]);
+		cap.face.push_back(corners[2]);
+		cap.face.push_back(corners[1]);
+	}
+	assignNormal(cap);
+
+	faces.push_back(cap);
+	trackNewFace(faces.back(), faceCount() - 1);
+	uint64_t capId = faces.back().id;
+
+	return capId;
+}
+
 void QuadSystem::bottomCap(Box& box)
 {
 	std::array<int, 4> corners = box.nearCorners();
@@ -333,6 +391,31 @@ void QuadSystem::bottomCap(Box& box)
 	cap.face.push_back(corners[2]);
 	cap.face.push_back(corners[3]);
 	cap.face.push_back(corners[0]);
+
+	faces.push_back(cap);
+	trackNewFace(faces.back(), faceCount() - 1);
+	bottomCapId = faces.back().id;
+	//box.faceIds.push_back(faces.back().id);
+}
+
+void QuadSystem::bottomCap(Box& box, bool polarity)
+{
+	std::array<int, 4> corners = box.nearCorners();
+	Face cap;
+	if (polarity)
+	{
+		cap.face.push_back(corners[0]);
+		cap.face.push_back(corners[1]);
+		cap.face.push_back(corners[2]);
+		cap.face.push_back(corners[3]);
+	}
+	else
+	{
+		cap.face.push_back(corners[1]);
+		cap.face.push_back(corners[2]);
+		cap.face.push_back(corners[3]);
+		cap.face.push_back(corners[0]);
+	}	
 
 	faces.push_back(cap);
 	trackNewFace(faces.back(), faceCount() - 1);
@@ -358,6 +441,32 @@ void QuadSystem::replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLO
 */
 // prioritize unique id's over indices that may change with deletions
 void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch)
+{
+	int faceIndex = getFaceIndexByID(faceId);
+	std::vector<int> faceToReplace = faces[faceIndex].face;
+	std::array<int, 4> oldFace;
+	oldFace[0] = faceToReplace[0];
+	oldFace[1] = faceToReplace[1];
+	oldFace[2] = faceToReplace[2];
+	oldFace[3] = faceToReplace[3];
+
+	buildBox(oldFace, normal, length, endScale);
+	uint64_t capId;
+	if (cap)
+	{
+		capId = addCap(boxes[boxes.size() - 1]);
+		capIds.push_back(capId);
+	}
+
+	faceDeletionIdList.push_back(faceId);
+
+	if (isBranch && cap)
+	{
+		branchCaps.push_back(capId);
+	}
+}
+
+void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool polarity, bool cap, bool isBranch)
 {
 	int faceIndex = getFaceIndexByID(faceId);
 	std::vector<int> faceToReplace = faces[faceIndex].face;
@@ -775,12 +884,57 @@ int QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::
 	return parent.id;
 }
 
+// overload for normal issues, branch length, returns the branchCap ids
+std::vector<uint64_t> QuadSystem::branch(Branch& parent, 
+										int faceId, 
+										std::vector<int> sides, 
+										std::vector<float> angles, 
+										float boxHeightRatio, 
+										float branchLengthRatio, 
+										bool polarity)
+{
+	int faceIndex = getFaceIndexByID(faceId);
+	Face& f = faces[faceIndex];
+	float newBoxHeight = approxWidth(faces[faceIndex]) * 0.8 * boxHeightRatio;
+	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
+	XMFLOAT3 boxNormal;
+	// not sure why calcNormal gets the sign wrong 
+	XMVECTOR boxNormalV = calcNormal(faceIndex);
+	XMStoreFloat3(&boxNormal, boxNormalV);
+	//
+	XMVECTOR nv = f.normalV;
+	//XMStoreFloat3(&boxNormal, nv);
+	replaceFace(faceId, boxNormal, newBoxHeight, scale, polarity, false, false);
+	uint64_t capId = addCap(boxes[boxes.size() - 1]);
+	parent.capId = capId;
+	Box newBox = boxes[boxes.size() - 1];
+	std::vector<int> newBranchIds;
+	std::vector<uint64_t> branchCapIds;
+
+	for (int s = 0; s < sides.size(); s++)
+	{
+		Branch newBranch;
+		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
+		XMFLOAT3 newNormal = rotateVector(boxNormalV, -calcNormal(face), angles[s]);
+		replaceFace(face, newNormal, newBoxHeight * 6, scale, polarity, false, false);
+		uint64_t newCapId = addCap(boxes[boxes.size() - 1], polarity);
+		newBranch.axis = newNormal;
+		newBranch.parentAxis = parent.axis;
+		newBranch.capId = newCapId;
+		branchCaps.push_back(newCapId);
+		parent.branches.push_back(newBranch);
+		branchCapIds.push_back(newCapId);
+	}
+	// dont forget to store indices of caps to make more branches
+
+	return branchCapIds;	
+}
+
 std::array<XMVECTOR, 4> QuadSystem::projectQuad(
 	FXMVECTOR P1, FXMVECTOR P2, FXMVECTOR P3, FXMVECTOR P4,
 	FXMVECTOR V, float L)
 {
 	XMVECTOR C = XMVectorScale(XMVectorAdd(XMVectorAdd(P1, P2), XMVectorAdd(P3, P4)), 0.25f);
-
 	XMVECTOR N = XMVector3Normalize(V);
 
 	// C2 = C + (L * N)
@@ -794,14 +948,9 @@ std::array<XMVECTOR, 4> QuadSystem::projectQuad(
 	for (int i = 0; i < originalPoints.size(); ++i)
 	{
 		XMVECTOR P = originalPoints[i];
-
-		
 		XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
-
-		
 		XMVECTOR dotProductVec = XMVector3Dot(vec_PC2, N);
 		XMVECTOR displacement = XMVectorMultiply(dotProductVec, N);
-
 		XMVECTOR P_new = XMVectorSubtract(P, displacement);
 
 		projectedPoints[i] = P_new;
@@ -813,7 +962,6 @@ std::array<XMVECTOR, 4> QuadSystem::projectQuad(
 std::array<XMVECTOR, 4> QuadSystem::projectQuad(std::array<XMVECTOR, 4> originalPoints, FXMVECTOR V, float L)
 {
 	XMVECTOR C = findCentroidV(originalPoints);
-
 	XMVECTOR N = XMVector3Normalize(V);
 
 	// C2 = C + (L * N)
@@ -826,16 +974,10 @@ std::array<XMVECTOR, 4> QuadSystem::projectQuad(std::array<XMVECTOR, 4> original
 	for (int i = 0; i < originalPoints.size(); ++i)
 	{
 		XMVECTOR P = originalPoints[i];
-
-
 		XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
-
-
 		XMVECTOR dotProductVec = XMVector3Dot(vec_PC2, N);
 		XMVECTOR displacement = XMVectorMultiply(dotProductVec, N);
-
 		XMVECTOR P_new = XMVectorSubtract(P, displacement);
-
 		projectedPoints[i] = P_new;
 	}
 
@@ -872,4 +1014,143 @@ void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch
 	}
 	// Add the new box to the list of boxes
 	//boxes.push_back(newBox);
+}
+
+void QuadSystem::buildCylinder(XMFLOAT3 centerBase, XMFLOAT3 normal, float length, float baseRadius, float taper, int hDivs, int rDivs)
+{
+	Cylinder cyl;
+	std::vector<XMFLOAT3> nearCorners;
+	std::vector<XMFLOAT3> farCorners;
+	float hSlice = length / (hDivs + 1);    // 0 divs: divide by 1, not zero
+	float dRadius = (baseRadius * taper) / (hDivs + 1);
+	// hDiv = 1 indicates a cylinder divided in half, so 1 + 2 for the base and the top rings = 3 rings
+	int ringCount = hDivs + 2;
+	int vInd = 0;
+	for (int i = 0; i < ringCount; i++)
+	{
+		float y = i * hSlice;
+		float r = baseRadius + taper / (hDivs + 1);
+		float dTheta = 2.0 * XM_PI / rDivs;
+		std::vector<XMFLOAT3> slicePoints = {};
+		for (int j = 1; j <= rDivs; j++)
+		{
+			
+			float c = cos(j * dTheta);
+			float s = sin(j * dTheta);
+
+			XMFLOAT3 point = XMFLOAT3(r * c, y, r * s);
+			slicePoints.push_back(point);
+			points.push_back(point);
+			cyl.verts.push_back(pointCount() - 1);
+		}
+	}
+	int tInd = 0;
+	for (int i = 0; i < (hDivs + 1); i++)
+	{
+		std::vector<Face> ringFaces;
+		for (int j = 0; j < (rDivs - 1); j++)
+		{
+
+			Face newFace;
+			newFace.face.push_back(cyl.verts[i * rDivs + j]);
+			newFace.face.push_back(cyl.verts[(i + 1) * rDivs + j]);
+			newFace.face.push_back(cyl.verts[(i + 1) * rDivs + (j + 1)]);
+			newFace.face.push_back(cyl.verts[i * rDivs + (j + 1)]);
+
+			ringFaces.push_back(newFace);
+			cyl.faceIndices.push_back(faceCount());
+			faces.push_back(newFace);
+			trackNewFace(faces.back(), faceCount() - 1);
+			cyl.faceIds.push_back(faces.back().id);
+			/*
+			tris[tInd] = i * rDivs + j;  // 0
+
+			tris[tInd] = (i + 1) * rDivs + j;  // 4
+
+			tris[tInd] = (i + 1) * rDivs + (j + 1);  // 5
+
+			tris[tInd] = i * rDivs + (j + 1);  // 1
+			*/
+
+		}
+		
+		Face newFace;
+		newFace.face.push_back(cyl.verts[(i + 1) * rDivs - 1]);
+		newFace.face.push_back(cyl.verts[(i + 2) * rDivs - 1]);
+		newFace.face.push_back(cyl.verts[(i + 1) * rDivs]);
+		newFace.face.push_back(cyl.verts[(i + 1) * rDivs - rDivs]);
+
+		ringFaces.push_back(newFace);
+		ringFaces.push_back(newFace);
+		cyl.faceIndices.push_back(faceCount());
+		faces.push_back(newFace);
+		trackNewFace(faces.back(), faceCount() - 1);
+		cyl.faceIds.push_back(faces.back().id);
+
+		/*
+		tris[tInd] = (i + 1) * rDivs - 1;  // 3
+
+		tris[tInd] = (i + 2) * rDivs - 1;  // 7
+
+		tris[tInd] = (i + 1) * rDivs;  // 4
+
+		tris[tInd] = (i + 1) * rDivs - rDivs;  // 0
+		*/
+	}
+
+	cyl.direction = normal;
+
+	//boxes.push_back(box);
+}
+
+
+void QuadSystem::buildPlane(int xCount, int zCount)
+{
+	int currentPointCount = points.size();
+	int currentFaceCount = faceCount();
+	std::unique_ptr<float[]> xAxis = std::make_unique<float[]>(xCount);
+	std::unique_ptr<float[]> zAxis = std::make_unique<float[]>(zCount);
+	float xLim = 12.0;
+	float yLim = 12.0;
+	float step = .1;
+
+
+	for (int i = 0; i < xCount; i++)
+	{
+		xAxis[i] = i * step;
+	}
+	for (int i = 0; i < zCount; i++)
+	{
+		zAxis[i] = i * step;
+	}
+	double pi = 3.1415926535;
+	int vInd = 0;
+	for (int i = 0; i < xCount; i++)
+	{
+		for (int j = 0; j < zCount; j++)
+		{
+			XMFLOAT3 point;
+			point.x = xAxis[i];
+			point.y = 0.0f;
+			point.z = zAxis[j];
+			points.push_back(point);
+			vInd++;
+		}
+	}
+	/*
+	int tInd = 0;
+	for (int i = 0; i < xCount - 1; i++)
+	{
+		for (int j = 0; j < zCount - 1; j++)
+		{
+			tris[tInd] = (i * zCount) + j;
+			tris[tInd] = (i * zCount) + j + zCount;
+			tris[tInd] = (i * zCount) + j + zCount + 1;
+			tris[tInd] = (i * zCount) + j + 1;
+			
+		}
+	}
+
+
+	*/
 }
