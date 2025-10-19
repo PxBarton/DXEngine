@@ -493,8 +493,16 @@ bool Renderer::SceneSetup()
 	qBox->deleteStagedFaces();
 	*/
 
-	qBox->buildCylinder(qBox->basePoint, boxNormal, 8.0, 4.0, .4, 4, 5);
-	uint64_t cylCapId = qBox->topCylinderCap(qBox->getCylinder(0));
+	qBox->buildCylinder(qBox->basePoint, boxNormal, 8.0, 4.0, .4, 4, 12);
+	Cylinder& newCyl = qBox->getCylinder(0);
+	for (int i = 0; i < newCyl.slices[1].size(); i += 2)
+	{
+		qBox->getFaceById(newCyl.slices[1][i]).normalV = qBox->calcNormal(newCyl.slices[1][i]);
+		DirectX::XMStoreFloat3(&qBox->getFaceById(newCyl.slices[1][i]).normal, qBox->getFaceById(newCyl.slices[1][i]).normalV);
+		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[1][i]).normal;
+		qBox->replaceFace(newCyl.slices[1][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	}
+	uint64_t cylCapId = qBox->topCylinderCap(newCyl);
 	//qBox->triangulateNgon(cylCapId);
 
 	qBox->deleteStagedFaces();
