@@ -927,6 +927,23 @@ uint64_t QuadSystem::topCylinderCap(Cylinder& cyl)
 	return capId;
 }
 
+uint64_t QuadSystem::bottomCylinderCap(Cylinder& cyl)
+{
+	int numVerts = cyl.sideCount;
+	// Create a new face for the cap
+	Face capFace;
+	for (int i = 0; i < numVerts; i++)
+	{
+		capFace.face.push_back(cyl.baseVerts[i]);
+	}
+	// Add the cap face to the list of faces
+	faces.push_back(capFace);
+	trackNewFace(faces.back(), faceCount() - 1);
+	uint64_t capId = faces.back().id;
+	cyl.topFaceId = capId;
+	return capId;
+}
+
 
 void QuadSystem::buildPlane(int xCount, int zCount)
 {

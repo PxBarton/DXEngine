@@ -493,7 +493,7 @@ bool Renderer::SceneSetup()
 	qBox->deleteStagedFaces();
 	*/
 
-	qBox->buildCylinder(qBox->basePoint, boxNormal, 8.0, 4.0, .4, 4, 12);
+	qBox->buildCylinder(qBox->basePoint, boxNormal, 12.0, 4.0, .4, 12, 12);
 	Cylinder& newCyl = qBox->getCylinder(0);
 	for (int i = 0; i < newCyl.slices[1].size(); i += 2)
 	{
@@ -502,7 +502,25 @@ bool Renderer::SceneSetup()
 		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[1][i]).normal;
 		qBox->replaceFace(newCyl.slices[1][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	}
+	
+	for (int i = 0; i < newCyl.slices[5].size(); i += 2)
+	{
+		qBox->getFaceById(newCyl.slices[5][i]).normalV = qBox->calcNormal(newCyl.slices[5][i]);
+		DirectX::XMStoreFloat3(&qBox->getFaceById(newCyl.slices[5][i]).normal, qBox->getFaceById(newCyl.slices[5][i]).normalV);
+		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[5][i]).normal;
+		qBox->replaceFace(newCyl.slices[5][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	}
+	for (int i = 0; i < newCyl.slices[9].size(); i += 2)
+	{
+		qBox->getFaceById(newCyl.slices[9][i]).normalV = qBox->calcNormal(newCyl.slices[9][i]);
+		DirectX::XMStoreFloat3(&qBox->getFaceById(newCyl.slices[9][i]).normal, qBox->getFaceById(newCyl.slices[9][i]).normalV);
+		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[9][i]).normal;
+		qBox->replaceFace(newCyl.slices[9][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	}
+	
 	uint64_t cylCapId = qBox->topCylinderCap(newCyl);
+	uint64_t cylBottomCapId = qBox->bottomCylinderCap(newCyl);
+
 	//qBox->triangulateNgon(cylCapId);
 
 	qBox->deleteStagedFaces();
@@ -515,9 +533,10 @@ bool Renderer::SceneSetup()
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 
+	qBox->CCsubdivideNgon(5.0, 2.0, 4.0);
 	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
 	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
-	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
