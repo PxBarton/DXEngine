@@ -533,10 +533,10 @@ bool Renderer::SceneSetup()
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 
-	qBox->CCsubdivideNgon(5.0, 2.0, 4.0);
-	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
-	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
-	qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	//qBox->CCsubdivideNgon(5.0, 2.0, 4.0);
+	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);

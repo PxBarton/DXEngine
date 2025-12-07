@@ -28,8 +28,8 @@ float4 main(PS_INPUT input) : SV_TARGET
 	float3 ambientLight = ambientColor * ambientStrength;
 	float3 pixelColor = input.inColor;
 	float3 finalLight = ambientLight;
-
 	float3 lightDirVec = normalize(lightPosition - input.inWorldPos);
+
 	//float3 diffuseIntensity = max(dot(lightDirVec, input.inNormal), 0);
 	float3 diffuseIntensity = max(dot(lightDirVec, flatNormal), 0);
 	diffuseIntensity -= max(((1 - diffuseIntensity) * .2), 0);
