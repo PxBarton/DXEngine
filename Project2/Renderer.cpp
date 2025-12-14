@@ -358,7 +358,7 @@ bool Renderer::SceneSetup()
 
 	qBox = std::make_unique<QuadSystem>();
 	
-	/*
+	
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
 	qBox->buildBox(qBox->getBox(0).farCorners(), boxNormal, 2.0, boxScale);
@@ -491,8 +491,8 @@ bool Renderer::SceneSetup()
 	qBox->replaceFace(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	
 	qBox->deleteStagedFaces();
-	*/
-
+	
+    /*
 	qBox->buildCylinder(qBox->basePoint, boxNormal, 12.0, 4.0, .4, 12, 12);
 	Cylinder& newCyl = qBox->getCylinder(0);
 	for (int i = 0; i < newCyl.slices[1].size(); i += 2)
@@ -520,7 +520,7 @@ bool Renderer::SceneSetup()
 	
 	uint64_t cylCapId = qBox->topCylinderCap(newCyl);
 	uint64_t cylBottomCapId = qBox->bottomCylinderCap(newCyl);
-
+	*/
 	//qBox->triangulateNgon(cylCapId);
 
 	qBox->deleteStagedFaces();
@@ -529,7 +529,7 @@ bool Renderer::SceneSetup()
 	//qBox->CCsubdivide(5.0, 2.0, 4.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
 	qBox->CCsubdivide(3.0, 2.0, 1.0);
 

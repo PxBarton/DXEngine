@@ -581,6 +581,7 @@ XMVECTOR QuadSystem::findNgonCentroidV(const std::vector<XMVECTOR>& vertices) {
 	return centroid;
 }
 
+// populates edges and faceEdgePairs at the same time
 void QuadSystem::findEdges()
 {
 	faceEdgePairs.clear();
@@ -740,7 +741,7 @@ std::array<XMVECTOR, 4> QuadSystem::projectQuad(
 	std::array<XMVECTOR, 4> originalPoints = { P1, P2, P3, P4 };
 	std::array<XMVECTOR, 4> projectedPoints;
 
-	for (int i = 0; i < originalPoints.size(); ++i)
+	for (int i = 0; i < originalPoints.size(); i++)
 	{
 		XMVECTOR P = originalPoints[i];
 		XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
@@ -766,7 +767,7 @@ std::array<XMVECTOR, 4> QuadSystem::projectQuad(std::array<XMVECTOR, 4> original
 
 	std::array<XMVECTOR, 4> projectedPoints;
 
-	for (int i = 0; i < originalPoints.size(); ++i)
+	for (int i = 0; i < originalPoints.size(); i++)
 	{
 		XMVECTOR P = originalPoints[i];
 		XMVECTOR vec_PC2 = XMVectorSubtract(P, C2);
