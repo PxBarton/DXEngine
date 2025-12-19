@@ -581,6 +581,7 @@ XMVECTOR QuadSystem::findNgonCentroidV(const std::vector<XMVECTOR>& vertices) {
 	return centroid;
 }
 
+
 // populates edges and faceEdgePairs at the same time
 void QuadSystem::findEdges()
 {
@@ -596,7 +597,7 @@ void QuadSystem::findEdges()
 			std::vector<std::pair<int, int>> faceEdges;
 
 			// loop through each edge on the face
-			for (size_t j = 0; j < s; ++j) {
+			for (size_t j = 0; j < s; j++) {
 				// two point indices for the current edge
 				// modulo wrapping around
 				int v1 = f.face[j];
@@ -1835,6 +1836,8 @@ void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float param
 	faces = newFaces;
 
 }
+
+
 
 /*
 
