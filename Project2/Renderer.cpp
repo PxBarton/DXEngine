@@ -361,6 +361,10 @@ bool Renderer::SceneSetup()
 	
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
+	//qBox->topCap(qBox->getBox(0));
+	//qBox->bottomCap(qBox->getBox(0));
+
+	
 	qBox->buildBox(qBox->getBox(0).farCorners(), boxNormal, 2.0, boxScale);
 	qBox->buildBox(qBox->getBox(1).farCorners(), boxNormal, 4.0, boxScale2);
 	qBox->buildBox(qBox->getBox(2).farCorners(), boxNormal, 3.0, boxScale3);
@@ -548,6 +552,7 @@ bool Renderer::SceneSetup()
 	cube->initMesh(8, 36);
 	cube->buildCube(2.0f);
 	//cube->buildCubeFlat(2.0f);
+	
 
 	// flat plane setup
 	const float xLimit1 = -16.0f;

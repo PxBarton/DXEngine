@@ -1,7 +1,9 @@
 #pragma once
+#define NOMINMAX
 
 #include <algorithm>
 #include <unordered_map>
+#include <map>
 #include <cmath>
 #include <vector>
 #include <array>
@@ -12,6 +14,8 @@
 #include <DirectXMath.h>
 #include "Vertex.h"
 #include "Mesh.h"
+
+
 
 
 // represents a flat quad, eventually subdivided and/or triangulated, tri's inherit normal, if calculated
@@ -111,6 +115,66 @@ struct pair_hash {
 	}
 };
 
+// Use int indices into the corresponding vector of HEDS elements.
+using HEIndex = int;
+using HVertexIndex = int;
+using HFaceIndex = int;
+
+// 1. HalfEdge
+struct HalfEdge {
+	HEIndex next;       // Next HE in the face loop (O(1) Face Adjacency)
+	HEIndex twin;       // Opposite HE on the adjacent face (O(1) Edge Adjacency)
+	HVertexIndex origin; // Origin vertex index
+	HFaceIndex face;     // Incident face index
+
+	// Custom data needed for Catmull-Clark
+	XMFLOAT3 edgePoint; // The newly calculated Edge Point (EP)
+};
+
+// 2. HVertex (References the Original points for coordinates)
+struct HVertex {
+	HEIndex outgoingEdge; // One HE starting at this vertex (O(1) Vertex Adjacency traversal)
+
+	// Custom data needed for Catmull-Clark
+	XMFLOAT3 vertexPoint; // The newly calculated New Vertex Point (VP')
+};
+
+// 3. HFace (References the Original faces list, or is newly created)
+struct HFace {
+	HEIndex boundingEdge; // One HE belonging to this face
+	int originalFaceIndex; // The index of the Face object in QuadSystem::faces[]
+
+	// Custom data needed for Catmull-Clark
+	XMFLOAT3 facePoint;   // The newly calculated Face Point (FP)
+};
+
+// The central data structure for the subdivision phase
+struct HalfEdgeSystem {
+	std::vector<HalfEdge> edges;
+	std::vector<HVertex> vertices;
+	std::vector<HFace> faces;
+};
+
+
+// --- Helper Struct for HEDS Construction ---
+// Required for the std::map used in buildAHES to find twin half-edges.
+struct EdgePair {
+	int v1;
+	int v2;
+	// Overload comparison operators for use in std::map (required for map key)
+	bool operator<(const EdgePair& other) const {
+		// Sorts based on v1 first, then v2 if v1's are equal
+		return (v1 < other.v1) || (v1 == other.v1 && v2 < other.v2);
+	}
+};
+
+// Helper function to create the canonical (sorted) EdgePair
+inline EdgePair makeCanonicalEdgePair(int p1, int p2) {
+	if (p1 > p2) {
+		return { p2, p1 };
+	}
+	return { p1, p2 };
+}
 
 // represents a 3D mesh of quads, calculates normals and performs triangulation and/or subdivision
 // provides functionality for procedural and randomized shape generation
@@ -230,8 +294,12 @@ public:
 	void fillLists();
 
 	// subdivision alorithms
+	void buildAHES(HalfEdgeSystem& heSystem);
 	void loopSubdivide();
 	void CCsubdivide(float paramA, float paramB, float paramC);
+	void CCsubdivideHE1(float paramA, float paramB, float paramC);
+	void CCsubdivideHE2(float paramA, float paramB, float paramC);
+	
 	void CCsubdivideNgon(float paramA, float paramB, float paramC);
 
 	// two perpendicular cuts, one face becomes 4
@@ -252,34 +320,7 @@ public:
 	void branchSystem();
 
 	// A and B two  XMVECTORs
-	XMFLOAT3 rotateVector(XMVECTOR A, XMVECTOR B, float angle)
-	{
-		angle = XMConvertToRadians(angle);
-		// Calculate the Plane Normal (Rotation Axis)
-		XMVECTOR N = XMVector3Cross(A, B);
-
-		/*
-		// Check if the vectors are parallel/anti-parallel (Cross product is near zero)
-		if (XMVector3NearEqual(N, XMVectorZero(), XMVectorReplicate(1e-6f)))
-		{
-			return A;
-		}
-		*/
-
-		XMVECTOR unitNormal = XMVector3Normalize(N);
-
-		// Create the Rotation Matrix (Quaternion for smooth rotation)
-		// Create a rotation quaternion for the delta_angle around the N_unit axis.
-		XMVECTOR rotationQuat = XMQuaternionRotationAxis(unitNormal, angle);
-
-		// Rotate Vector A
-		// Use XMVector3Rotate to apply the quaternion rotation to vector A.
-		XMVECTOR rotatedB = XMVector3Rotate(B, rotationQuat);
-		XMFLOAT3 rotatedBfloat3;
-		XMStoreFloat3(&rotatedBfloat3, rotatedB); // Stores the XMVECTOR into the XMFLOAT3
-
-		return rotatedBfloat3;
-	}
+	XMFLOAT3 rotateVector(XMVECTOR A, XMVECTOR B, float angle);
 
 	void findEdges();
 
@@ -329,37 +370,7 @@ public:
 		faces.erase(faces.begin() + index);
 	}
 
-	
-	void deleteStagedFaces()
-	{
-		std::vector<int> indicesToDelete;
-		for (uint64_t id : faceDeletionIdList) 
-		{
-			// in case a face was already deleted or replaced multiple times.
-			try {
-				indicesToDelete.push_back(faceIdToIndexMap.at(id));
-			}
-			catch (...) {
-				continue;
-			}
-		}
-
-		// sort indices
-		std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
-
-		for (int index : indicesToDelete) 
-		{
-			faces.erase(faces.begin() + index);
-		}
-
-		faceIdToIndexMap.clear();
-		for (int i = 0; i < faces.size(); ++i) {
-			// The face's ID has not changed, but its index has
-			faceIdToIndexMap[faces[i].id] = i;
-		}
-
-		faceDeletionIdList.clear();
-	}
+	void deleteStagedFaces();
 
 	XMFLOAT3 basePoint = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	uint64_t topCapId;

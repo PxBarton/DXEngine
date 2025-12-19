@@ -997,253 +997,425 @@ void QuadSystem::buildPlane(int xCount, int zCount)
 	*/
 }
 
-
-// Catmull-Clark algorithms
-
-// Quads only
-void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float paramC = 1.0)
+XMFLOAT3 QuadSystem::rotateVector(XMVECTOR A, XMVECTOR B, float angle)
 {
-	// phase 1: build adjacency lists
+	angle = XMConvertToRadians(angle);
+	// Calculate the Plane Normal (Rotation Axis)
+	XMVECTOR N = XMVector3Cross(A, B);
 
-	// build edge list
-	findEdges();
-
-	// map setup for Face objects, vector<int> might be better
-	std::unordered_map<int, std::vector<int>> pointToFacesMap;
-	std::unordered_map<int, std::array<int, 2>> edgeToFacesMap;
-	std::unordered_map<int, std::vector<int>> faceToEdgesMap;
-	std::unordered_map<int, std::vector<int>> pointToEdgesMap;
-
-	// point to faces
-	// slow
 	/*
-	for (int p = 0; p < points.size(); p++)
+	// Check if the vectors are parallel/anti-parallel (Cross product is near zero)
+	if (XMVector3NearEqual(N, XMVectorZero(), XMVectorReplicate(1e-6f)))
 	{
-		std::vector<Face> adjFaces;
-		for (int f = 0; f < faces.size(); f++)
-		{
-			// check if the point index exists in the face array
-			for (int i : faces[f].face)
-			{
-				if (p == i)
-				{
-					adjFaces.push_back(faces[f]);
-					break;
-				}
-
-			}
-		}
+		return A;
 	}
 	*/
 
-	// point to faces
-	// faster, hash lookup, no order
-	//for (const Face& face : faces) {
-	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		if (true)
-		{
-			const Face& face = faces[f_idx];
-			for (int p_index : face.face) {
-				//pointToFacesMap[p_index].push_back(face);
-				pointToFacesMap[p_index].push_back(f_idx);
-			}
-		}
+	XMVECTOR unitNormal = XMVector3Normalize(N);
 
+	// Create the Rotation Matrix (Quaternion for smooth rotation)
+	// Create a rotation quaternion for the delta_angle around the N_unit axis.
+	XMVECTOR rotationQuat = XMQuaternionRotationAxis(unitNormal, angle);
+
+	// Rotate Vector A
+	// Use XMVector3Rotate to apply the quaternion rotation to vector A.
+	XMVECTOR rotatedB = XMVector3Rotate(B, rotationQuat);
+	XMFLOAT3 rotatedBfloat3;
+	XMStoreFloat3(&rotatedBfloat3, rotatedB); // Stores the XMVECTOR into the XMFLOAT3
+
+	return rotatedBfloat3;
+}
+
+void QuadSystem::deleteStagedFaces()
+{
+	std::vector<int> indicesToDelete;
+	for (uint64_t id : faceDeletionIdList)
+	{
+		// in case a face was already deleted or replaced multiple times.
+		try {
+			indicesToDelete.push_back(faceIdToIndexMap.at(id));
+		}
+		catch (...) {
+			continue;
+		}
 	}
 
+	// sort indices
+	std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
 
-	// edge to faces
-	for (int e_idx = 0; e_idx < edges.size(); ++e_idx) {
-		const auto& edge = edges[e_idx];
-
-		// Replicates the Python 'adjFaces = []' logic
-		std::array<int, 2> adjFaces = { -1, -1 };
-		int faceCount = 0;
-
-		// Replicates the Python 'for i in range(len(eList))' and 'if edges[e] in eList[i]'
-		for (int f_idx = 0; f_idx < faceEdgePairs.size(); ++f_idx) {
-			// std::find is the C++ equivalent of Python's 'in' for a list
-			if (std::find(faceEdgePairs[f_idx].begin(), faceEdgePairs[f_idx].end(), edge) != faceEdgePairs[f_idx].end()) {
-				if (faceCount < 2) {
-					adjFaces[faceCount] = f_idx;
-					faceCount++;
-				}
-				// We can stop searching for this edge if we've found both faces
-				if (faceCount == 2) {
-					break;
-				}
-			}
-		}
-		edgeToFacesMap[e_idx] = adjFaces;
+	for (int index : indicesToDelete)
+	{
+		faces.erase(faces.begin() + index);
 	}
 
-	// face to edges
-	for (int f = 0; f < faceEdgePairs.size(); ++f) {
-		std::vector<int> adjEdges;
-		for (const auto& faceEdge : faceEdgePairs[f]) {
-			// This is the slow part: finding the index of an edge in the uniqueEdges list
-			// This is needed because the map key is an int index.
-			auto it = std::find(edges.begin(), edges.end(), faceEdge);
-			if (it != edges.end()) {
-				int edge_idx = std::distance(edges.begin(), it);
-				adjEdges.push_back(edge_idx);
-			}
-		}
-		faceToEdgesMap[f] = adjEdges;
+	faceIdToIndexMap.clear();
+	for (int i = 0; i < faces.size(); ++i) {
+		// The face's ID has not changed, but its index has
+		faceIdToIndexMap[faces[i].id] = i;
 	}
 
-	// point to edges
-	// Loop through each vertex in the mesh
-	for (int v = 0; v < points.size(); ++v) {
-		std::vector<int> adjEdges;
-		// brute-force search
-		for (int e = 0; e < edges.size(); ++e) {
-			const auto& edge = edges[e];
-			// Check if the vertex index is in the edge pair
-			if (edge.first == v || edge.second == v) {
-				adjEdges.push_back(e);
+	faceDeletionIdList.clear();
+}
+
+void QuadSystem::buildAHES(HalfEdgeSystem& heSystem)
+{
+	// Clear all AHES containers to start fresh
+	heSystem.edges.clear();
+	heSystem.vertices.clear();
+	heSystem.faces.clear();
+
+	// 1. Pre-allocate size and initialize
+	heSystem.vertices.resize(points.size());
+	heSystem.faces.resize(faces.size());
+	heSystem.edges.reserve(faces.size() * 4); // Roughly 4 edges per face
+
+	// Temporary map to find twin half-edges: maps Canonical Edge -> Index of the first HE found
+	// The use of std::map<EdgePair, HEIndex> allows for fast twin lookup and is transient.
+	std::map<EdgePair, HEIndex> edgeToHalfEdgeMap;
+
+	for (size_t i = 0; i < points.size(); ++i) {
+		heSystem.vertices[i].outgoingEdge = -1;
+	}
+	// No need to initialize face boundingEdge here, it's set in the loop below.
+
+	// 2. Iterate through faces to create Half-Edges and find Twins
+	for (size_t f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		const Face& currentFace = faces[f_idx];
+		int N = currentFace.face.size(); // Number of vertices in the N-gon
+
+		std::vector<HEIndex> currentHEIndices;
+		currentHEIndices.reserve(N);
+
+		for (int i = 0; i < N; ++i) {
+			int v_start_idx = currentFace.face[i];
+			int v_end_idx = currentFace.face[(i + 1) % N];
+
+			// Create the new half-edge (HE)
+			HalfEdge newHE;
+			newHE.origin = v_start_idx;
+			newHE.face = f_idx;
+			newHE.twin = -1; // Uninitialized
+
+			HEIndex he_idx = heSystem.edges.size();
+			heSystem.edges.push_back(newHE);
+			currentHEIndices.push_back(he_idx);
+
+			// --- A) Setup Vertex and Face Pointers ---
+			heSystem.vertices[v_start_idx].outgoingEdge = he_idx;
+			heSystem.faces[f_idx].boundingEdge = he_idx;
+
+			// --- B) Setup Next Pointer ---
+			if (i > 0) {
+				heSystem.edges[currentHEIndices[i - 1]].next = he_idx;
 			}
+
+			// --- C) Find Twin using the Temporary Map ---
+			EdgePair canonicalEdge = makeCanonicalEdgePair(v_start_idx, v_end_idx);
+
+			auto it = edgeToHalfEdgeMap.find(canonicalEdge);
+			if (it != edgeToHalfEdgeMap.end()) {
+				// Found the twin HE
+				HEIndex twin_he_idx = it->second;
+
+				// Link them both ways
+				heSystem.edges[he_idx].twin = twin_he_idx;
+				heSystem.edges[twin_he_idx].twin = he_idx;
+
+				// Remove the twin from the map (edge is now complete)
+				edgeToHalfEdgeMap.erase(it);
+
+			}
+			else {
+				// First time seeing this edge. Store this HE index.
+				edgeToHalfEdgeMap[canonicalEdge] = he_idx;
+			}
+		} // End of face edges loop
+
+		// Finalize 'next' pointer for the last HE to wrap back to the first
+		if (N > 0) {
+			heSystem.edges[currentHEIndices.back()].next = currentHEIndices.front();
 		}
-		pointToEdgesMap[v] = adjEdges;
+	} // End of faces loop
+}
+
+
+
+
+// Catmull-Clark algorithms
+
+
+// =======================================================================
+// Catmull-Clark Subdivision using AHES (O(V+E+F))
+// =======================================================================
+
+void QuadSystem::CCsubdivideHE1(float paramA, float paramB, float paramC)
+{
+	// --- Phase 1: Build Auxiliary Half-Edge System (AHES) ---
+	HalfEdgeSystem heMesh;
+	buildAHES(heMesh);
+
+	// Get sizes for index offsets
+	const size_t numOriginalVerts = points.size();
+	// Total unique edges is the number of half-edges divided by 2
+	const size_t numOriginalEdges = heMesh.edges.size() / 2;
+	const size_t numOriginalFaces = faces.size();
+
+	// Define the index offsets for new points in the final list:
+	const size_t offsetEP = numOriginalVerts;
+	const size_t offsetFP = numOriginalVerts + numOriginalEdges;
+
+	// --- Phase 2: Calculate New Geometry (FP, EP, VP') ---
+
+	// 1. Calculate Face Points (FP) - O(F * N) (N is avg vertices per face)
+	for (HFaceIndex f_idx = 0; f_idx < numOriginalFaces; ++f_idx) {
+		HFace& hFace = heMesh.faces[f_idx];
+		HEIndex startHEIndex = hFace.boundingEdge;
+
+		std::vector<XMFLOAT3> faceVerts;
+
+		HEIndex currentHE = startHEIndex;
+		do {
+			// Traverse HEs around the face to get the original vertex positions
+			faceVerts.push_back(points[heMesh.edges[currentHE].origin]);
+			currentHE = heMesh.edges[currentHE].next;
+		} while (currentHE != startHEIndex);
+
+		hFace.facePoint = findNgonCentroid(faceVerts);
 	}
 
-	// phase 2: calculate new geometry
+	// 2. Calculate Edge Points (EP) - O(E)
+	// Map canonical edges to their index in the newPoints list
+	std::map<EdgePair, int> canonicalEdgeToNewPointIndex;
+	int ep_index_counter = 0;
 
-	std::unordered_map<int, XMFLOAT3> facePoints;
-	std::unordered_map<int, XMFLOAT3> edgePoints;
-	std::unordered_map<int, XMFLOAT3> vertPoints;
+	for (HEIndex he_idx = 0; he_idx < heMesh.edges.size(); ++he_idx) {
+		HalfEdge& he = heMesh.edges[he_idx];
 
-	// calculate face points 
-	facePoints.clear();
-	for (int f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		if (true)
-		{
-			std::vector<XMFLOAT3> faceVerts;
-			for (int v_idx : faces[f_idx].face) {
-				faceVerts.push_back(points[v_idx]);
-			}
-			facePoints[f_idx] = findNgonCentroid(faceVerts);
+		// Only calculate for one half of the twin pair (he_idx < he.twin ensures each unique edge is processed once)
+		if (he_idx > he.twin) {
+			continue;
 		}
 
-	}
+		const HalfEdge& twinHE = heMesh.edges[he.twin];
 
-	// calculate edge points 
-	edgePoints.clear();
-	for (int e = 0; e < edges.size(); ++e) {
-		const auto& edge = edges[e];
+		// P (Edge midpoint of original vertices)
+		XMFLOAT3 P = edgeMidpoint(points[he.origin], points[twinHE.origin]);
 
-		// Edge midpoint (P in the algorithm)
-		XMFLOAT3 edgeMid = edgeMidpoint(points[edge.first], points[edge.second]);
+		// F1, F2 (Face Points of adjacent faces)
+		// Accessing these points via HE.face is O(1)
+		XMFLOAT3 F1 = heMesh.faces[he.face].facePoint;
+		XMFLOAT3 F2 = heMesh.faces[twinHE.face].facePoint;
 
-		// Average of adjacent face points (R in the algorithm)
-		XMFLOAT3 fp1 = facePoints[edgeToFacesMap[e][0]];
-		XMFLOAT3 fp2 = facePoints[edgeToFacesMap[e][1]];
-		XMFLOAT3 avgFP = edgeMidpoint(fp1, fp2);
+		// R (Average of adjacent face points)
+		XMFLOAT3 R = edgeMidpoint(F1, F2);
 
-		// New edge point is the average of P and R
+		// New Edge Point = 0.5 * (P + R)
 		XMFLOAT3 newEdgePoint;
-		XMVECTOR v_new_edge = XMVectorScale(XMVectorAdd(XMLoadFloat3(&edgeMid), XMLoadFloat3(&avgFP)), 0.5f);
+		XMVECTOR v_new_edge = XMVectorScale(XMVectorAdd(XMLoadFloat3(&P), XMLoadFloat3(&R)), 0.5f);
 		DirectX::XMStoreFloat3(&newEdgePoint, v_new_edge);
 
-		edgePoints[e] = newEdgePoint;
+		// Store the result on both HEs for easy lookup during mesh construction
+		he.edgePoint = newEdgePoint;
+		heMesh.edges[he.twin].edgePoint = newEdgePoint;
+
+		// Map this edge point to its final index
+		canonicalEdgeToNewPointIndex[makeCanonicalEdgePair(he.origin, heMesh.edges[he.twin].origin)] = offsetEP + ep_index_counter;
+		ep_index_counter++;
 	}
 
-	// calculate vertex points
-	vertPoints.clear();
-	for (int v = 0; v < points.size(); ++v) {
-		// Find average of adjacent face points (F)
-		std::vector<XMFLOAT3> adjFacePoints;
-		const auto& adjFaces = pointToFacesMap[v];
-		for (int f_idx : adjFaces) {
-			adjFacePoints.push_back(facePoints[f_idx]);
+
+	// 3. Calculate Vertex Points (VP') - O(V * Valence)
+	for (HVertexIndex v_idx = 0; v_idx < numOriginalVerts; ++v_idx) {
+		HVertex& hVert = heMesh.vertices[v_idx];
+
+		HEIndex startHEIndex = hVert.outgoingEdge;
+		if (startHEIndex == -1) {
+			hVert.vertexPoint = points[v_idx];
+			continue;
 		}
-		XMFLOAT3 F = findNgonCentroid(adjFacePoints);
 
-		// Find average of adjacent edge midpoints (R)
-		std::vector<XMFLOAT3> adjEdgeMids;
-		for (int e_idx : pointToEdgesMap[v]) {
-			const auto& edge = edges[e_idx];
-			adjEdgeMids.push_back(edgeMidpoint(points[edge.first], points[edge.second]));
-		}
-		XMFLOAT3 R = findNgonCentroid(adjEdgeMids);
+		std::vector<XMFLOAT3> adjFacePoints; // For F average
+		std::vector<XMFLOAT3> adjEdgeMids;   // For R average (P in the CC formula)
 
-		// Original vertex point (P)
-		XMFLOAT3 P = points[v];
+		HEIndex currentHE_idx = startHEIndex;
+		int n = 0; // Valence of the vertex
 
-		// n is the number of faces/edges adjacent to the vertex. This number is dynamic.
-		int n = adjFaces.size(); // CORRECTED: Get n from the new map's size
+		// Traverse around the vertex using the O(1) twin->next cycle
+		do {
+			// 1. Explicitly create references to the HalfEdge structs using the index
+			const HalfEdge& currentHE_ref = heMesh.edges[currentHE_idx]; // <<< Correct: use index to get struct reference
+			const HalfEdge& twinHE_ref = heMesh.edges[currentHE_ref.twin];
 
-		// Catmull-Clark formula for the new vertex point
-		float m1 = (static_cast<float>(n) - paramA) / static_cast<float>(n);
-		float m2 = paramB / static_cast<float>(n);
-		float m3 = paramC / static_cast<float>(n);
+			// F: Sum of adjacent Face Points
+			adjFacePoints.push_back(heMesh.faces[currentHE_ref.face].facePoint);
+
+			// R: Sum of adjacent edge midpoints. This line is now correct:
+			adjEdgeMids.push_back(edgeMidpoint(points[currentHE_ref.origin], points[twinHE_ref.origin]));
+
+			// Move to the next outgoing edge from V: he = he.twin.next
+			currentHE_idx = twinHE_ref.next;
+			n++;
+		} while (currentHE_idx != startHEIndex && n < heMesh.edges.size());
+
+		XMFLOAT3 F_avg = findNgonCentroid(adjFacePoints); // Average of FPs
+		XMFLOAT3 R_avg = findNgonCentroid(adjEdgeMids);   // Average of midpoints R_i
+		XMFLOAT3 P = points[v_idx];                       // Original vertex point P
+
+		// Catmull-Clark formula for the new vertex point (VP')
+		// VP' = ((n - A) * P + B * F_avg + C * R_avg) / n
+		float n_float = static_cast<float>(n);
+
+		float m1 = (n_float - paramA) / n_float;
+		float m2 = paramB / n_float;
+		float m3 = paramC / n_float;
 
 		XMVECTOR v_new_vert = XMVectorAdd(
 			XMVectorScale(XMLoadFloat3(&P), m1),
 			XMVectorAdd(
-				XMVectorScale(XMLoadFloat3(&F), m2),
-				XMVectorScale(XMLoadFloat3(&R), m3)
+				XMVectorScale(XMLoadFloat3(&F_avg), m2),
+				XMVectorScale(XMLoadFloat3(&R_avg), m3)
 			)
 		);
 
-		XMFLOAT3 newVertPoint;
-		DirectX::XMStoreFloat3(&newVertPoint, v_new_vert);
-		vertPoints[v] = newVertPoint;
+		DirectX::XMStoreFloat3(&hVert.vertexPoint, v_new_vert);
 	}
 
-	// --- Step 5: Construct the new mesh ---
+
+	// --- Phase 3: Construct the new mesh ---
+
 	std::vector<XMFLOAT3> newPoints;
 	std::vector<Face> newFaces;
 
-	// Add new vertex points
-	for (int i = 0; i < points.size(); ++i) {
-		newPoints.push_back(vertPoints[i]);
-	}
-	// Add new edge points
-	for (int i = 0; i < edges.size(); ++i) {
-		newPoints.push_back(edgePoints[i]);
-	}
-	// Add new face points
-	for (int i = 0; i < faces.size(); ++i) {
-		newPoints.push_back(facePoints[i]);
+	// 1. Add new points in order (VP', EP, FP)
+	// VP' (New Vertex Points) - 0 to numOriginalVerts - 1
+	for (const auto& hVert : heMesh.vertices) {
+		newPoints.push_back(hVert.vertexPoint);
 	}
 
-	// Construct new faces (Quads)
-	size_t n1 = points.size();
-	size_t n2 = edges.size();
-
-	for (int f = 0; f < faces.size(); ++f) {
-		if (true)
-		{
-			const auto& oldFace = faces[f];
-			const auto& oldEdges = faceToEdgesMap[f];
-
-			// A temporary vector to hold the new faces for this old face
-			std::vector<Face> subFaces;
-
-			for (int i = 0; i < oldFace.face.size(); ++i) {
-				Face newFace;
-				// Original vertex point (V')
-				newFace.face.push_back(oldFace.face[i]);
-				// Edge point of the next edge (E')
-				newFace.face.push_back(n1 + faceToEdgesMap[f][i]);
-				// Face point (F')
-				newFace.face.push_back(n1 + n2 + f);
-				// Edge point of the previous edge (E'')
-				newFace.face.push_back(n1 + faceToEdgesMap[f][(i + 3) % oldFace.face.size()]);
-
-				subFaces.push_back(newFace);
-			}
-			newFaces.insert(newFaces.end(), subFaces.begin(), subFaces.end());
-		}
-
+	// EP (Edge Points) - offsetEP to offsetFP - 1 (Already added via canonicalEdgeToNewPointIndex map)
+	// We add them by iterating through the map since the map guarantees unique edges and ordered indices
+	// Note: The total size is known, so we resize and fill if preferred, but map iteration ensures correctness
+	newPoints.resize(offsetFP + numOriginalFaces);
+	for (const auto& pair : canonicalEdgeToNewPointIndex) {
+		// Find the edge point stored on one of the corresponding half-edges
+		const HalfEdge& he = heMesh.edges[heMesh.edges[heMesh.vertices[pair.first.v1].outgoingEdge].twin];
+		newPoints[pair.second] = he.edgePoint;
 	}
 
-	// Replace the old mesh with the new one
-	points = newPoints;
-	faces = newFaces;
 
+	// FP (Face Points) - offsetFP onwards
+	int fp_idx_counter = offsetFP;
+	for (const auto& hFace : heMesh.faces) {
+		newPoints[fp_idx_counter++] = hFace.facePoint;
+	}
+
+	/*
+	// 2. Construct new faces (Quads) - O(F * N)
+	for (HFaceIndex f_idx = 0; f_idx < numOriginalFaces; ++f_idx) {
+		const HFace& hFace = heMesh.faces[f_idx];
+		HEIndex startHEIndex = hFace.boundingEdge;
+
+		HEIndex currentHE = startHEIndex;
+
+		// Traverse HEs around the original face to create N quads
+		do {
+			const HalfEdge& he = heMesh.edges[currentHE];
+			// 1. Get the HalfEdge whose 'next' is 'he'. This is the HE leaving V_curr *on the adjacent face*. We need its index.
+			HEIndex prev_HE_candidate_idx = heMesh.edges[he.twin].next;
+
+			// 2. The twin of that candidate is the HE running V_prev -> V_curr. This is the index we want.
+			HEIndex prev_HE_idx = heMesh.edges[prev_HE_candidate_idx].twin;
+
+			// 3. Get the final HalfEdge reference using the correct index.
+			const HalfEdge& prevHE = heMesh.edges[prev_HE_idx];
+			//const HalfEdge& prevHE = heMesh.edges[heMesh.edges[he.twin].next].twin;
+			// ^ The HE whose origin is the previous vertex (V_prev -> V_curr)
+
+			Face newQuad;
+
+			// P1: V' (New Vertex Point) - Index is the same as the old vertex index
+			newQuad.face.push_back(he.origin);
+
+			// P2: E'_{current} (Edge Point of the current edge)
+			EdgePair currentEdge = makeCanonicalEdgePair(he.origin, heMesh.edges[he.twin].origin);
+			newQuad.face.push_back(canonicalEdgeToNewPointIndex.at(currentEdge));
+
+			// P3: F' (Face Point) - Index is offsetFP + original_face_index
+			newQuad.face.push_back(offsetFP + f_idx);
+
+			// P4: E'_{prev} (Edge Point of the previous edge)
+			EdgePair prevEdge = makeCanonicalEdgePair(prevHE.origin, he.origin);
+			newQuad.face.push_back(canonicalEdgeToNewPointIndex.at(prevEdge));
+
+			newFaces.push_back(newQuad);
+
+			currentHE = he.next;
+		} while (currentHE != startHEIndex);
+	}
+	*/
+
+	// 2. Construct new faces (Quads) - O(F * N)
+	for (HFaceIndex f_idx = 0; f_idx < numOriginalFaces; ++f_idx) {
+		const HFace& hFace = heMesh.faces[f_idx];
+		HEIndex startHEIndex = hFace.boundingEdge;
+		HEIndex currentHE_idx = startHEIndex;
+
+		// For every vertex in the original face, we create one new quad
+		do {
+			const HalfEdge& he = heMesh.edges[currentHE_idx];
+
+			// To find the "previous" edge point relative to the current vertex 'he.origin':
+			// We need the edge that ends at he.origin. In AHES, this is the 'next' 
+			// of the Half-Edge that comes before 'he' in the face loop.
+			// However, a faster way in AHES to find the "incoming" edge to he.origin 
+			// inside this face is to find the HE whose 'next' is currentHE_idx.
+
+			HEIndex prev_in_face_idx = -1;
+			HEIndex search_idx = startHEIndex;
+			do {
+				if (heMesh.edges[search_idx].next == currentHE_idx) {
+					prev_in_face_idx = search_idx;
+					break;
+				}
+				search_idx = heMesh.edges[search_idx].next;
+			} while (search_idx != startHEIndex);
+
+			const HalfEdge& prev_he = heMesh.edges[prev_in_face_idx];
+
+			Face newQuad;
+			/* WINDING ORDER (Counter-Clockwise):
+			   1. The New Vertex Position (VP')
+			   2. The Edge Point of the edge STARTING at this vertex (EP_curr)
+			   3. The Face Point (FP)
+			   4. The Edge Point of the edge ENDING at this vertex (EP_prev)
+			*/
+
+			// 1. VP'
+			newQuad.face.push_back(he.origin);
+
+			// 2. EP_curr (Edge: he.origin -> next_vert)
+			EdgePair currEdge = makeCanonicalEdgePair(he.origin, heMesh.edges[he.twin].origin);
+			newQuad.face.push_back(canonicalEdgeToNewPointIndex.at(currEdge));
+
+			// 3. FP'
+			newQuad.face.push_back(offsetFP + f_idx);
+
+			// 4. EP_prev (Edge: prev_vert -> he.origin)
+			EdgePair prevEdge = makeCanonicalEdgePair(prev_he.origin, he.origin);
+			newQuad.face.push_back(canonicalEdgeToNewPointIndex.at(prevEdge));
+
+			newFaces.push_back(newQuad);
+
+			currentHE_idx = he.next;
+		} while (currentHE_idx != startHEIndex);
+	}
+
+	// --- Phase 4: Replace old mesh data ---
+	points = std::move(newPoints);
+	faces = std::move(newFaces);
 }
+
+
 
 
 void QuadSystem::CCsubdivideNgon(float paramA = 3.0, float paramB = 2.0, float paramC = 1.0)
@@ -1445,4 +1617,324 @@ void QuadSystem::CCsubdivideNgon(float paramA = 3.0, float paramB = 2.0, float p
 	points = newPoints;
 	faces = newFaces;
 }
+
+
+// Quads only
+void QuadSystem::CCsubdivide(float paramA = 3.0, float paramB = 2.0, float paramC = 1.0)
+{
+	// phase 1: build adjacency lists
+
+	// build edge list
+	findEdges();
+
+	// map setup for Face objects, vector<int> might be better
+	std::unordered_map<int, std::vector<int>> pointToFacesMap;
+	std::unordered_map<int, std::array<int, 2>> edgeToFacesMap;
+	std::unordered_map<int, std::vector<int>> faceToEdgesMap;
+	std::unordered_map<int, std::vector<int>> pointToEdgesMap;
+
+	// point to faces
+	// faster, hash lookup, no order
+	for (int f = 0; f < faces.size(); ++f) {
+		const Face& face = faces[f];
+		for (int p : face.face) {
+			pointToFacesMap[p].push_back(f);
+		}
+	}
+
+	// edge to faces
+	for (int e = 0; e < edges.size(); ++e) {
+		const auto& edge = edges[e];
+
+		// Replicates the Python 'adjFaces = []' logic
+		std::array<int, 2> adjFaces = { -1, -1 };
+		int faceCount = 0;
+
+		// Replicates the Python 'for i in range(len(eList))' and 'if edges[e] in eList[i]'
+		for (int f = 0; f < faceEdgePairs.size(); ++f) {
+			// std::find is the C++ equivalent of Python's 'in' for a list
+			if (std::find(faceEdgePairs[f].begin(), faceEdgePairs[f].end(), edge) != faceEdgePairs[f].end()) {
+				if (faceCount < 2) {
+					adjFaces[faceCount] = f;
+					faceCount++;
+				}
+				// We can stop searching for this edge if we've found both faces
+				if (faceCount == 2) {
+					break;
+				}
+			}
+		}
+		edgeToFacesMap[e] = adjFaces;
+	}
+
+	// face to edges
+	for (int f = 0; f < faceEdgePairs.size(); ++f) {
+		std::vector<int> adjEdges;
+		for (const auto& faceEdge : faceEdgePairs[f]) {
+			// This is the slow part: finding the index of an edge in the uniqueEdges list
+			// This is needed because the map key is an int index.
+			auto it = std::find(edges.begin(), edges.end(), faceEdge);
+			if (it != edges.end()) {
+				int e = std::distance(edges.begin(), it);
+				adjEdges.push_back(e);
+			}
+		}
+		faceToEdgesMap[f] = adjEdges;
+	}
+
+	// point to edges
+	// Loop through each vertex in the mesh
+	for (int v = 0; v < points.size(); ++v) {
+		std::vector<int> adjEdges;
+		// brute-force search
+		for (int e = 0; e < edges.size(); ++e) {
+			const auto& edge = edges[e];
+			// Check if the vertex index is in the edge pair
+			if (edge.first == v || edge.second == v) {
+				adjEdges.push_back(e);
+			}
+		}
+		pointToEdgesMap[v] = adjEdges;
+	}
+
+	// phase 2: calculate new geometry
+
+	std::unordered_map<int, XMFLOAT3> facePoints;
+	std::unordered_map<int, XMFLOAT3> edgePoints;
+	std::unordered_map<int, XMFLOAT3> vertPoints;
+
+	// calculate face points (centroids)
+	facePoints.clear();
+	for (int f = 0; f < faces.size(); ++f) {
+		std::vector<XMFLOAT3> faceVerts;
+		for (int v : faces[f].face) {
+			faceVerts.push_back(points[v]);
+		}
+		facePoints[f] = findNgonCentroid(faceVerts);
+	}
+
+	// calculate edge points
+	edgePoints.clear();
+	for (int e = 0; e < edges.size(); ++e) {
+		// std::vector<std::pair<int, int>>
+		const auto& edge = edges[e];
+
+		// Edge midpoint (P in the algorithm)
+		XMFLOAT3 edgeMid = edgeMidpoint(points[edge.first], points[edge.second]);
+
+		// Average of adjacent face points (R in the algorithm)
+		XMFLOAT3 fp1 = facePoints[edgeToFacesMap[e][0]];
+		XMFLOAT3 fp2 = facePoints[edgeToFacesMap[e][1]];
+		XMFLOAT3 avgFP = edgeMidpoint(fp1, fp2);
+
+		// New edge point is the average of P and R
+		XMFLOAT3 newEdgePoint;
+		XMVECTOR v_new_edge = XMVectorScale(XMVectorAdd(XMLoadFloat3(&edgeMid), XMLoadFloat3(&avgFP)), 0.5f);
+		DirectX::XMStoreFloat3(&newEdgePoint, v_new_edge);
+
+		edgePoints[e] = newEdgePoint;
+	}
+
+	// calculate vertex points
+	// find avg's of facePoints and edgePoints
+	// incorporate Catmull-Clark weights
+	vertPoints.clear();
+	for (int v = 0; v < points.size(); ++v) {
+		// Find average of adjacent face points (F)
+		std::vector<XMFLOAT3> adjFacePoints;
+		const auto& adjFaces = pointToFacesMap[v];
+		for (int f : adjFaces) {
+			adjFacePoints.push_back(facePoints[f]);
+		}
+		XMFLOAT3 F = findNgonCentroid(adjFacePoints);
+
+		// Find average of adjacent edge midpoints (R)
+		std::vector<XMFLOAT3> adjEdgeMids;
+		for (int e : pointToEdgesMap[v]) {
+			const auto& edge = edges[e];
+			adjEdgeMids.push_back(edgeMidpoint(points[edge.first], points[edge.second]));
+		}
+		XMFLOAT3 R = findNgonCentroid(adjEdgeMids);
+
+		// Original vertex point (P)
+		XMFLOAT3 P = points[v];
+
+		// n is the number of faces/edges adjacent to the vertex
+		// get n from the new map's size
+		int n = adjFaces.size();
+
+		// Catmull-Clark formula for the new vertex point
+		float m1 = (static_cast<float>(n) - paramA) / static_cast<float>(n);
+		float m2 = paramB / static_cast<float>(n);
+		float m3 = paramC / static_cast<float>(n);
+
+		XMVECTOR v_new_vert = XMVectorAdd(
+			XMVectorScale(XMLoadFloat3(&P), m1),
+			XMVectorAdd(
+				XMVectorScale(XMLoadFloat3(&F), m2),
+				XMVectorScale(XMLoadFloat3(&R), m3)
+			)
+		);
+
+		XMFLOAT3 newVertPoint;
+		DirectX::XMStoreFloat3(&newVertPoint, v_new_vert);
+		vertPoints[v] = newVertPoint;
+	}
+
+	//phase 3: subdivide and rebuild mesh
+
+	std::vector<XMFLOAT3> newPoints;
+	std::vector<Face> newFaces;
+
+	// Add new vertex points
+	for (int i = 0; i < points.size(); ++i) {
+		newPoints.push_back(vertPoints[i]);
+	}
+	// Add new edge points
+	for (int i = 0; i < edges.size(); ++i) {
+		newPoints.push_back(edgePoints[i]);
+	}
+	// Add new face points
+	for (int i = 0; i < faces.size(); ++i) {
+		newPoints.push_back(facePoints[i]);
+	}
+
+	// construct new faces (Quads)
+	size_t n1 = points.size();
+	size_t n2 = edges.size();
+
+	for (int f = 0; f < faces.size(); ++f) {
+		if (true)
+		{
+			const auto& oldFace = faces[f];
+			const auto& oldEdges = faceToEdgesMap[f];
+
+			// A temporary vector to hold the new faces for this old face
+			std::vector<Face> subFaces;
+
+			for (int i = 0; i < oldFace.face.size(); ++i) {
+				Face newFace;
+				// Original vertex point (V')
+				newFace.face.push_back(oldFace.face[i]);
+				// Edge point of the next edge (E')
+				newFace.face.push_back(n1 + faceToEdgesMap[f][i]);
+				// Face point (F')
+				newFace.face.push_back(n1 + n2 + f);
+				// Edge point of the previous edge (E'')
+				newFace.face.push_back(n1 + faceToEdgesMap[f][(i + 3) % oldFace.face.size()]);
+
+				subFaces.push_back(newFace);
+			}
+			newFaces.insert(newFaces.end(), subFaces.begin(), subFaces.end());
+		}
+
+	}
+
+	// Replace the old mesh with the new one
+	points = newPoints;
+	faces = newFaces;
+
+}
+
+/*
+
+// original
+
+void QuadSystem::buildAHES(HalfEdgeSystem& heSystem)
+{
+	// Clear all AHES containers to start fresh
+	heSystem.edges.clear();
+	heSystem.vertices.clear();
+	heSystem.faces.clear();
+
+	// 1. Pre-allocate size (optimistic)
+	heSystem.vertices.resize(points.size());
+	heSystem.faces.resize(faces.size());
+	heSystem.edges.reserve(faces.size() * 4); // Catmull-Clark guarantees quads after 1st pass
+
+	// Temporary map to find twin half-edges: maps Canonical Edge -> Index of the first HE found
+	// The key is the sorted pair (v_min, v_max). The value is the index of the HE (v_min -> v_max).
+	std::map<EdgePair, HEIndex> edgeToHalfEdgeMap;
+
+	// 2. Initialize Vertices and Faces
+	for (size_t i = 0; i < points.size(); ++i) {
+		heSystem.vertices[i].outgoingEdge = -1; // -1 = uninitialized
+	}
+	for (size_t i = 0; i < faces.size(); ++i) {
+		heSystem.faces[i].originalFaceIndex = i;
+		heSystem.faces[i].boundingEdge = -1;
+	}
+
+	// 3. Iterate through faces to create Half-Edges and find Twins
+	for (size_t f_idx = 0; f_idx < faces.size(); ++f_idx) {
+		const Face& currentFace = faces[f_idx];
+		int N = currentFace.face.size(); // Number of vertices in the N-gon
+
+		// Store the indices of the half-edges being created for this face
+		std::vector<HEIndex> currentHEIndices;
+
+		for (int i = 0; i < N; ++i) {
+			int v_start_idx = currentFace.face[i];
+			int v_end_idx = currentFace.face[(i + 1) % N];
+
+			// Create the new half-edge (HE) for the path v_start -> v_end
+			HalfEdge newHE;
+			newHE.origin = v_start_idx;
+			newHE.face = f_idx;
+			newHE.twin = -1; // Will be set later
+
+			HEIndex he_idx = heSystem.edges.size();
+			heSystem.edges.push_back(newHE);
+			currentHEIndices.push_back(he_idx);
+
+			// --- A) Setup Vertex and Face Pointers ---
+			// Set the outgoing edge for the vertex (just pick the last one created for simplicity)
+			heSystem.vertices[v_start_idx].outgoingEdge = he_idx;
+			// Set the bounding edge for the face
+			heSystem.faces[f_idx].boundingEdge = he_idx;
+
+			// --- B) Setup Next Pointer ---
+			// The HE 'next' is the one created for the next face edge
+			if (i > 0) {
+				heSystem.edges[currentHEIndices[i - 1]].next = he_idx;
+			}
+
+			// --- C) Find Twin using the Temporary Map ---
+			EdgePair canonicalEdge;
+			canonicalEdge.v1 = std::min(v_start_idx, v_end_idx);
+			canonicalEdge.v2 = std::max(v_start_idx, v_end_idx);
+
+			// The edge key for the half-edge going in the opposite direction (v_end -> v_start)
+			EdgePair twinKey = { v_end_idx, v_start_idx };
+
+			// Search the map for the twin (canonical edge)
+			auto it = edgeToHalfEdgeMap.find(canonicalEdge);
+			if (it != edgeToHalfEdgeMap.end()) {
+				// We found the twin (the HE that runs v_start -> v_end)
+				HEIndex twin_he_idx = it->second;
+
+				// Link them: Current HE links to Twin HE
+				heSystem.edges[he_idx].twin = twin_he_idx;
+				// Twin HE links back to Current HE
+				heSystem.edges[twin_he_idx].twin = he_idx;
+
+				// Remove the twin from the map to mark the edge as "closed"
+				edgeToHalfEdgeMap.erase(it);
+
+			}
+			else {
+				// First time seeing this edge (v_start -> v_end). Store this HE index.
+				edgeToHalfEdgeMap[canonicalEdge] = he_idx;
+			}
+		} // End of face edges loop
+
+		// Finalize 'next' pointer for the last HE to wrap back to the first
+		if (N > 0) {
+			heSystem.edges[currentHEIndices.back()].next = currentHEIndices.front();
+		}
+	} // End of faces loop
+
+	// Cleanup: edgeToHalfEdgeMap is local and destroyed automatically.
+}
+*/
 
