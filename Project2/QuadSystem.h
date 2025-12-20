@@ -301,6 +301,7 @@ public:
 	void CCsubdivideHE2(float paramA, float paramB, float paramC);
 	
 	void CCsubdivideNgon(float paramA, float paramB, float paramC);
+	void CCsubdivideNgonLERP(float paramA, float paramB, float paramC, float strength);
 
 	// two perpendicular cuts, one face becomes 4
 	void divideFace(int faceIndex, float dim1, float dim2, float u, float v);

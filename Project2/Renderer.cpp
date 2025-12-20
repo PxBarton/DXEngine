@@ -321,21 +321,14 @@ bool Renderer::SceneSetup()
 
 	DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
 
-	cube = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	flatPlane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	plane = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	cylinder = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	building = std::make_unique<Mesh>(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-
 	// QuadSystem test
-	qSquare = std::make_unique<QuadSystem>();
-	qSquare->buildFlatSquare(8.0);
+	//qSquare = std::make_unique<QuadSystem>();
+	//qSquare->buildFlatSquare(8.0);
 	//qSquare->CCsubdivide(3.0, 2.0, 1.0);
 	//qSquare->CCsubdivide(3.0, 2.0, 1.0);
-
-	square = qSquare->convertQuadsToMesh();
-	square->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
-	square->initDraw();
+	//square = qSquare->convertQuadsToMesh();
+	//square->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+	//square->initDraw();
 	
 	XMFLOAT3 p1 = XMFLOAT3(-2.0, -2.0, -2.0);
 	XMFLOAT3 p2 = XMFLOAT3(2.0, -2.0, -2.0);
@@ -358,7 +351,7 @@ bool Renderer::SceneSetup()
 
 	qBox = std::make_unique<QuadSystem>();
 	
-	
+	/*
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
 	//qBox->topCap(qBox->getBox(0));
@@ -495,8 +488,8 @@ bool Renderer::SceneSetup()
 	qBox->replaceFace(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	
 	qBox->deleteStagedFaces();
-	
-    /*
+	*/
+    
 	qBox->buildCylinder(qBox->basePoint, boxNormal, 12.0, 4.0, .4, 12, 12);
 	Cylinder& newCyl = qBox->getCylinder(0);
 	for (int i = 0; i < newCyl.slices[1].size(); i += 2)
@@ -524,8 +517,8 @@ bool Renderer::SceneSetup()
 	
 	uint64_t cylCapId = qBox->topCylinderCap(newCyl);
 	uint64_t cylBottomCapId = qBox->bottomCylinderCap(newCyl);
-	*/
-	//qBox->triangulateNgon(cylCapId);
+	
+	qBox->triangulateNgon(cylCapId);
 
 	qBox->deleteStagedFaces();
 
@@ -536,58 +529,20 @@ bool Renderer::SceneSetup()
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
 	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	qBox->CCsubdivideHE1(3.0, 2.0, 1.0);
 	
-	//qBox->CCsubdivideNgon(5.0, 2.0, 4.0);
-	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
-	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
-	//qBox->CCsubdivideNgon(3.0, 2.0, 1.0);
+	
+	qBox->CCsubdivideNgon(-2.0, -6.5, 4.5);
+	qBox->CCsubdivideNgonLERP(3.0, 1.0, 2.0, 0.3);
+	qBox->CCsubdivideNgon(4.0, 5.0, -1.0);
+	//qBox->CCsubdivideNgon(3.0, 4.0, -1.0);
+	//qBox->CCsubdivideNgon(4.0, 5.0, -1.0);
+	//qBox->CCsubdivideNgon(3.0, 4.0, -1.0);
+	qBox->CCsubdivideNgonLERP(3.0, 1.0, 2.0, 0.5);
+	qBox->CCsubdivideNgon(3.0, 1.0, 2.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
 	box->initDraw();
-	
-
-
-	// cube setup
-	cube->initMesh(8, 36);
-	cube->buildCube(2.0f);
-	//cube->buildCubeFlat(2.0f);
-	
-
-	// flat plane setup
-	const float xLimit1 = -16.0f;
-	const float xLimit2 = 16.0f;
-	const float zLimit1 = -16.0f;
-	const float zLimit2 = 16.0f;
-	const int numPoints = 8;
-
-	const int planeVertCount = numPoints * numPoints;
-
-	// the number of total indices in the triangle array, triangles * 3
-	const int planeTriCount = (numPoints - 1) * (numPoints - 1) * 2 * 3;
-
-	flatPlane->initMesh(planeVertCount, planeTriCount);
-	flatPlane->buildPlane(xLimit1, xLimit2, zLimit1, zLimit2, numPoints, 0.0, 0.0, 0.0);
-
-	// parameter plane setup
-	plane->initMesh(planeVertCount, planeTriCount);
-	
-	// cylinder setup
-	float h = 10.0f;
-	float bRad = 3.0f;
-	float tRad = 3.0f;
-	int hDiv = 8;
-	int rDiv = 6;
-
-	int cylinderVertCount = (hDiv + 2) * (rDiv);
-	int cylinderTriCount = (hDiv + 1) * (rDiv) * 2 * 3;
-	
-	cylinder->initMesh(cylinderVertCount, cylinderTriCount);
-	cylinder->buildCylinder(h, bRad, tRad, hDiv, rDiv);
-	//cylinder->initBuffers();
-
-	//building->buildPolyStack(4, origin, 6, 4, 4, 3, 1, 1, 1, 1, 1.2, 0);
 
 	return true;
 }
@@ -617,18 +572,6 @@ void Renderer::RenderSetup()
 	static float param12 = 1.0f;
 	static float param13 = 1.0f;
 
-	XMFLOAT3* module = building->buildModule(param1,
-		param2, param3, param4,
-		param5, param6, param7, param8, param9);
-
-	building->buildPolyStack(8, origin, module,
-		param1, param2, param3,
-		param4, param5, param6, param7, param8, param9, 0.0, 0.0,
-		param10, param11, param12, param13 );
-
-	//building->draw(viewProjection);
-
-	//square->draw(viewProjection);
 	box->draw(viewProjection);
 
 	// Start the Dear ImGui frame
