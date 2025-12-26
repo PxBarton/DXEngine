@@ -558,6 +558,7 @@ void Renderer::RenderSetup()
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX viewProjection = camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	DirectX::XMMATRIX initTransform = DirectX::XMMatrixIdentity();
 
 	
 	static float param1 = 10.0f;
@@ -611,6 +612,22 @@ void Renderer::RenderSetup()
 	XMFLOAT3 cameraPos = camera.GetPosition();
 	std::string info = "Camera Position: " + std::to_string(cameraPos.x) + "  " + std::to_string(cameraPos.y) + "  " + std::to_string(cameraPos.z);
 	ImGui::Text(info.c_str());
+
+	ImGui::End();
+
+
+	ImGui::Begin("Mesh Functions");
+	// Create the button
+	if (ImGui::Button("Subdivide"))
+	{
+		// This code only runs when the button is clicked
+		qBox->CCsubdivide(3.0, 1.0, 2.0);
+		box = qBox->convertFacesToMesh();
+		box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);
+		box->initDraw();
+	
+	}
+	
 
 	ImGui::End();
 	//Assemble Together Draw Data
