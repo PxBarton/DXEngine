@@ -235,15 +235,30 @@ void QuadSystem::buildBox(std::array<int, 4> nearCorners, XMFLOAT3 normal, float
 	XMFLOAT3 endPoint;
 	DirectX::XMStoreFloat3(&endPoint, endPointV);
 	
-	XMVECTOR P1 = XMLoadFloat3(&points[nearCorners[0]]);
-	XMVECTOR P2 = XMLoadFloat3(&points[nearCorners[1]]);
-	XMVECTOR P3 = XMLoadFloat3(&points[nearCorners[2]]);
-	XMVECTOR P4 = XMLoadFloat3(&points[nearCorners[3]]);
+	XMVECTOR P0 = XMLoadFloat3(&points[nearCorners[0]]);
+	XMVECTOR P1 = XMLoadFloat3(&points[nearCorners[1]]);
+	XMVECTOR P2 = XMLoadFloat3(&points[nearCorners[2]]);
+	XMVECTOR P3 = XMLoadFloat3(&points[nearCorners[3]]);
 
-	std::array<XMVECTOR, 4> nearCornersV = { P1, P2, P3, P4 };
 
-	std::array<XMVECTOR, 4> projectedPointsV = projectQuad(P1, P2, P3, P4, DirectX::XMLoadFloat3(&normal), length);
-	//std::vector<XMVECTOR> projectedPointsV = projectQuad(nearCornersV, normalV, length);
+	// ensure new winding order consistent with normal direction, regardless of initial corner order
+	XMVECTOR e1 = XMVectorSubtract(P1, P0);
+	XMVECTOR e2 = XMVectorSubtract(P3, P0);
+	XMVECTOR windingNormal = XMVector3Cross(e1, e2); // Use the same order as calcNormal
+
+	XMVECTOR directionV = XMLoadFloat3(&normal);
+	XMFLOAT3 dotV;
+	DirectX::XMStoreFloat3(&dotV, XMVector3Dot(windingNormal, directionV));
+	float dot = dotV.x;
+	std::array<XMVECTOR, 4> projectedPointsV;
+
+	if (dot  < 0.0f) {
+		projectedPointsV = projectQuad(P0, P1, P2, P3, DirectX::XMLoadFloat3(&normal), length);
+	}
+	else {
+		projectedPointsV = projectQuad(P0, P3, P2, P1, DirectX::XMLoadFloat3(&normal), length);
+	}
+
 	std::vector<XMFLOAT3> projectedPoints;
 
 	for (size_t i = 0; i < projectedPointsV.size(); ++i) {
@@ -344,36 +359,6 @@ uint64_t QuadSystem::topCap(Box& box)
 	return capId;
 }
 
-uint64_t QuadSystem::topCap(Box& box, bool polarity)
-{
-	std::array<int, 4> corners = box.farCorners();
-	Face cap;
-
-	if (polarity)
-	{
-		cap.face.push_back(corners[0]);
-		cap.face.push_back(corners[1]);
-		cap.face.push_back(corners[2]);
-		cap.face.push_back(corners[3]);
-	}
-	else
-	{
-		cap.face.push_back(corners[0]);
-		cap.face.push_back(corners[3]);
-		cap.face.push_back(corners[2]);
-		cap.face.push_back(corners[1]);
-	}
-	assignNormal(cap);
-
-	faces.push_back(cap);
-	trackNewFace(faces.back(), faceCount() - 1);
-	uint64_t capId = faces.back().id;
-	topCapId = capId;
-	//box.faceIds.push_back(faces.back().id);
-
-	return capId;
-}
-
 uint64_t QuadSystem::addCap(Box& box)
 {
 	std::array<int, 4> corners = box.farCorners();
@@ -382,34 +367,6 @@ uint64_t QuadSystem::addCap(Box& box)
 	cap.face.push_back(corners[3]);
 	cap.face.push_back(corners[2]);
 	cap.face.push_back(corners[1]);
-	assignNormal(cap);
-
-	faces.push_back(cap);
-	trackNewFace(faces.back(), faceCount() - 1);
-	uint64_t capId = faces.back().id;
-
-	return capId;
-}
-
-uint64_t QuadSystem::addCap(Box& box, bool polarity)
-{
-	std::array<int, 4> corners = box.farCorners();
-	Face cap;
-
-	if (polarity)
-	{
-		cap.face.push_back(corners[0]);
-		cap.face.push_back(corners[1]);
-		cap.face.push_back(corners[2]);
-		cap.face.push_back(corners[3]);
-	}
-	else
-	{
-		cap.face.push_back(corners[0]);
-		cap.face.push_back(corners[3]);
-		cap.face.push_back(corners[2]);
-		cap.face.push_back(corners[1]);
-	}
 	assignNormal(cap);
 
 	faces.push_back(cap);
@@ -434,57 +391,16 @@ void QuadSystem::bottomCap(Box& box)
 	//box.faceIds.push_back(faces.back().id);
 }
 
-void QuadSystem::bottomCap(Box& box, bool polarity)
-{
-	std::array<int, 4> corners = box.nearCorners();
-	Face cap;
-	if (polarity)
-	{
-		cap.face.push_back(corners[0]);
-		cap.face.push_back(corners[1]);
-		cap.face.push_back(corners[2]);
-		cap.face.push_back(corners[3]);
-	}
-	else
-	{
-		cap.face.push_back(corners[1]);
-		cap.face.push_back(corners[2]);
-		cap.face.push_back(corners[3]);
-		cap.face.push_back(corners[0]);
-	}	
-
-	faces.push_back(cap);
-	trackNewFace(faces.back(), faceCount() - 1);
-	bottomCapId = faces.back().id;
-	//box.faceIds.push_back(faces.back().id);
-}
-/*
-void QuadSystem::replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap)
-{
-	std::vector<int> faceToReplace = faces[faceIndex].face;
-	std::array<int, 4> oldFace;
-	oldFace[0] = faceToReplace[0];
-	oldFace[1] = faceToReplace[1];
-	oldFace[2] = faceToReplace[2];
-	oldFace[3] = faceToReplace[3];
-
-	buildBox(oldFace, normal, length, endScale);
-	if (cap)
-	{
-		topCap(boxes[boxes.size() - 1]);
-	}
-}
-*/
 // prioritize unique id's over indices that may change with deletions
-void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch)
+void QuadSystem::extrude(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch)
 {
 	int faceIndex = getFaceIndexByID(faceId);
 	std::vector<int> faceToReplace = faces[faceIndex].face;
 	std::array<int, 4> oldFace;
 	oldFace[0] = faceToReplace[0];
-	oldFace[1] = faceToReplace[1];
+	oldFace[1] = faceToReplace[3];
 	oldFace[2] = faceToReplace[2];
-	oldFace[3] = faceToReplace[3];
+	oldFace[3] = faceToReplace[1];
 
 	buildBox(oldFace, normal, length, endScale);
 	uint64_t capId;
@@ -502,31 +418,6 @@ void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMF
 	}
 }
 
-void QuadSystem::replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool polarity, bool cap, bool isBranch)
-{
-	int faceIndex = getFaceIndexByID(faceId);
-	std::vector<int> faceToReplace = faces[faceIndex].face;
-	std::array<int, 4> oldFace;
-	oldFace[0] = faceToReplace[0];
-	oldFace[1] = faceToReplace[1];
-	oldFace[2] = faceToReplace[2];
-	oldFace[3] = faceToReplace[3];
-
-	buildBox(oldFace, normal, length, endScale);
-	uint64_t capId;
-	if (cap)
-	{
-		capId = addCap(boxes[boxes.size() - 1]);
-		capIds.push_back(capId);
-	}
-
-	faceDeletionIdList.push_back(faceId);
-
-	if (isBranch && cap)
-	{
-		branchCaps.push_back(capId);
-	}
-}
 
 
 XMFLOAT3 QuadSystem::edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2) {
@@ -646,6 +537,48 @@ float QuadSystem::approxWidth(Face f)
 	return (diagonal1 + diagonal2) / 2.0;
 }
 
+float QuadSystem::approxWidth(std::array<int, 4> corners)
+{
+	XMFLOAT3 v0 = points[corners[0]];
+	XMFLOAT3 v1 = points[corners[1]];
+	XMFLOAT3 v2 = points[corners[2]];
+	XMFLOAT3 v3 = points[corners[3]];
+	float diagonal1 = distance(v0, v2);
+	float diagonal2 = distance(v1, v3);
+
+	return (diagonal1 + diagonal2) / 2.0;
+}
+
+XMFLOAT3 QuadSystem::rotateVector(XMVECTOR A, XMVECTOR B, float angle)
+{
+	angle = XMConvertToRadians(angle);
+	// Calculate the Plane Normal (Rotation Axis)
+	XMVECTOR N = XMVector3Cross(A, B);
+
+	/*
+	// Check if the vectors are parallel/anti-parallel (Cross product is near zero)
+	if (XMVector3NearEqual(N, XMVectorZero(), XMVectorReplicate(1e-6f)))
+	{
+		return A;
+	}
+	*/
+
+	XMVECTOR unitNormal = XMVector3Normalize(N);
+
+	// Create the Rotation Matrix (Quaternion for smooth rotation)
+	// Create a rotation quaternion for the delta_angle around the N_unit axis.
+	XMVECTOR rotationQuat = XMQuaternionRotationAxis(unitNormal, angle);
+
+	// Rotate Vector B
+	// Use XMVector3Rotate to apply the quaternion rotation to vector B.
+	//XMVECTOR negB = XMVectorScale(B, -1.0f);
+	XMVECTOR rotatedB = XMVector3Rotate(B, rotationQuat);
+	XMFLOAT3 rotatedBfloat3;
+	XMStoreFloat3(&rotatedBfloat3, rotatedB); // Stores the XMVECTOR into the XMFLOAT3
+
+	return rotatedBfloat3;
+}
+
 // angle away from initial face normal
 int QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::vector<float> angles, float boxHeightRatio)
 {
@@ -654,23 +587,23 @@ int QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::
 	float newBoxHeight = approxWidth(faces[faceIndex])* 0.8 * boxHeightRatio;
 	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
 	XMFLOAT3 boxNormal;
-	// not sure why calcNormal gets the sign wrong 
 	XMVECTOR boxNormalV = calcNormal(faceIndex);
 	XMStoreFloat3(&boxNormal, boxNormalV);
 	//
 	XMVECTOR nv = f.normalV;
 	//XMStoreFloat3(&boxNormal, nv);
-	replaceFace(faceId, boxNormal, newBoxHeight, scale, false, false);
+	extrude(faceId, boxNormal, newBoxHeight, scale, false, false);
 	uint64_t capId = addCap(boxes[boxes.size() - 1]);
 	parent.capId = capId;
 	Box newBox = boxes[boxes.size() - 1];
 	std::vector<int> newBranchIds;
+	
 	for (int s = 0; s < sides.size(); s++)
 	{
 		Branch newBranch;
 		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
-		XMFLOAT3 newNormal = rotateVector(boxNormalV, -calcNormal(face), angles[s]);
-		replaceFace(face, newNormal, newBoxHeight * 6, scale, false, false);
+		XMFLOAT3 newNormal = rotateVector(boxNormalV, calcNormal(face), angles[s]);
+		extrude(face, newNormal, newBoxHeight * 6, scale, false, false);
 		uint64_t newCapId = addCap(boxes[boxes.size() - 1]);
 		newBranch.axis = newNormal;
 		newBranch.parentAxis = parent.axis;
@@ -678,55 +611,11 @@ int QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::
 		branchCaps.push_back(newCapId);
 		parent.branches.push_back(newBranch);
 	}
+	
 	// dont forget to store indices of caps to make more branches
 	return parent.id;
 }
 
-// overload for normal issues, branch length, returns the branchCap ids
-std::vector<uint64_t> QuadSystem::branch(Branch& parent, 
-										int faceId, 
-										std::vector<int> sides, 
-										std::vector<float> angles, 
-										float boxHeightRatio, 
-										float branchLengthRatio, 
-										bool polarity)
-{
-	int faceIndex = getFaceIndexByID(faceId);
-	Face& f = faces[faceIndex];
-	float newBoxHeight = approxWidth(faces[faceIndex]) * 0.8 * boxHeightRatio;
-	XMFLOAT3 scale = XMFLOAT3(0.6, 0.6, 0.6);
-	XMFLOAT3 boxNormal;
-	// not sure why calcNormal gets the sign wrong 
-	XMVECTOR boxNormalV = calcNormal(faceIndex);
-	XMStoreFloat3(&boxNormal, boxNormalV);
-	//
-	XMVECTOR nv = f.normalV;
-	//XMStoreFloat3(&boxNormal, nv);
-	replaceFace(faceId, boxNormal, newBoxHeight, scale, polarity, false, false);
-	uint64_t capId = addCap(boxes[boxes.size() - 1]);
-	parent.capId = capId;
-	Box newBox = boxes[boxes.size() - 1];
-	std::vector<int> newBranchIds;
-	std::vector<uint64_t> branchCapIds;
-
-	for (int s = 0; s < sides.size(); s++)
-	{
-		Branch newBranch;
-		int face = getFaceIndexByID(newBox.faceIds[sides[s]]);
-		XMFLOAT3 newNormal = rotateVector(boxNormalV, -calcNormal(face), angles[s]);
-		replaceFace(face, newNormal, newBoxHeight * 6, scale, polarity, false, false);
-		uint64_t newCapId = addCap(boxes[boxes.size() - 1], polarity);
-		newBranch.axis = newNormal;
-		newBranch.parentAxis = parent.axis;
-		newBranch.capId = newCapId;
-		branchCaps.push_back(newCapId);
-		parent.branches.push_back(newBranch);
-		branchCapIds.push_back(newCapId);
-	}
-	// dont forget to store indices of caps to make more branches
-
-	return branchCapIds;	
-}
 
 std::array<XMVECTOR, 4> QuadSystem::projectQuad(
 	FXMVECTOR P1, FXMVECTOR P2, FXMVECTOR P3, FXMVECTOR P4,
@@ -789,7 +678,7 @@ void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch
 	Face& f = faces[faceIndex];
 	float faceWidth = approxWidth(f);
 	//XMFLOAT3 centroid = findCentroid(f);
-	std::array<int, 4> nearCorners = { f.face[0], f.face[1], f.face[2], f.face[3] };
+	std::array<int, 4> nearCorners = { f.face[0], f.face[3], f.face[2], f.face[1] };
 	faceDeletionIdList.push_back(faceId);
 
 	XMVECTOR dirVec = calcNormal(faceIndex);
@@ -804,6 +693,36 @@ void QuadSystem::buildBall(uint64_t faceId, float scale, bool cap, bool isBranch
 	Box newBox2 = getBox(boxCount() - 1);
 	std::array<int, 4> newCorners2 = newBox2.farCorners();
 	buildBox(newCorners2, direction, faceWidth * scale * 0.33f, XMFLOAT3(1.0f / scale, 1.0f/scale, 1.0f / scale));
+	Box newBox3 = getBox(boxCount() - 1);
+	if (cap)
+	{
+		uint64_t capId = addCap(newBox3);
+		capIds.push_back(capId);
+	}
+	// Add the new box to the list of boxes
+	//boxes.push_back(newBox);
+}
+
+void QuadSystem::buildBall(std::vector<int> startVerts, float scale, bool cap, bool isBranch)
+{
+	// Get the face index
+	
+	//XMFLOAT3 centroid = findCentroid(f);
+	std::array<int, 4> nearCorners = { startVerts[0], startVerts[1], startVerts[2], startVerts[3] };
+	float faceWidth = approxWidth(nearCorners);
+
+	XMVECTOR dirVec = calcNormal(startVerts[0], startVerts[1], startVerts[2]);
+	//XMFLOAT3 direction = f.normal;
+	XMFLOAT3 direction;
+	XMStoreFloat3(&direction, dirVec);
+
+	buildBox(nearCorners, direction, faceWidth * scale * 0.33f, XMFLOAT3(scale, scale, scale));
+	Box newBox = getBox(boxCount() - 1);
+	std::array<int, 4> newCorners = newBox.farCorners();
+	buildBox(newCorners, direction, faceWidth * scale * 0.33f, XMFLOAT3(1.0, 1.0f, 1.0));
+	Box newBox2 = getBox(boxCount() - 1);
+	std::array<int, 4> newCorners2 = newBox2.farCorners();
+	buildBox(newCorners2, direction, faceWidth * scale * 0.33f, XMFLOAT3(1.0f / scale, 1.0f / scale, 1.0f / scale));
 	Box newBox3 = getBox(boxCount() - 1);
 	if (cap)
 	{
@@ -999,34 +918,7 @@ void QuadSystem::buildPlane(int xCount, int zCount)
 	*/
 }
 
-XMFLOAT3 QuadSystem::rotateVector(XMVECTOR A, XMVECTOR B, float angle)
-{
-	angle = XMConvertToRadians(angle);
-	// Calculate the Plane Normal (Rotation Axis)
-	XMVECTOR N = XMVector3Cross(A, B);
 
-	/*
-	// Check if the vectors are parallel/anti-parallel (Cross product is near zero)
-	if (XMVector3NearEqual(N, XMVectorZero(), XMVectorReplicate(1e-6f)))
-	{
-		return A;
-	}
-	*/
-
-	XMVECTOR unitNormal = XMVector3Normalize(N);
-
-	// Create the Rotation Matrix (Quaternion for smooth rotation)
-	// Create a rotation quaternion for the delta_angle around the N_unit axis.
-	XMVECTOR rotationQuat = XMQuaternionRotationAxis(unitNormal, angle);
-
-	// Rotate Vector A
-	// Use XMVector3Rotate to apply the quaternion rotation to vector A.
-	XMVECTOR rotatedB = XMVector3Rotate(B, rotationQuat);
-	XMFLOAT3 rotatedBfloat3;
-	XMStoreFloat3(&rotatedBfloat3, rotatedB); // Stores the XMVECTOR into the XMFLOAT3
-
-	return rotatedBfloat3;
-}
 
 void QuadSystem::deleteStagedFaces()
 {
@@ -2005,105 +1897,5 @@ void QuadSystem::CCsubdivideHE1(float paramA, float paramB, float paramC)
 
 
 
-/*
 
-// original
-
-void QuadSystem::buildAHES(HalfEdgeSystem& heSystem)
-{
-	// Clear all AHES containers to start fresh
-	heSystem.edges.clear();
-	heSystem.vertices.clear();
-	heSystem.faces.clear();
-
-	// 1. Pre-allocate size (optimistic)
-	heSystem.vertices.resize(points.size());
-	heSystem.faces.resize(faces.size());
-	heSystem.edges.reserve(faces.size() * 4); // Catmull-Clark guarantees quads after 1st pass
-
-	// Temporary map to find twin half-edges: maps Canonical Edge -> Index of the first HE found
-	// The key is the sorted pair (v_min, v_max). The value is the index of the HE (v_min -> v_max).
-	std::map<EdgePair, HEIndex> edgeToHalfEdgeMap;
-
-	// 2. Initialize Vertices and Faces
-	for (size_t i = 0; i < points.size(); ++i) {
-		heSystem.vertices[i].outgoingEdge = -1; // -1 = uninitialized
-	}
-	for (size_t i = 0; i < faces.size(); ++i) {
-		heSystem.faces[i].originalFaceIndex = i;
-		heSystem.faces[i].boundingEdge = -1;
-	}
-
-	// 3. Iterate through faces to create Half-Edges and find Twins
-	for (size_t f_idx = 0; f_idx < faces.size(); ++f_idx) {
-		const Face& currentFace = faces[f_idx];
-		int N = currentFace.face.size(); // Number of vertices in the N-gon
-
-		// Store the indices of the half-edges being created for this face
-		std::vector<HEIndex> currentHEIndices;
-
-		for (int i = 0; i < N; ++i) {
-			int v_start_idx = currentFace.face[i];
-			int v_end_idx = currentFace.face[(i + 1) % N];
-
-			// Create the new half-edge (HE) for the path v_start -> v_end
-			HalfEdge newHE;
-			newHE.origin = v_start_idx;
-			newHE.face = f_idx;
-			newHE.twin = -1; // Will be set later
-
-			HEIndex he_idx = heSystem.edges.size();
-			heSystem.edges.push_back(newHE);
-			currentHEIndices.push_back(he_idx);
-
-			// --- A) Setup Vertex and Face Pointers ---
-			// Set the outgoing edge for the vertex (just pick the last one created for simplicity)
-			heSystem.vertices[v_start_idx].outgoingEdge = he_idx;
-			// Set the bounding edge for the face
-			heSystem.faces[f_idx].boundingEdge = he_idx;
-
-			// --- B) Setup Next Pointer ---
-			// The HE 'next' is the one created for the next face edge
-			if (i > 0) {
-				heSystem.edges[currentHEIndices[i - 1]].next = he_idx;
-			}
-
-			// --- C) Find Twin using the Temporary Map ---
-			EdgePair canonicalEdge;
-			canonicalEdge.v1 = std::min(v_start_idx, v_end_idx);
-			canonicalEdge.v2 = std::max(v_start_idx, v_end_idx);
-
-			// The edge key for the half-edge going in the opposite direction (v_end -> v_start)
-			EdgePair twinKey = { v_end_idx, v_start_idx };
-
-			// Search the map for the twin (canonical edge)
-			auto it = edgeToHalfEdgeMap.find(canonicalEdge);
-			if (it != edgeToHalfEdgeMap.end()) {
-				// We found the twin (the HE that runs v_start -> v_end)
-				HEIndex twin_he_idx = it->second;
-
-				// Link them: Current HE links to Twin HE
-				heSystem.edges[he_idx].twin = twin_he_idx;
-				// Twin HE links back to Current HE
-				heSystem.edges[twin_he_idx].twin = he_idx;
-
-				// Remove the twin from the map to mark the edge as "closed"
-				edgeToHalfEdgeMap.erase(it);
-
-			}
-			else {
-				// First time seeing this edge (v_start -> v_end). Store this HE index.
-				edgeToHalfEdgeMap[canonicalEdge] = he_idx;
-			}
-		} // End of face edges loop
-
-		// Finalize 'next' pointer for the last HE to wrap back to the first
-		if (N > 0) {
-			heSystem.edges[currentHEIndices.back()].next = currentHEIndices.front();
-		}
-	} // End of faces loop
-
-	// Cleanup: edgeToHalfEdgeMap is local and destroyed automatically.
-}
-*/
 

@@ -134,7 +134,7 @@ bool Renderer::Init(HWND hWnd, int width, int height)
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 		rasterizerDesc.MultisampleEnable = true;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		hr = device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
@@ -351,7 +351,7 @@ bool Renderer::SceneSetup()
 
 	qBox = std::make_unique<QuadSystem>();
 	
-	/*
+	
 	qBox->addPoints(newPoints);
 	qBox->buildBox(newIndices, boxNormal, 3.0, defaultScale);
 	//qBox->topCap(qBox->getBox(0));
@@ -368,7 +368,7 @@ bool Renderer::SceneSetup()
 	qBox->bottomCap(qBox->getBox(0));
 
 	
-
+	
 	std::vector<int> sides = { 0, 1, 2, 3 };
 	std::vector<float> angles = { -50.0, -50.0, -50.0, -50.0 };
 	std::vector<float> angles2 = { -30.0, -30.0, -30.0, -30.0 };
@@ -377,15 +377,15 @@ bool Renderer::SceneSetup()
 	Branch startingBranch;
 	startingBranch.axis = qBox->getBox(6).direction;
 	qBox->branch(startingBranch, qBox->bottomCapId, sides, angles2, 0.4);
+	
 	for (uint64_t capId : qBox->branchCaps)
 	{
 		qBox->buildBall(capId, 2.5, true, true);
 	}
+	
 	qBox->branchCaps.clear();
 	qBox->branch(startingBranch, qBox->topCapId, sides, angles, 0.6);
-	//qBox->deleteStagedFaces();
 	std::vector<uint64_t> currentCaps = qBox->branchCaps; // Get the list of new cap IDs
-    //auto& testCap = currentCaps.back();
 	qBox->branchCaps.clear();
 	//qBox->buildBall(testCap, 1.5, true, true);
 	
@@ -411,7 +411,7 @@ bool Renderer::SceneSetup()
 			qBox->branch(startingBranch, moreCaps[i], sides, angles, 1.5);
 			for (uint64_t capId : qBox->branchCaps)
 			{
-				qBox->buildBall(capId, 1.75, true, true);
+				//qBox->buildBall(capId, 1.75, true, true);
 			}
 			qBox->branchCaps.clear();
 		}
@@ -419,85 +419,87 @@ bool Renderer::SceneSetup()
 		//qBox->buildBall(capId, 1.75, true, true);
 	}
 	
+	
 	//qBox->deleteStagedFaces();
 	
 	//Box test = qBox->getBox(0)
 	//std::vector<Face> faceTest = qBox->getFaces();
 	
+	
 	uint64_t face1Id = qBox->getBox(0).faceIds[0];
 	qBox->getFaceById(face1Id).normalV = qBox->calcNormal(face1Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face1Id).normal, qBox->getFaceById(face1Id).normalV);
 	XMFLOAT3 newNormal1 = qBox->getFaceById(face1Id).normal;
-	//qBox->replaceFace(face1Id, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->extrude(face1Id, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal1 = XMFLOAT3(newNormal1.x, newNormal1.y - 0.5, newNormal1.z);
-	qBox->replaceFace(face1Id, testNormal1, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	qBox->extrude(face1Id, testNormal1, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
 	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 	//qBox->branch(startingBranch, qBox->capIds.back(), sides, angles, 0.6);
 
 	// how do I get the new endcap id for the box? 
-
+	
 	int face2Id = qBox->getBox(0).faceIds[1];
 	qBox->getFaceById(face2Id).normalV = qBox->calcNormal(face2Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face2Id).normal, qBox->getFaceById(face2Id).normalV);
 	XMFLOAT3 newNormal2 = qBox->getFaceById(face2Id).normal;
-	//qBox->replaceFace(face2Id, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->extrude(face2Id, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal2 = XMFLOAT3(newNormal2.x, newNormal2.y - 0.5, newNormal2.z);
-	qBox->replaceFace(face2Id, testNormal2, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	qBox->extrude(face2Id, testNormal2, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
 	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face3Id = qBox->getBox(0).faceIds[2];
 	qBox->getFaceById(face3Id).normalV = qBox->calcNormal(face3Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face3Id).normal, qBox->getFaceById(face3Id).normalV);
 	XMFLOAT3 newNormal3 = qBox->getFaceById(face3Id).normal;
-	//qBox->replaceFace(face3Id, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->extrude(face3Id, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal3 = XMFLOAT3(newNormal3.x, newNormal3.y - 0.5, newNormal3.z);
-	qBox->replaceFace(face3Id, testNormal3, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	qBox->extrude(face3Id, testNormal3, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
 	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face4Id = qBox->getBox(0).faceIds[3];
 	qBox->getFaceById(face4Id).normalV = qBox->calcNormal(face4Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face4Id).normal, qBox->getFaceById(face4Id).normalV);
 	XMFLOAT3 newNormal4 = qBox->getFaceById(face4Id).normal;
-	//qBox->replaceFace(face4Id, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	//qBox->extrude(face4Id, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal4 = XMFLOAT3(newNormal4.x, newNormal4.y - 0.5, newNormal4.z);
-	qBox->replaceFace(face4Id, testNormal4, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+	qBox->extrude(face4Id, testNormal4, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
 	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face5Id = qBox->getBox(2).faceIds[0];
 	qBox->getFaceById(face5Id).normalV = qBox->calcNormal(face5Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face5Id).normal, qBox->getFaceById(face5Id).normalV);
 	XMFLOAT3 newNormal5 = qBox->getFaceById(face5Id).normal;
-	qBox->replaceFace(face5Id, newNormal5, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	qBox->extrude(face5Id, newNormal5, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 
 	int face6Id = qBox->getBox(2).faceIds[1];
 	qBox->getFaceById(face6Id).normalV = qBox->calcNormal(face6Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face6Id).normal, qBox->getFaceById(face6Id).normalV);
 	XMFLOAT3 newNormal6 = qBox->getFaceById(face6Id).normal;
-	qBox->replaceFace(face6Id, newNormal6, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	qBox->extrude(face6Id, newNormal6, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 
 	int face7Id = qBox->getBox(2).faceIds[2];
 	qBox->getFaceById(face7Id).normalV = qBox->calcNormal(face7Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face7Id).normal, qBox->getFaceById(face7Id).normalV);
 	XMFLOAT3 newNormal7 = qBox->getFaceById(face7Id).normal;
-	qBox->replaceFace(face7Id, newNormal7, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	qBox->extrude(face7Id, newNormal7, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 
 	int face8Id = qBox->getBox(2).faceIds[3];
 	qBox->getFaceById(face8Id).normalV = qBox->calcNormal(face8Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face8Id).normal, qBox->getFaceById(face8Id).normalV);
 	XMFLOAT3 newNormal8 = qBox->getFaceById(face8Id).normal;
-	qBox->replaceFace(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	qBox->extrude(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	
 	qBox->deleteStagedFaces();
-	*/
-    
-	qBox->buildCylinder(qBox->basePoint, boxNormal, 12.0, 4.0, .4, 12, 12);
+	
+    /*
+	qBox->buildCylinder(qBox->basePoint, boxNormal, 12.0, 4.0, .4, 12, 32);
 	Cylinder& newCyl = qBox->getCylinder(0);
-	for (int i = 0; i < newCyl.slices[1].size(); i += 2)
+	for (int i = 0; i < newCyl.slices[1].size(); i += 1)
 	{
 		qBox->getFaceById(newCyl.slices[1][i]).normalV = qBox->calcNormal(newCyl.slices[1][i]);
 		DirectX::XMStoreFloat3(&qBox->getFaceById(newCyl.slices[1][i]).normal, qBox->getFaceById(newCyl.slices[1][i]).normalV);
 		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[1][i]).normal;
-		qBox->replaceFace(newCyl.slices[1][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+		qBox->extrude(newCyl.slices[1][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	}
 	
 	for (int i = 0; i < newCyl.slices[5].size(); i += 2)
@@ -505,14 +507,14 @@ bool Renderer::SceneSetup()
 		qBox->getFaceById(newCyl.slices[5][i]).normalV = qBox->calcNormal(newCyl.slices[5][i]);
 		DirectX::XMStoreFloat3(&qBox->getFaceById(newCyl.slices[5][i]).normal, qBox->getFaceById(newCyl.slices[5][i]).normalV);
 		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[5][i]).normal;
-		qBox->replaceFace(newCyl.slices[5][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+		qBox->extrude(newCyl.slices[5][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	}
 	for (int i = 0; i < newCyl.slices[9].size(); i += 2)
 	{
 		qBox->getFaceById(newCyl.slices[9][i]).normalV = qBox->calcNormal(newCyl.slices[9][i]);
 		DirectX::XMStoreFloat3(&qBox->getFaceById(newCyl.slices[9][i]).normal, qBox->getFaceById(newCyl.slices[9][i]).normalV);
 		XMFLOAT3 n = qBox->getFaceById(newCyl.slices[9][i]).normal;
-		qBox->replaceFace(newCyl.slices[9][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+		qBox->extrude(newCyl.slices[9][i], n, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	}
 	
 	uint64_t cylCapId = qBox->topCylinderCap(newCyl);
@@ -522,23 +524,24 @@ bool Renderer::SceneSetup()
 
 	qBox->deleteStagedFaces();
 
+	*/
 	//qBox->CCsubdivide(2.8, 2.0, 1.2);
 	//qBox->CCsubdivide(5.0, 2.0, 4.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
-	//qBox->CCsubdivide(3.0, 2.0, 1.0);
+	//qBox->CCsubdivide(3.0, 1.0, 2.0);
+	//qBox->CCsubdivide(3.0, 1.0, 2.0);
+	//qBox->CCsubdivide(3.0, 1.0, 2.0);
+	//qBox->CCsubdivide(3.0, 1.0, 2.0);
+	//qBox->CCsubdivide(3.0, 1.0, 2.0);
 	
 	
-	qBox->CCsubdivideNgon(-2.0, -6.5, 4.5);
-	qBox->CCsubdivideNgonLERP(3.0, 1.0, 2.0, 0.3);
-	qBox->CCsubdivideNgon(4.0, 5.0, -1.0);
-	//qBox->CCsubdivideNgon(3.0, 4.0, -1.0);
+	//qBox->CCsubdivideNgon(-2.0, -6.5, 4.5);
+	//qBox->CCsubdivideNgonLERP(3.0, 1.0, 2.0, 0.0);
 	//qBox->CCsubdivideNgon(4.0, 5.0, -1.0);
 	//qBox->CCsubdivideNgon(3.0, 4.0, -1.0);
-	qBox->CCsubdivideNgonLERP(3.0, 1.0, 2.0, 0.5);
-	qBox->CCsubdivideNgon(3.0, 1.0, 2.0);
+	//qBox->CCsubdivideNgon(4.0, 5.0, -1.0);
+	//qBox->CCsubdivideNgon(3.0, 1.0, 2.0);
+	//qBox->CCsubdivideNgonLERP(3.0, 1.0, 2.0, 1.0);
+	//qBox->CCsubdivideNgon(3.0, 1.0, 2.0);
 
 	box = qBox->convertFacesToMesh();
 	box->initGPU(this->device.Get(), this->deviceContext.Get(), initTransform, cb_vert);

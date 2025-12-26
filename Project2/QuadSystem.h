@@ -205,6 +205,7 @@ public:
 	XMFLOAT3 edgeMidpoint(const XMFLOAT3& p1, const XMFLOAT3& p2);
 	float distance(XMFLOAT3 pt1, XMFLOAT3 pt2);
 	float approxWidth(Face f);
+	float approxWidth(std::array<int, 4> corners);
 	std::vector<XMFLOAT3> scalePolygon(std::vector<XMFLOAT3> points, const XMFLOAT3 scaleOrigin, XMFLOAT3 scale);
 
 	// tracking faces with unique ID's for deletions and looking up branch caps
@@ -259,17 +260,13 @@ public:
 
 	// replace a face with a box
 	//void replaceFace(int faceIndex, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap);
-	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch);
-
-	void replaceFace(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool polarity, bool cap, bool isBranch);
+	void extrude(uint64_t faceId, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch);
+	void extrude(std::vector<int> startCorners, XMFLOAT3 normal, float length, XMFLOAT3 endScale, bool cap, bool isBranch);
 
 	// caps
 	uint64_t topCap(Box& box);
-	uint64_t topCap(Box& box, bool polarity);
 	uint64_t addCap(Box& box);
-	uint64_t addCap(Box& box, bool polarity);
 	void bottomCap(Box& box);
-	void bottomCap(Box& box, bool polarity);
 
 	uint64_t topCylinderCap(Cylinder& cyl);
 	uint64_t bottomCylinderCap(Cylinder& cyl);
@@ -279,11 +276,12 @@ public:
 
 	// premade shapes
 	void buildBall(uint64_t faceId, float scale, bool cap, bool isBranch);
+	void buildBall(std::array<int, 4> startVerts, float scale, bool cap, bool isBranch);
+	void buildBall(std::vector<int> startVerts, float scale, bool cap, bool isBranch);
 	void bend(uint64_t faceId, int numSections, XMFLOAT3 angle, float sectionScale);
 	void buildFin(uint64_t faceId, int numSections, bool pointDown);
-
-	void buildBall(std::array<int, 4> nearCorners, float scale);
 	void bend(std::array<int, 4> nearCorners, int numSections, XMFLOAT3 angle, float sectionScale);
+	void bend(std::vector<int> nearCorners, int numSections, XMFLOAT3 angle, float sectionScale);
 	void buildFin(std::array<int, 4> nearCorners, float scale, int numSections, bool pointDown);
 
 
