@@ -608,6 +608,7 @@ int QuadSystem::branch(Branch& parent, int faceId, std::vector<int> sides, std::
 		newBranch.axis = newNormal;
 		newBranch.parentAxis = parent.axis;
 		newBranch.capId = newCapId;
+		newBranch.id = parent.id + s + 1;
 		branchCaps.push_back(newCapId);
 		parent.branches.push_back(newBranch);
 	}

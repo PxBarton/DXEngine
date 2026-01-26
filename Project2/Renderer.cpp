@@ -337,6 +337,7 @@ bool Renderer::SceneSetup()
 
 	XMFLOAT3 boxNormal = XMFLOAT3(0.0, 1.0, 0.0);
 	XMFLOAT3 boxNormal2 = XMFLOAT3(0.0, 1.0, 0.3);
+	XMFLOAT3 down = XMFLOAT3(0.0, -1.0, 0.0);
 
 	std::vector<XMFLOAT3> newPoints = { p1, p2, p3, p4 };
 	
@@ -380,7 +381,10 @@ bool Renderer::SceneSetup()
 	
 	for (uint64_t capId : qBox->branchCaps)
 	{
-		qBox->buildBall(capId, 2.5, true, true);
+		qBox->buildBall(capId, 4.0, true, true);
+		auto verts = qBox->getFaceVertices(qBox->capIds.back());
+		qBox->buildBox(verts, down, 6.0, boxScale);
+		qBox->addCap(qBox->getBox(qBox->boxCount() - 1));
 	}
 	
 	qBox->branchCaps.clear();
@@ -388,21 +392,20 @@ bool Renderer::SceneSetup()
 	std::vector<uint64_t> currentCaps = qBox->branchCaps; // Get the list of new cap IDs
 	qBox->branchCaps.clear();
 	//qBox->buildBall(testCap, 1.5, true, true);
-	
-	//qBox->branch(startingBranch, currentCaps[0], sides, angles, 0.8);
-	//qBox->branch(startingBranch, currentCaps[1], sides, angles, 0.8);
-	//qBox->branch(startingBranch, currentCaps[2], sides, angles, 0.8);
-	//qBox->branch(startingBranch, currentCaps[3], sides, angles, 0.8);
-	
-	//for (uint64_t& cap : qBox->branchCaps)
-	//{
-	//	qBox->buildBall(cap, 2.0, true, true);
-	//}
+
+	for (int i = 0; i < 4; i++)
+	{
+		// start from last and go back 4
+		uint64_t capId = startingBranch.branches[startingBranch.branches.size() - 1 - i].capId;
+		qBox->buildBall(capId, 3.0, true, true);
+		qBox->branchCaps.push_back(qBox->capIds.back());
+	}
+
+	currentCaps = qBox->branchCaps; // Get the list of new cap IDs
+	qBox->branchCaps.clear();
 	
 	for (uint64_t capId : currentCaps)
 	{
-		//qBox->buildBall(capId, 2.0, true, true);
-		//qBox->branch(startingBranch, qBox->capIds.back(), sides, angles, 0.8);
 		qBox->branch(startingBranch, capId, sides, angles, 0.8);
 		std::vector<uint64_t> moreCaps = qBox->branchCaps;
 		qBox->branchCaps.clear();
@@ -411,7 +414,11 @@ bool Renderer::SceneSetup()
 			qBox->branch(startingBranch, moreCaps[i], sides, angles, 1.5);
 			for (uint64_t capId : qBox->branchCaps)
 			{
-				//qBox->buildBall(capId, 1.75, true, true);
+				qBox->buildBall(capId, 1.75, true, true);
+				auto verts = qBox->getFaceVertices(qBox->capIds.back());
+				qBox->buildBox(verts, boxNormal, 6.0, boxScale);
+				qBox->addCap(qBox->getBox(qBox->boxCount()-1));
+				//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 			}
 			qBox->branchCaps.clear();
 		}
@@ -425,45 +432,40 @@ bool Renderer::SceneSetup()
 	//Box test = qBox->getBox(0)
 	//std::vector<Face> faceTest = qBox->getFaces();
 	
-	
+	// how do I get the new endcap id for the box? 
+	/*
 	uint64_t face1Id = qBox->getBox(0).faceIds[0];
 	qBox->getFaceById(face1Id).normalV = qBox->calcNormal(face1Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face1Id).normal, qBox->getFaceById(face1Id).normalV);
 	XMFLOAT3 newNormal1 = qBox->getFaceById(face1Id).normal;
-	//qBox->extrude(face1Id, newNormal1, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal1 = XMFLOAT3(newNormal1.x, newNormal1.y - 0.5, newNormal1.z);
 	qBox->extrude(face1Id, testNormal1, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
-	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
-	//qBox->branch(startingBranch, qBox->capIds.back(), sides, angles, 0.6);
+	qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
-	// how do I get the new endcap id for the box? 
-	
 	int face2Id = qBox->getBox(0).faceIds[1];
 	qBox->getFaceById(face2Id).normalV = qBox->calcNormal(face2Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face2Id).normal, qBox->getFaceById(face2Id).normalV);
 	XMFLOAT3 newNormal2 = qBox->getFaceById(face2Id).normal;
-	//qBox->extrude(face2Id, newNormal2, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal2 = XMFLOAT3(newNormal2.x, newNormal2.y - 0.5, newNormal2.z);
 	qBox->extrude(face2Id, testNormal2, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
-	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
+	qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face3Id = qBox->getBox(0).faceIds[2];
 	qBox->getFaceById(face3Id).normalV = qBox->calcNormal(face3Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face3Id).normal, qBox->getFaceById(face3Id).normalV);
 	XMFLOAT3 newNormal3 = qBox->getFaceById(face3Id).normal;
-	//qBox->extrude(face3Id, newNormal3, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal3 = XMFLOAT3(newNormal3.x, newNormal3.y - 0.5, newNormal3.z);
 	qBox->extrude(face3Id, testNormal3, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
-	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
+	qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
 
 	int face4Id = qBox->getBox(0).faceIds[3];
 	qBox->getFaceById(face4Id).normalV = qBox->calcNormal(face4Id);
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face4Id).normal, qBox->getFaceById(face4Id).normalV);
 	XMFLOAT3 newNormal4 = qBox->getFaceById(face4Id).normal;
-	//qBox->extrude(face4Id, newNormal4, 6.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
 	XMFLOAT3 testNormal4 = XMFLOAT3(newNormal4.x, newNormal4.y - 0.5, newNormal4.z);
 	qBox->extrude(face4Id, testNormal4, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
-	//qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
+	qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
+	
 
 	int face5Id = qBox->getBox(2).faceIds[0];
 	qBox->getFaceById(face5Id).normalV = qBox->calcNormal(face5Id);
@@ -488,6 +490,28 @@ bool Renderer::SceneSetup()
 	DirectX::XMStoreFloat3(&qBox->getFaceById(face8Id).normal, qBox->getFaceById(face8Id).normalV);
 	XMFLOAT3 newNormal8 = qBox->getFaceById(face8Id).normal;
 	qBox->extrude(face8Id, newNormal8, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+
+	*/
+
+	for (int i = 0; i < 4; i++)
+	{
+		uint64_t faceId = qBox->getBox(0).faceIds[i];
+		qBox->getFaceById(faceId).normalV = qBox->calcNormal(faceId);
+		DirectX::XMStoreFloat3(&qBox->getFaceById(faceId).normal, qBox->getFaceById(faceId).normalV);
+		XMFLOAT3 newNormal = qBox->getFaceById(faceId).normal;
+		XMFLOAT3 testNormal = XMFLOAT3(newNormal.x, newNormal.y - 0.5, newNormal.z);
+		qBox->extrude(faceId, testNormal, 6.0, XMFLOAT3(0.4, 0.4, 0.4), true, false);
+		qBox->buildBall(qBox->capIds.back(), 2.0, true, true);
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		int faceId = qBox->getBox(2).faceIds[i];
+		qBox->getFaceById(faceId).normalV = qBox->calcNormal(faceId);
+		DirectX::XMStoreFloat3(&qBox->getFaceById(faceId).normal, qBox->getFaceById(faceId).normalV);
+		XMFLOAT3 newNormal = qBox->getFaceById(faceId).normal;
+		qBox->extrude(faceId, newNormal, 4.0, XMFLOAT3(0.6, 0.6, 0.6), true, false);
+	}
 	
 	qBox->deleteStagedFaces();
 	

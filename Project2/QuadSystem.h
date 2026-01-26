@@ -369,6 +369,14 @@ public:
 		faces.erase(faces.begin() + index);
 	}
 
+	std::array<int, 4> getFaceVertices(uint64_t faceId)
+	{
+		int index = getFaceIndexByID(faceId);
+		Face& f = faces[index];
+		std::array<int, 4> verts = { f.face[0], f.face[3], f.face[2], f.face[1] };
+		return verts;
+	}
+
 	void deleteStagedFaces();
 
 	XMFLOAT3 basePoint = XMFLOAT3(0.0f, 0.0f, 0.0f);
